@@ -1,0 +1,48 @@
+<script lang="ts">
+	import Header from '$lib/components/layout/Header.svelte';
+	import AdminSidebar from '$lib/components/layout/AdminSidebar.svelte';
+	import { goto } from '$app/navigation';
+	import { authStore } from '$lib/stores/auth.svelte';
+	import { academyStore } from '$lib/stores/academy.svelte';
+	import { onMount } from 'svelte';
+
+	let { children } = $props();
+	let sidebarOpen = $state(false);
+
+	onMount(() => {
+		if (!authStore.isAuthenticated) {
+			goto('/auth/login', { replaceState: true });
+			return;
+		}
+		if (!academyStore.academyId) {
+			goto('/auth/select-academy', { replaceState: true });
+		}
+	});
+
+	function handleMenuClick() {
+		sidebarOpen = true;
+	}
+
+	function handleSidebarClose() {
+		sidebarOpen = false;
+	}
+</script>
+
+<div class="admin-layout">
+	<Header onMenuClick={handleMenuClick} />
+	<AdminSidebar bind:isOpen={sidebarOpen} onclose={handleSidebarClose} />
+	<main class="admin-layout__content">
+		{@render children()}
+	</main>
+</div>
+
+<style lang="scss">
+	.admin-layout {
+		min-height: 100dvh;
+
+		&__content {
+			padding-top: var(--header-height);
+			padding: calc(var(--header-height) + var(--space-md)) var(--space-md) var(--space-md);
+		}
+	}
+</style>
