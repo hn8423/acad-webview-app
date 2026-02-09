@@ -1,0 +1,60 @@
+<script lang="ts">
+	import { academyStore } from '$lib/stores/academy.svelte';
+	import Card from '$lib/components/ui/Card.svelte';
+	import { goto } from '$app/navigation';
+</script>
+
+<div class="admin-dashboard">
+	<h1 class="admin-dashboard__title">대시보드</h1>
+
+	<div class="admin-dashboard__grid">
+		<Card onclick={() => goto('/admin/notices')}>
+			<div class="dashboard-card">
+				<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2">
+					<path d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+				</svg>
+				<span class="dashboard-card__label">공지사항 관리</span>
+			</div>
+		</Card>
+
+		<Card onclick={() => goto('/admin/students')}>
+			<div class="dashboard-card">
+				<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2">
+					<path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+				</svg>
+				<span class="dashboard-card__label">수강생 관리</span>
+			</div>
+		</Card>
+	</div>
+</div>
+
+<style lang="scss">
+	.admin-dashboard {
+		&__title {
+			font-size: var(--font-size-xl);
+			font-weight: var(--font-weight-bold);
+			margin-bottom: var(--space-lg);
+		}
+
+		&__grid {
+			display: grid;
+			grid-template-columns: repeat(2, 1fr);
+			gap: var(--space-md);
+		}
+	}
+
+	.dashboard-card {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-sm);
+		padding: var(--space-md);
+
+		&__label {
+			font-size: var(--font-size-sm);
+			font-weight: var(--font-weight-medium);
+			color: var(--color-text);
+			text-align: center;
+		}
+	}
+</style>
