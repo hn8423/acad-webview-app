@@ -28,16 +28,20 @@ export function getAuthStore() {
 			device_type: 'ANDROID'
 		});
 
-		if (res.status && res.data) {
-			setTokens(res.data.access_token, res.data.refresh_token);
-
-			const meRes = await authApi.getMe();
-			if (meRes.status && meRes.data) {
-				user = meRes.data;
-				setJson(USER_STORAGE_KEY, meRes.data);
-				isAuthenticated = true;
-			}
+		if (!res.status || !res.data) {
+			throw new Error(res.message || '로그인에 실패했습니다.');
 		}
+
+		setTokens(res.data.access_token, res.data.refresh_token);
+
+		const meRes = await authApi.getMe();
+		if (!meRes.status || !meRes.data) {
+			throw new Error('사용자 정보를 불러올 수 없습니다.');
+		}
+
+		user = meRes.data;
+		setJson(USER_STORAGE_KEY, meRes.data);
+		isAuthenticated = true;
 	}
 
 	async function signup(
@@ -55,16 +59,20 @@ export function getAuthStore() {
 			user_gender: gender
 		});
 
-		if (res.status && res.data) {
-			setTokens(res.data.access_token, res.data.refresh_token);
-
-			const meRes = await authApi.getMe();
-			if (meRes.status && meRes.data) {
-				user = meRes.data;
-				setJson(USER_STORAGE_KEY, meRes.data);
-				isAuthenticated = true;
-			}
+		if (!res.status || !res.data) {
+			throw new Error(res.message || '회원가입에 실패했습니다.');
 		}
+
+		setTokens(res.data.access_token, res.data.refresh_token);
+
+		const meRes = await authApi.getMe();
+		if (!meRes.status || !meRes.data) {
+			throw new Error('사용자 정보를 불러올 수 없습니다.');
+		}
+
+		user = meRes.data;
+		setJson(USER_STORAGE_KEY, meRes.data);
+		isAuthenticated = true;
 	}
 
 	async function logout(): Promise<void> {
