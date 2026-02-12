@@ -53,13 +53,39 @@
 <aside class="sidebar" class:sidebar--open={isOpen}>
 	<div class="sidebar__header">
 		<h2 class="sidebar__title">{academyStore.academy?.academy_name ?? '관리자'}</h2>
-		<button class="sidebar__close" onclick={onclose} aria-label="닫기">&times;</button>
+		<button class="sidebar__close" onclick={onclose} aria-label="닫기">
+			<svg
+				width="24"
+				height="24"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+			>
+				<path d="M18 6L6 18M6 6l12 12" />
+			</svg>
+		</button>
 	</div>
 
 	<nav class="sidebar__nav">
-		<a href="/admin" class="sidebar__item" class:sidebar__item--active={(page.url.pathname as string) === '/admin'} onclick={onclose}>
-			<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-				<path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+		<a
+			href="/admin"
+			class="sidebar__item"
+			class:sidebar__item--active={(page.url.pathname as string) === '/admin'}
+			onclick={onclose}
+		>
+			<svg
+				width="20"
+				height="20"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+			>
+				<path
+					d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+				/>
 			</svg>
 			<span>대시보드</span>
 		</a>
@@ -72,7 +98,16 @@
 				class:sidebar__item--active={isActive(path)}
 				onclick={onclose}
 			>
-				<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+				<svg
+					width="20"
+					height="20"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				>
 					<path d={getIconPath(item.nav_position)} />
 				</svg>
 				<span>{item.nav_label}</span>
@@ -85,7 +120,8 @@
 	.sidebar-backdrop {
 		position: fixed;
 		inset: 0;
-		background-color: rgba(0, 0, 0, 0.3);
+		background-color: rgba(0, 0, 0, 0.4);
+		backdrop-filter: blur(4px);
 		z-index: calc(var(--z-sidebar) - 1);
 	}
 
@@ -98,7 +134,7 @@
 		background-color: var(--color-white);
 		z-index: var(--z-sidebar);
 		transform: translateX(-100%);
-		transition: transform var(--transition-base);
+		transition: transform var(--transition-spring);
 		display: flex;
 		flex-direction: column;
 
@@ -110,40 +146,48 @@
 			display: flex;
 			align-items: center;
 			justify-content: space-between;
-			padding: var(--space-lg);
-			border-bottom: 1px solid var(--color-border);
+			padding: var(--space-lg) var(--space-lg);
 		}
 
 		&__title {
 			font-size: var(--font-size-lg);
-			font-weight: var(--font-weight-semibold);
+			font-weight: var(--font-weight-bold);
 		}
 
 		&__close {
-			font-size: 24px;
+			width: 44px;
+			height: 44px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			border-radius: var(--radius-full);
 			color: var(--color-text-secondary);
+			transition: background-color var(--transition-fast);
 
 			&:hover {
+				background-color: var(--color-bg);
 				color: var(--color-text);
 			}
 		}
 
 		&__nav {
 			flex: 1;
-			padding: var(--space-sm);
+			padding: var(--space-sm) var(--space-md);
 			overflow-y: auto;
 		}
 
 		&__item {
 			display: flex;
 			align-items: center;
-			gap: var(--space-sm);
-			padding: var(--space-sm) var(--space-md);
+			gap: var(--space-md);
+			padding: 12px var(--space-lg);
 			border-radius: var(--radius-md);
 			color: var(--color-text);
 			text-decoration: none;
 			font-size: var(--font-size-base);
-			transition: background-color var(--transition-fast);
+			transition:
+				background-color var(--transition-fast),
+				color var(--transition-fast);
 
 			&:hover {
 				background-color: var(--color-bg);
@@ -153,7 +197,8 @@
 			&--active {
 				background-color: var(--color-primary-bg);
 				color: var(--color-primary);
-				font-weight: var(--font-weight-medium);
+				font-weight: var(--font-weight-semibold);
+				border-left: 3px solid var(--color-primary);
 			}
 		}
 	}

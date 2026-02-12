@@ -41,42 +41,74 @@
 				<Spinner />
 			</div>
 		{:else if member}
-			<Card>
-				<div class="info-section">
-					<h2 class="info-section__name">{member.user_name}</h2>
-					<p class="info-section__phone">{formatPhone(member.user_phone)}</p>
-					<p class="info-section__date">가입일: {formatDate(member.joined_at)}</p>
-				</div>
-			</Card>
+			<div class="info-section">
+				<h2 class="info-section__name">{member.user_name}</h2>
+				<p class="info-section__phone">{formatPhone(member.user_phone)}</p>
+				<p class="info-section__date">가입일: {formatDate(member.joined_at)}</p>
+			</div>
 
 			<div class="student-detail__menu">
-				<Card onclick={() => goto(`/admin/students/${page.params.id}/passes`)}>
-					<div class="menu-item">
+				<div class="menu-list">
+					<div
+						class="menu-item"
+						role="button"
+						tabindex="0"
+						onclick={() => goto(`/admin/students/${page.params.id}/passes`)}
+						onkeydown={(e) => {
+							if (e.key === 'Enter' || e.key === ' ') {
+								e.preventDefault();
+								goto(`/admin/students/${page.params.id}/passes`);
+							}
+						}}
+					>
 						<span class="menu-item__label">수강권 관리</span>
 						<div class="menu-item__right">
 							{#if member.active_passes > 0}
 								<Badge variant="success">{member.active_passes}개 활성</Badge>
 							{/if}
-							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+							<svg
+								width="20"
+								height="20"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+							>
 								<path d="M9 18l6-6-6-6" />
 							</svg>
 						</div>
 					</div>
-				</Card>
-
-				<Card onclick={() => goto(`/admin/students/${page.params.id}/drinks`)}>
-					<div class="menu-item">
+					<div class="menu-list__divider"></div>
+					<div
+						class="menu-item"
+						role="button"
+						tabindex="0"
+						onclick={() => goto(`/admin/students/${page.params.id}/drinks`)}
+						onkeydown={(e) => {
+							if (e.key === 'Enter' || e.key === ' ') {
+								e.preventDefault();
+								goto(`/admin/students/${page.params.id}/drinks`);
+							}
+						}}
+					>
 						<span class="menu-item__label">음료권 관리</span>
 						<div class="menu-item__right">
 							{#if member.remaining_drinks > 0}
 								<Badge variant="info">{member.remaining_drinks}잔</Badge>
 							{/if}
-							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+							<svg
+								width="20"
+								height="20"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+							>
 								<path d="M9 18l6-6-6-6" />
 							</svg>
 						</div>
 					</div>
-				</Card>
+				</div>
 			</div>
 		{:else}
 			<p class="student-detail__empty">수강생 정보를 찾을 수 없습니다.</p>
@@ -103,17 +135,21 @@
 		}
 
 		&__menu {
-			display: flex;
-			flex-direction: column;
-			gap: var(--space-sm);
-			margin-top: var(--space-md);
+			margin-top: var(--space-lg);
 		}
 	}
 
 	.info-section {
+		background: var(--color-white);
+		border-radius: var(--radius-lg);
+		box-shadow: var(--shadow-card);
+		padding: var(--space-lg);
+
 		&__name {
-			font-size: var(--font-size-xl);
+			font-size: var(--font-size-2xl);
 			font-weight: var(--font-weight-bold);
+			letter-spacing: var(--letter-spacing-tight);
+			color: var(--color-text);
 		}
 
 		&__phone {
@@ -129,13 +165,34 @@
 		}
 	}
 
+	.menu-list {
+		background: var(--color-white);
+		border-radius: var(--radius-lg);
+		box-shadow: var(--shadow-card);
+		padding: 0 var(--space-md);
+	}
+
+	.menu-list__divider {
+		height: 1px;
+		background-color: var(--color-divider);
+	}
+
 	.menu-item {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
+		padding: var(--space-md) 0;
+		cursor: pointer;
+		transition: opacity var(--transition-fast);
+
+		&:active {
+			opacity: 0.7;
+		}
 
 		&__label {
+			font-size: var(--font-size-base);
 			font-weight: var(--font-weight-medium);
+			color: var(--color-text);
 		}
 
 		&__right {

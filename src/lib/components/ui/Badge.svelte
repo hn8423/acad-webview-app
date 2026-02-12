@@ -17,30 +17,30 @@
 	.badge {
 		display: inline-flex;
 		align-items: center;
-		padding: 2px 8px;
+		padding: 4px 10px;
 		border-radius: var(--radius-full);
 		font-size: var(--font-size-xs);
-		font-weight: var(--font-weight-medium);
+		font-weight: var(--font-weight-semibold);
 		white-space: nowrap;
 
 		&--success {
-			background-color: #e8f5e9;
-			color: #2e7d32;
+			background-color: var(--color-success-bg);
+			color: #059669;
 		}
 
 		&--warning {
-			background-color: #fff3e0;
-			color: #e65100;
+			background-color: var(--color-warning-bg);
+			color: #d97706;
 		}
 
 		&--danger {
-			background-color: #ffebee;
-			color: #c62828;
+			background-color: var(--color-danger-bg);
+			color: #dc2626;
 		}
 
 		&--info {
-			background-color: #e3f2fd;
-			color: #1565c0;
+			background-color: var(--color-info-bg);
+			color: var(--color-primary);
 		}
 
 		&--neutral {

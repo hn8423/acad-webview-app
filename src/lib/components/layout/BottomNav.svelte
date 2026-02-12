@@ -41,11 +41,7 @@
 <nav class="bottom-nav">
 	{#each navItems as item}
 		{@const path = getNavPath(item.nav_position)}
-		<a
-			href={path}
-			class="bottom-nav__item"
-			class:bottom-nav__item--active={isActive(path)}
-		>
+		<a href={path} class="bottom-nav__item" class:bottom-nav__item--active={isActive(path)}>
 			<svg
 				class="bottom-nav__icon"
 				width="24"
@@ -60,6 +56,9 @@
 				<path d={getIconPath(item.nav_icon)} />
 			</svg>
 			<span class="bottom-nav__label">{item.nav_label}</span>
+			{#if isActive(path)}
+				<span class="bottom-nav__indicator"></span>
+			{/if}
 		</a>
 	{/each}
 </nav>
@@ -72,7 +71,7 @@
 		right: 0;
 		height: var(--bottom-nav-height);
 		background-color: var(--color-white);
-		border-top: 1px solid var(--color-border);
+		box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.04);
 		display: flex;
 		align-items: center;
 		justify-content: space-around;
@@ -89,10 +88,12 @@
 			height: 100%;
 			color: var(--color-text-muted);
 			text-decoration: none;
+			position: relative;
 			transition: color var(--transition-fast);
 
 			&--active {
 				color: var(--color-primary);
+				font-weight: var(--font-weight-semibold);
 			}
 
 			&:hover {
@@ -107,8 +108,17 @@
 		}
 
 		&__label {
-			font-size: 11px;
+			font-size: 10px;
 			font-weight: var(--font-weight-medium);
+		}
+
+		&__indicator {
+			position: absolute;
+			bottom: 0;
+			width: 20px;
+			height: 2px;
+			background: var(--color-primary-gradient);
+			border-radius: var(--radius-full);
 		}
 	}
 </style>

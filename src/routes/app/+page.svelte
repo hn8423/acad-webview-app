@@ -2,7 +2,6 @@
 	import { academyStore } from '$lib/stores/academy.svelte';
 	import { getMyPasses, getMyDrinkTickets } from '$lib/api/member';
 	import { getRecentNotices } from '$lib/api/academy';
-	import Card from '$lib/components/ui/Card.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import { formatDate } from '$lib/utils/format';
@@ -83,12 +82,21 @@
 	{:else}
 		<!-- 음료권 -->
 		<section class="main-page__section">
-			<h2 class="section-title">음료권</h2>
-			<Card>
+			<div class="section-card">
+				<h2 class="section-title">음료권</h2>
 				<div class="drink-card">
 					<div class="drink-card__icon">
-						<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2">
-							<path d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8zM6 1v3M10 1v3M14 1v3" />
+						<svg
+							width="40"
+							height="40"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="var(--color-primary)"
+							stroke-width="2"
+						>
+							<path
+								d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8zM6 1v3M10 1v3M14 1v3"
+							/>
 						</svg>
 					</div>
 					<div class="drink-card__info">
@@ -96,20 +104,18 @@
 						<span class="drink-card__label">잔 남음</span>
 					</div>
 				</div>
-			</Card>
+			</div>
 		</section>
 
 		<!-- 수강권 -->
 		<section class="main-page__section">
-			<h2 class="section-title">수강권</h2>
-			{#if passes.length === 0}
-				<Card>
+			<div class="section-card">
+				<h2 class="section-title">수강권</h2>
+				{#if passes.length === 0}
 					<p class="empty-text">등록된 수강권이 없습니다.</p>
-				</Card>
-			{:else}
-				<div class="pass-list">
-					{#each passes as pass}
-						<Card>
+				{:else}
+					<div class="pass-list">
+						{#each passes as pass}
 							<div class="pass-card">
 								<div class="pass-card__header">
 									<span class="pass-card__name">{pass.pass_name}</span>
@@ -123,7 +129,9 @@
 										<div class="progress-bar">
 											<div
 												class="progress-bar__fill"
-												style="width: {((pass.total_lessons - pass.remaining_lessons) / pass.total_lessons) * 100}%"
+												style="width: {((pass.total_lessons - pass.remaining_lessons) /
+													pass.total_lessons) *
+													100}%"
 											></div>
 										</div>
 										<span class="pass-card__remaining">
@@ -135,34 +143,42 @@
 									</div>
 								</div>
 							</div>
-						</Card>
-					{/each}
-				</div>
-			{/if}
+							{#if passes.indexOf(pass) < passes.length - 1}
+								<div class="pass-divider"></div>
+							{/if}
+						{/each}
+					</div>
+				{/if}
+			</div>
 		</section>
 
 		<!-- 공지사항 -->
 		<section class="main-page__section">
-			<div class="section-header">
-				<h2 class="section-title">공지사항</h2>
-				<a href="/app/notice" class="section-more">더보기</a>
-			</div>
-			{#if recentNotices.length === 0}
-				<Card>
+			<div class="section-card">
+				<div class="section-header">
+					<h2 class="section-title">공지사항</h2>
+					<a href="/app/notice" class="section-more">더보기</a>
+				</div>
+				{#if recentNotices.length === 0}
 					<p class="empty-text">공지사항이 없습니다.</p>
-				</Card>
-			{:else}
-				<div class="notice-list">
-					{#each recentNotices as notice}
-						<Card onclick={() => goto(`/app/notice/${notice.id}`)}>
-							<div class="notice-item">
+				{:else}
+					<div class="notice-list">
+						{#each recentNotices as notice, i}
+							<button
+								type="button"
+								class="notice-item"
+								onclick={() => goto(`/app/notice/${notice.id}`)}
+							>
 								<h3 class="notice-item__title">{notice.title}</h3>
 								<span class="notice-item__date">{formatDate(notice.created_at)}</span>
-							</div>
-						</Card>
-					{/each}
-				</div>
-			{/if}
+							</button>
+							{#if i < recentNotices.length - 1}
+								<div class="notice-divider"></div>
+							{/if}
+						{/each}
+					</div>
+				{/if}
+			</div>
 		</section>
 	{/if}
 </div>
@@ -170,6 +186,9 @@
 <style lang="scss">
 	.main-page {
 		padding: var(--space-md);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-section);
 
 		&__loading {
 			display: flex;
@@ -178,54 +197,75 @@
 		}
 
 		&__section {
-			margin-bottom: var(--space-lg);
+			min-width: 0;
 		}
+	}
+
+	.section-card {
+		background: var(--color-white);
+		border-radius: var(--radius-lg);
+		padding: var(--space-xl) var(--space-lg);
 	}
 
 	.section-title {
 		font-size: var(--font-size-lg);
-		font-weight: var(--font-weight-semibold);
-		margin-bottom: var(--space-sm);
+		font-weight: var(--font-weight-bold);
+		margin-bottom: var(--space-md);
+		letter-spacing: var(--letter-spacing-tight);
 	}
 
 	.section-header {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		margin-bottom: var(--space-sm);
+		margin-bottom: var(--space-md);
+
+		.section-title {
+			margin-bottom: 0;
+		}
 	}
 
 	.section-more {
 		font-size: var(--font-size-sm);
-		color: var(--color-text-secondary);
+		color: var(--color-text-muted);
+		text-decoration: none;
 	}
 
 	.empty-text {
 		text-align: center;
 		color: var(--color-text-muted);
-		padding: var(--space-md);
+		padding: var(--space-md) 0;
 		font-size: var(--font-size-sm);
 	}
 
 	.drink-card {
 		display: flex;
 		align-items: center;
-		gap: var(--space-md);
+		gap: var(--space-lg);
+
+		&__icon {
+			flex-shrink: 0;
+		}
 
 		&__info {
 			display: flex;
 			align-items: baseline;
-			gap: var(--space-xs);
+			gap: var(--space-sm);
 		}
 
 		&__count {
-			font-size: var(--font-size-2xl);
-			font-weight: var(--font-weight-bold);
-			color: var(--color-primary);
+			font-size: var(--font-size-4xl);
+			font-weight: var(--font-weight-extrabold);
+			letter-spacing: var(--letter-spacing-tight);
+			line-height: var(--line-height-tight);
+			background: var(--color-primary-gradient);
+			-webkit-background-clip: text;
+			-webkit-text-fill-color: transparent;
+			background-clip: text;
 		}
 
 		&__label {
-			font-size: var(--font-size-sm);
+			font-size: var(--font-size-base);
 			color: var(--color-text-secondary);
 		}
 	}
@@ -233,7 +273,12 @@
 	.pass-list {
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-sm);
+	}
+
+	.pass-divider {
+		height: 1px;
+		background-color: var(--color-divider);
+		margin: var(--space-md) 0;
 	}
 
 	.pass-card {
@@ -246,6 +291,7 @@
 
 		&__name {
 			font-weight: var(--font-weight-semibold);
+			letter-spacing: var(--letter-spacing-tight);
 		}
 
 		&__instructor {
@@ -276,13 +322,13 @@
 	.progress-bar {
 		flex: 1;
 		height: 8px;
-		background-color: var(--color-bg);
+		background-color: var(--color-divider);
 		border-radius: var(--radius-full);
 		overflow: hidden;
 
 		&__fill {
 			height: 100%;
-			background-color: var(--color-primary);
+			background: var(--color-primary-gradient);
 			border-radius: var(--radius-full);
 			transition: width var(--transition-base);
 		}
@@ -291,7 +337,11 @@
 	.notice-list {
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-xs);
+	}
+
+	.notice-divider {
+		height: 1px;
+		background-color: var(--color-divider);
 	}
 
 	.notice-item {
@@ -299,6 +349,17 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--space-sm);
+		padding: 14px 0;
+		width: 100%;
+		text-align: left;
+		background: none;
+		border: none;
+		cursor: pointer;
+		transition: opacity var(--transition-fast);
+
+		&:active {
+			opacity: 0.6;
+		}
 
 		&__title {
 			font-size: var(--font-size-sm);
@@ -307,6 +368,7 @@
 			text-overflow: ellipsis;
 			white-space: nowrap;
 			flex: 1;
+			color: var(--color-text);
 		}
 
 		&__date {

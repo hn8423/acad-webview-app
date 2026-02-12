@@ -82,23 +82,35 @@
 		</p>
 	{:else}
 		<div class="student-list">
-			{#each members as member}
-				<Card onclick={() => goto(`/admin/students/${member.member_id}`)}>
-					<div class="student-row">
-						<div class="student-row__info">
-							<h3 class="student-row__name">{member.user_name}</h3>
-							<span class="student-row__phone">{formatPhone(member.user_phone)}</span>
-						</div>
-						<div class="student-row__stats">
-							{#if member.active_passes > 0}
-								<Badge variant="success">수강권 {member.active_passes}</Badge>
-							{/if}
-							{#if member.remaining_drinks > 0}
-								<Badge variant="info">음료 {member.remaining_drinks}</Badge>
-							{/if}
-						</div>
+			{#each members as member, i}
+				<div
+					class="student-row"
+					role="button"
+					tabindex="0"
+					onclick={() => goto(`/admin/students/${member.member_id}`)}
+					onkeydown={(e) => {
+						if (e.key === 'Enter' || e.key === ' ') {
+							e.preventDefault();
+							goto(`/admin/students/${member.member_id}`);
+						}
+					}}
+				>
+					<div class="student-row__info">
+						<h3 class="student-row__name">{member.user_name}</h3>
+						<span class="student-row__phone">{formatPhone(member.user_phone)}</span>
 					</div>
-				</Card>
+					<div class="student-row__stats">
+						{#if member.active_passes > 0}
+							<Badge variant="success">수강권 {member.active_passes}</Badge>
+						{/if}
+						{#if member.remaining_drinks > 0}
+							<Badge variant="info">음료 {member.remaining_drinks}</Badge>
+						{/if}
+					</div>
+				</div>
+				{#if i < members.length - 1}
+					<div class="student-list__divider"></div>
+				{/if}
 			{/each}
 		</div>
 
@@ -117,9 +129,11 @@
 <style lang="scss">
 	.admin-students {
 		&__title {
-			font-size: var(--font-size-xl);
+			font-size: var(--font-size-2xl);
 			font-weight: var(--font-weight-bold);
+			letter-spacing: var(--letter-spacing-tight);
 			margin-bottom: var(--space-md);
+			color: var(--color-text);
 		}
 
 		&__search {
@@ -148,7 +162,15 @@
 	.student-list {
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-xs);
+		background: var(--color-white);
+		border-radius: var(--radius-lg);
+		box-shadow: var(--shadow-card);
+		padding: 0 var(--space-md);
+	}
+
+	.student-list__divider {
+		height: 1px;
+		background-color: var(--color-divider);
 	}
 
 	.student-row {
@@ -156,6 +178,13 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--space-sm);
+		padding: var(--space-md) 0;
+		cursor: pointer;
+		transition: opacity var(--transition-fast);
+
+		&:active {
+			opacity: 0.7;
+		}
 
 		&__info {
 			flex: 1;
@@ -165,11 +194,13 @@
 		&__name {
 			font-size: var(--font-size-base);
 			font-weight: var(--font-weight-medium);
+			color: var(--color-text);
 		}
 
 		&__phone {
 			font-size: var(--font-size-xs);
 			color: var(--color-text-secondary);
+			margin-top: 2px;
 		}
 
 		&__stats {
@@ -181,8 +212,10 @@
 	.load-more-btn {
 		color: var(--color-primary);
 		font-size: var(--font-size-sm);
-		padding: var(--space-sm) var(--space-md);
-		border-radius: var(--radius-md);
+		font-weight: var(--font-weight-medium);
+		padding: var(--space-sm) var(--space-lg);
+		border-radius: var(--radius-full);
+		transition: background-color var(--transition-fast);
 
 		&:hover {
 			background-color: var(--color-primary-bg);

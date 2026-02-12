@@ -128,7 +128,13 @@
 </div>
 
 <Modal isOpen={showCreateModal} title="음료권 부여" onclose={() => (showCreateModal = false)}>
-	<form class="create-form" onsubmit={(e) => { e.preventDefault(); handleCreate(); }}>
+	<form
+		class="create-form"
+		onsubmit={(e) => {
+			e.preventDefault();
+			handleCreate();
+		}}
+	>
 		<Input type="number" label="음료권 수량" placeholder="10" bind:value={totalCount} />
 		<Input type="date" label="유효기간" bind:value={expiryDate} />
 
@@ -137,8 +143,8 @@
 		{/if}
 
 		<div class="create-form__actions">
-			<Button variant="secondary" onclick={() => (showCreateModal = false)}>취소</Button>
-			<Button type="submit" loading={creating}>부여하기</Button>
+			<Button type="submit" fullWidth loading={creating}>부여하기</Button>
+			<Button variant="secondary" fullWidth onclick={() => (showCreateModal = false)}>취소</Button>
 		</div>
 	</form>
 </Modal>
@@ -183,8 +189,10 @@
 		}
 
 		&__count {
-			font-size: var(--font-size-lg);
-			font-weight: var(--font-weight-semibold);
+			font-size: var(--font-size-2xl);
+			font-weight: var(--font-weight-bold);
+			letter-spacing: var(--letter-spacing-tight);
+			color: var(--color-text);
 		}
 
 		&__expiry {
@@ -205,7 +213,7 @@
 
 		&__actions {
 			display: flex;
-			justify-content: flex-end;
+			flex-direction: column;
 			gap: var(--space-sm);
 		}
 	}

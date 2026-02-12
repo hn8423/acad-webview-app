@@ -81,12 +81,23 @@
 				<Spinner />
 			</div>
 		{:else}
-			<form class="form" onsubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
+			<form
+				class="form"
+				onsubmit={(e) => {
+					e.preventDefault();
+					handleSubmit();
+				}}
+			>
 				<Input label="제목" placeholder="공지 제목을 입력하세요" bind:value={title} />
 
 				<div class="form__field">
 					<label class="form__label" for="notice-content">내용</label>
-					<textarea id="notice-content" class="form__textarea" placeholder="공지 내용을 입력하세요" bind:value={content}></textarea>
+					<textarea
+						id="notice-content"
+						class="form__textarea"
+						placeholder="공지 내용을 입력하세요"
+						bind:value={content}
+					></textarea>
 				</div>
 
 				<div class="form__field">
@@ -135,21 +146,29 @@
 		&__label {
 			font-size: var(--font-size-sm);
 			font-weight: var(--font-weight-medium);
+			color: var(--color-text-secondary);
 		}
 
 		&__textarea {
 			width: 100%;
 			min-height: 200px;
-			padding: 12px 16px;
-			border: 1px solid var(--color-border);
+			padding: 14px 16px;
+			border: none;
+			background: var(--color-bg);
 			border-radius: var(--radius-md);
 			font-size: var(--font-size-base);
 			font-family: inherit;
 			resize: vertical;
 			outline: none;
+			color: var(--color-text);
+			transition: box-shadow var(--transition-fast);
 
 			&:focus {
-				border-color: var(--color-primary);
+				box-shadow: 0 0 0 2px var(--color-primary-light);
+			}
+
+			&::placeholder {
+				color: var(--color-text-muted);
 			}
 		}
 
@@ -157,12 +176,13 @@
 			display: flex;
 			align-items: center;
 			gap: var(--space-sm);
-			font-size: var(--font-size-sm);
+			font-size: var(--font-size-base);
 			cursor: pointer;
+			color: var(--color-text);
 
 			input {
-				width: 18px;
-				height: 18px;
+				width: 20px;
+				height: 20px;
 				accent-color: var(--color-primary);
 			}
 		}
