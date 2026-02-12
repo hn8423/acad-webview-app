@@ -1,6 +1,7 @@
 import { PUBLIC_API_BASE_URL } from '$env/static/public';
 import { ApiError } from '$lib/types/api';
 import { getItem, setItem, removeItem } from '$lib/utils/storage';
+import { toastStore } from '$lib/stores/toast.svelte';
 
 const STORAGE_KEY_ACCESS = 'access_token';
 const STORAGE_KEY_REFRESH = 'refresh_token';
@@ -69,10 +70,11 @@ interface RequestOptions {
 	body?: unknown;
 	headers?: Record<string, string>;
 	skipAuth?: boolean;
+	silent?: boolean;
 }
 
 export async function apiRequest<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
-	const { method = 'GET', body, headers = {}, skipAuth = false } = options;
+	const { method = 'GET', body, headers = {}, skipAuth = false, silent = false } = options;
 
 	const requestHeaders: Record<string, string> = {
 		...headers
@@ -127,6 +129,9 @@ export async function apiRequest<T>(endpoint: string, options: RequestOptions = 
 			message = errorJson.message || message;
 		} catch {
 			// ignore parse error
+		}
+		if (!silent && res.status !== 401) {
+			toastStore.error(message);
 		}
 		throw new ApiError(res.status, message);
 	}
