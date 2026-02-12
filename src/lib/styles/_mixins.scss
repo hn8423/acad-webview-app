@@ -59,3 +59,40 @@
 @mixin safe-area-top {
 	padding-top: env(safe-area-inset-top, 0);
 }
+
+// Toss-style gradient text
+@mixin gradient-text {
+	background: var(--color-primary-gradient);
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	background-clip: text;
+}
+
+// Toss-style press feedback
+@mixin press-scale {
+	transition: transform 150ms ease;
+
+	&:active {
+		transform: scale(0.97);
+	}
+}
+
+// Toss-style card
+@mixin toss-card {
+	background-color: var(--color-white);
+	border-radius: var(--radius-lg);
+	box-shadow: var(--shadow-card);
+}
+
+// Skeleton shimmer animation
+@mixin skeleton-shimmer {
+	background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+	background-size: 200% 100%;
+	animation: shimmer 1.5s infinite;
+}
+
+// Minimum touch target
+@mixin touch-target($size: 48px) {
+	min-height: $size;
+	min-width: $size;
+}

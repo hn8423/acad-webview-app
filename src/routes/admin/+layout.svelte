@@ -39,10 +39,12 @@
 <style lang="scss">
 	.admin-layout {
 		min-height: 100dvh;
+		background-color: var(--color-bg);
 
 		&__content {
 			padding-top: var(--header-height);
 			padding: calc(var(--header-height) + var(--space-md)) var(--space-md) var(--space-md);
+			background-color: var(--color-bg);
 		}
 	}
 </style>

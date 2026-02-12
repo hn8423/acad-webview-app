@@ -73,35 +73,60 @@
 		<p class="admin-notices__empty">공지사항이 없습니다.</p>
 	{:else}
 		<div class="notice-list">
-			{#each notices as notice}
-				<Card>
-					<div class="notice-row">
-						<div class="notice-row__left" role="button" tabindex="0" onclick={() => goto(`/admin/notices/${notice.id}`)} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goto(`/admin/notices/${notice.id}`); } }}>
-							{#if notice.is_pinned}
-								<Badge variant="info">고정</Badge>
-							{/if}
-							<h3 class="notice-row__title">{notice.title}</h3>
-						</div>
-						<div class="notice-row__right">
-							<span class="notice-row__date">{formatDate(notice.created_at)}</span>
-							<button class="notice-row__delete" onclick={() => confirmDelete(notice)} aria-label="삭제">
-								<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-									<path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-								</svg>
-							</button>
-						</div>
+			{#each notices as notice, i}
+				<div class="notice-row" role="listitem">
+					<div
+						class="notice-row__left"
+						role="button"
+						tabindex="0"
+						onclick={() => goto(`/admin/notices/${notice.id}`)}
+						onkeydown={(e) => {
+							if (e.key === 'Enter' || e.key === ' ') {
+								e.preventDefault();
+								goto(`/admin/notices/${notice.id}`);
+							}
+						}}
+					>
+						{#if notice.is_pinned}
+							<Badge variant="info">고정</Badge>
+						{/if}
+						<h3 class="notice-row__title">{notice.title}</h3>
 					</div>
-				</Card>
+					<div class="notice-row__right">
+						<span class="notice-row__date">{formatDate(notice.created_at)}</span>
+						<button
+							class="notice-row__delete"
+							onclick={() => confirmDelete(notice)}
+							aria-label="삭제"
+						>
+							<svg
+								width="16"
+								height="16"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+							>
+								<path
+									d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+								/>
+							</svg>
+						</button>
+					</div>
+				</div>
+				{#if i < notices.length - 1}
+					<div class="notice-list__divider"></div>
+				{/if}
 			{/each}
 		</div>
 	{/if}
 </div>
 
 <Modal isOpen={showDeleteModal} title="공지 삭제" onclose={() => (showDeleteModal = false)}>
-	<p>"{deleteTarget?.title}" 공지를 삭제하시겠습니까?</p>
+	<p class="modal-message">"{deleteTarget?.title}" 공지를 삭제하시겠습니까?</p>
 	<div class="modal-actions">
-		<Button variant="secondary" onclick={() => (showDeleteModal = false)}>취소</Button>
-		<Button variant="danger" onclick={handleDelete}>삭제</Button>
+		<Button variant="danger" fullWidth onclick={handleDelete}>삭제</Button>
+		<Button variant="secondary" fullWidth onclick={() => (showDeleteModal = false)}>취소</Button>
 	</div>
 </Modal>
 
@@ -115,8 +140,10 @@
 		}
 
 		&__title {
-			font-size: var(--font-size-xl);
+			font-size: var(--font-size-2xl);
 			font-weight: var(--font-weight-bold);
+			letter-spacing: var(--letter-spacing-tight);
+			color: var(--color-text);
 		}
 
 		&__loading {
@@ -135,7 +162,15 @@
 	.notice-list {
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-xs);
+		background: var(--color-white);
+		border-radius: var(--radius-lg);
+		box-shadow: var(--shadow-card);
+		padding: 0 var(--space-md);
+	}
+
+	.notice-list__divider {
+		height: 1px;
+		background-color: var(--color-divider);
 	}
 
 	.notice-row {
@@ -143,6 +178,7 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--space-sm);
+		padding: var(--space-md) 0;
 
 		&__left {
 			display: flex;
@@ -154,11 +190,12 @@
 		}
 
 		&__title {
-			font-size: var(--font-size-sm);
+			font-size: var(--font-size-base);
 			font-weight: var(--font-weight-medium);
 			overflow: hidden;
 			text-overflow: ellipsis;
 			white-space: nowrap;
+			color: var(--color-text);
 		}
 
 		&__right {
@@ -175,19 +212,26 @@
 
 		&__delete {
 			color: var(--color-text-muted);
-			padding: 4px;
+			padding: 6px;
 			border-radius: var(--radius-sm);
+			transition: all var(--transition-fast);
 
 			&:hover {
 				color: var(--color-danger);
-				background-color: #ffebee;
+				background-color: var(--color-danger-bg);
 			}
 		}
 	}
 
+	.modal-message {
+		font-size: var(--font-size-base);
+		color: var(--color-text-secondary);
+		line-height: var(--line-height-base);
+	}
+
 	.modal-actions {
 		display: flex;
-		justify-content: flex-end;
+		flex-direction: column;
 		gap: var(--space-sm);
 		margin-top: var(--space-lg);
 	}

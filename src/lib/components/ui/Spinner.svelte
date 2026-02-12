@@ -42,7 +42,7 @@
 	}
 
 	.spinner__ring {
-		border: 3px solid var(--color-border);
+		border: 3px solid var(--color-primary-surface);
 		border-top-color: var(--color-primary);
 		border-radius: 50%;
 		animation: spin 0.7s linear infinite;

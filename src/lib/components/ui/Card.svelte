@@ -16,8 +16,15 @@
 	class="card card--pad-{padding}"
 	class:card--shadow={shadow}
 	class:card--clickable={!!onclick}
-	onclick={onclick}
-	onkeydown={onclick ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onclick?.(); } } : undefined}
+	{onclick}
+	onkeydown={onclick
+		? (e) => {
+				if (e.key === 'Enter' || e.key === ' ') {
+					e.preventDefault();
+					onclick?.();
+				}
+			}
+		: undefined}
 	role={onclick ? 'button' : undefined}
 	tabindex={onclick ? 0 : undefined}
 >
@@ -28,31 +35,33 @@
 	.card {
 		background-color: var(--color-bg-card);
 		border-radius: var(--radius-lg);
-		border: 1px solid var(--color-border);
 
 		&--pad-sm {
-			padding: var(--space-sm);
+			padding: 12px 16px;
 		}
 
 		&--pad-md {
-			padding: var(--space-md);
+			padding: var(--space-lg) var(--space-lg);
 		}
 
 		&--pad-lg {
-			padding: var(--space-lg);
+			padding: var(--space-xl) var(--space-lg);
 		}
 
 		&--shadow {
-			box-shadow: var(--shadow-sm);
-			border: none;
+			box-shadow: var(--shadow-card);
 		}
 
 		&--clickable {
 			cursor: pointer;
-			transition: box-shadow var(--transition-fast);
+			transition: transform 150ms ease;
+
+			&:active {
+				transform: scale(0.97);
+			}
 
 			&:hover {
-				box-shadow: var(--shadow-md);
+				background-color: var(--color-bg);
 			}
 		}
 	}

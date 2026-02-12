@@ -43,6 +43,7 @@
 			padding-top: var(--header-height);
 			padding-bottom: var(--bottom-nav-height);
 			min-height: 100dvh;
+			background-color: var(--color-bg);
 		}
 	}
 </style>

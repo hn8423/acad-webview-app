@@ -1,70 +1,91 @@
 :root {
-	// Colors - Primary
-	--color-primary: #4a90d9;
-	--color-primary-light: #6ba3e0;
-	--color-primary-dark: #3a7bc8;
-	--color-primary-bg: #eef4fb;
+	// Colors - Primary (Blue Violet Gradient)
+	--color-primary: #6c5ce7;
+	--color-primary-light: #a29bfe;
+	--color-primary-dark: #5a4bd1;
+	--color-primary-bg: #f0eeff;
+	--color-primary-gradient: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
+	--color-primary-gradient-hover: linear-gradient(135deg, #5a4bd1 0%, #8b7fe8 100%);
+	--color-primary-surface: #e8e5fd;
 
 	// Colors - Secondary
-	--color-secondary: #6c757d;
-	--color-secondary-light: #8a9299;
-	--color-secondary-dark: #565e64;
+	--color-secondary: #6b7280;
+	--color-secondary-light: #9ca3af;
+	--color-secondary-dark: #4b5563;
 
 	// Colors - Semantic
-	--color-success: #28a745;
-	--color-warning: #ffc107;
-	--color-danger: #dc3545;
-	--color-info: #17a2b8;
+	--color-success: #10b981;
+	--color-success-bg: #ecfdf5;
+	--color-warning: #f59e0b;
+	--color-warning-bg: #fffbeb;
+	--color-danger: #ef4444;
+	--color-danger-bg: #fef2f2;
+	--color-info: #6c5ce7;
+	--color-info-bg: #f0eeff;
 
-	// Colors - Neutral
+	// Colors - Neutral (Toss-style)
 	--color-white: #ffffff;
-	--color-bg: #f8f9fa;
+	--color-bg: #f5f6f8;
+	--color-bg-elevated: #ffffff;
 	--color-bg-card: #ffffff;
-	--color-border: #e0e0e0;
-	--color-text: #212529;
-	--color-text-secondary: #6c757d;
-	--color-text-muted: #adb5bd;
+	--color-border: #f0f0f0;
+	--color-divider: #f2f3f5;
+	--color-text: #191f28;
+	--color-text-secondary: #8b95a1;
+	--color-text-muted: #b0b8c1;
+	--color-text-disabled: #d1d6db;
 
 	// Typography
-	--font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
-		sans-serif;
-	--font-size-xs: 0.75rem;
-	--font-size-sm: 0.875rem;
-	--font-size-base: 1rem;
-	--font-size-lg: 1.125rem;
+	--font-family:
+		'Pretendard Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
+		Arial, sans-serif;
+	--font-size-xs: 0.6875rem;
+	--font-size-sm: 0.8125rem;
+	--font-size-base: 0.9375rem;
+	--font-size-lg: 1.0625rem;
 	--font-size-xl: 1.25rem;
 	--font-size-2xl: 1.5rem;
+	--font-size-3xl: 1.75rem;
+	--font-size-4xl: 2.25rem;
 	--font-weight-normal: 400;
 	--font-weight-medium: 500;
 	--font-weight-semibold: 600;
 	--font-weight-bold: 700;
-	--line-height-tight: 1.25;
-	--line-height-base: 1.5;
+	--font-weight-extrabold: 800;
+	--line-height-tight: 1.3;
+	--line-height-base: 1.6;
+	--letter-spacing-tight: -0.02em;
 
 	// Spacing
+	--space-2xs: 0.125rem;
 	--space-xs: 0.25rem;
 	--space-sm: 0.5rem;
 	--space-md: 1rem;
-	--space-lg: 1.5rem;
-	--space-xl: 2rem;
-	--space-2xl: 3rem;
+	--space-lg: 1.25rem;
+	--space-xl: 1.5rem;
+	--space-2xl: 2rem;
+	--space-3xl: 2.5rem;
+	--space-section: 0.75rem;
 
 	// Border Radius
-	--radius-sm: 4px;
-	--radius-md: 8px;
-	--radius-lg: 12px;
-	--radius-xl: 16px;
+	--radius-sm: 8px;
+	--radius-md: 12px;
+	--radius-lg: 16px;
+	--radius-xl: 20px;
+	--radius-2xl: 24px;
 	--radius-full: 9999px;
 
 	// Shadows
-	--shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-	--shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08);
-	--shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.12);
+	--shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
+	--shadow-md: 0 2px 12px rgba(0, 0, 0, 0.06);
+	--shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
+	--shadow-xl: 0 12px 40px rgba(0, 0, 0, 0.12);
+	--shadow-card: 0 1px 4px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(0, 0, 0, 0.02);
 
 	// Layout
 	--header-height: 56px;
-	--bottom-nav-height: 64px;
-	--sidebar-width: 260px;
+	--bottom-nav-height: 56px;
+	--sidebar-width: 280px;
 	--max-content-width: 480px;
 
 	// Z-index
@@ -73,8 +94,12 @@
 	--z-sidebar: 200;
 	--z-modal-backdrop: 300;
 	--z-modal: 400;
+	--z-bottomsheet: 350;
+	--z-toast: 500;
 
 	// Transitions
 	--transition-fast: 150ms ease;
-	--transition-base: 250ms ease;
+	--transition-base: 250ms cubic-bezier(0.32, 0.72, 0, 1);
+	--transition-slow: 400ms cubic-bezier(0.32, 0.72, 0, 1);
+	--transition-spring: 500ms cubic-bezier(0.32, 0.72, 0, 1);
 }

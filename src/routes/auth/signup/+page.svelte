@@ -110,26 +110,56 @@
 </script>
 
 <div class="signup-page">
+	<div class="signup-page__steps">
+		<span class="signup-page__dot" class:signup-page__dot--active={step === 'phone'}></span>
+		<span class="signup-page__dot" class:signup-page__dot--active={step === 'verify'}></span>
+		<span class="signup-page__dot" class:signup-page__dot--active={step === 'info'}></span>
+	</div>
+
 	<h1 class="signup-page__title">회원가입</h1>
 
 	{#if step === 'phone'}
-		<form class="signup-page__form" onsubmit={(e) => { e.preventDefault(); handleSendCode(); }}>
+		<form
+			class="signup-page__form"
+			onsubmit={(e) => {
+				e.preventDefault();
+				handleSendCode();
+			}}
+		>
 			<p class="signup-page__desc">전화번호를 입력하면 인증코드가 발송됩니다.</p>
-			<Input type="tel" label="전화번호" placeholder="01012345678" bind:value={phone} maxlength={11} />
+			<Input
+				type="tel"
+				label="전화번호"
+				placeholder="01012345678"
+				bind:value={phone}
+				maxlength={11}
+			/>
 			{#if error}
 				<p class="signup-page__error">{error}</p>
 			{/if}
 			<Button type="submit" fullWidth {loading}>인증코드 발송</Button>
 		</form>
 	{:else if step === 'verify'}
-		<form class="signup-page__form" onsubmit={(e) => { e.preventDefault(); handleVerifyCode(); }}>
+		<form
+			class="signup-page__form"
+			onsubmit={(e) => {
+				e.preventDefault();
+				handleVerifyCode();
+			}}
+		>
 			<p class="signup-page__desc">
 				{phone}로 발송된 인증코드를 입력하세요.
 				{#if countdown > 0}
 					<span class="signup-page__countdown">{formatCountdown(countdown)}</span>
 				{/if}
 			</p>
-			<Input type="text" label="인증코드" placeholder="6자리 입력" bind:value={verifyCode} maxlength={6} />
+			<Input
+				type="text"
+				label="인증코드"
+				placeholder="6자리 입력"
+				bind:value={verifyCode}
+				maxlength={6}
+			/>
 			{#if error}
 				<p class="signup-page__error">{error}</p>
 			{/if}
@@ -137,10 +167,26 @@
 			<Button variant="ghost" fullWidth onclick={handleSendCode}>재발송</Button>
 		</form>
 	{:else}
-		<form class="signup-page__form" onsubmit={(e) => { e.preventDefault(); handleSignup(); }}>
+		<form
+			class="signup-page__form"
+			onsubmit={(e) => {
+				e.preventDefault();
+				handleSignup();
+			}}
+		>
 			<Input type="text" label="이름" placeholder="이름을 입력하세요" bind:value={name} />
-			<Input type="password" label="비밀번호" placeholder="비밀번호를 입력하세요" bind:value={password} />
-			<Input type="password" label="비밀번호 확인" placeholder="비밀번호를 다시 입력하세요" bind:value={passwordConfirm} />
+			<Input
+				type="password"
+				label="비밀번호"
+				placeholder="비밀번호를 입력하세요"
+				bind:value={password}
+			/>
+			<Input
+				type="password"
+				label="비밀번호 확인"
+				placeholder="비밀번호를 다시 입력하세요"
+				bind:value={passwordConfirm}
+			/>
 			{#if error}
 				<p class="signup-page__error">{error}</p>
 			{/if}
@@ -158,27 +204,46 @@
 		width: 100%;
 		max-width: 360px;
 
-		&__title {
-			font-size: var(--font-size-2xl);
-			font-weight: var(--font-weight-bold);
-			text-align: center;
+		&__steps {
+			display: flex;
+			gap: var(--space-sm);
 			margin-bottom: var(--space-xl);
+		}
+
+		&__dot {
+			width: 8px;
+			height: 8px;
+			border-radius: var(--radius-full);
+			background-color: var(--color-divider);
+			transition: background-color var(--transition-fast);
+
+			&--active {
+				background-color: var(--color-primary);
+			}
+		}
+
+		&__title {
+			font-size: var(--font-size-3xl);
+			font-weight: var(--font-weight-bold);
+			text-align: left;
+			margin-bottom: var(--space-xl);
+			letter-spacing: var(--letter-spacing-tight);
 		}
 
 		&__form {
 			display: flex;
 			flex-direction: column;
-			gap: var(--space-md);
+			gap: var(--space-lg);
 		}
 
 		&__desc {
 			font-size: var(--font-size-sm);
 			color: var(--color-text-secondary);
-			text-align: center;
+			text-align: left;
 		}
 
 		&__countdown {
-			color: var(--color-danger);
+			color: var(--color-primary);
 			font-weight: var(--font-weight-medium);
 		}
 

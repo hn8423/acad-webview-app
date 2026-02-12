@@ -17,8 +17,16 @@
 
 <header class="back-header">
 	<button class="back-header__btn" onclick={handleBack} aria-label="뒤로가기">
-		<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-			<path d="M19 12H5M12 19l-7-7 7-7" />
+		<svg
+			width="24"
+			height="24"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			stroke-width="2"
+			stroke-linecap="round"
+		>
+			<path d="M15 18l-6-6 6-6" />
 		</svg>
 	</button>
 	<h1 class="back-header__title">{title}</h1>
@@ -33,20 +41,20 @@
 		right: 0;
 		height: var(--header-height);
 		background-color: var(--color-white);
-		border-bottom: 1px solid var(--color-border);
 		display: flex;
 		align-items: center;
-		padding: 0 var(--space-sm);
+		padding: 0 var(--space-xs);
 		z-index: var(--z-header);
 
 		&__btn {
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			width: 40px;
-			height: 40px;
-			border-radius: var(--radius-md);
+			width: 44px;
+			height: 44px;
+			border-radius: var(--radius-full);
 			color: var(--color-text);
+			transition: background-color var(--transition-fast);
 
 			&:hover {
 				background-color: var(--color-bg);
@@ -57,11 +65,11 @@
 			flex: 1;
 			text-align: center;
 			font-size: var(--font-size-lg);
-			font-weight: var(--font-weight-semibold);
+			font-weight: var(--font-weight-bold);
 		}
 
 		&__spacer {
-			width: 40px;
+			width: 44px;
 		}
 	}
 </style>

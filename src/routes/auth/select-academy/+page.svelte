@@ -85,7 +85,15 @@
 							<h3 class="academy-card__name">{academy.academy_name}</h3>
 							<span class="academy-card__role">{getRoleBadge(academy.member_role)}</span>
 						</div>
-						<svg class="academy-card__arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<svg
+							class="academy-card__arrow"
+							width="20"
+							height="20"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+						>
 							<path d="M9 18l6-6-6-6" />
 						</svg>
 					</div>
@@ -101,16 +109,17 @@
 		max-width: 400px;
 
 		&__title {
-			font-size: var(--font-size-2xl);
+			font-size: var(--font-size-3xl);
 			font-weight: var(--font-weight-bold);
-			text-align: center;
+			text-align: left;
 			margin-bottom: var(--space-xs);
+			letter-spacing: var(--letter-spacing-tight);
 		}
 
 		&__desc {
 			font-size: var(--font-size-sm);
 			color: var(--color-text-secondary);
-			text-align: center;
+			text-align: left;
 			margin-bottom: var(--space-xl);
 		}
 
@@ -135,7 +144,15 @@
 		&__list {
 			display: flex;
 			flex-direction: column;
-			gap: var(--space-sm);
+			gap: var(--space-md);
+
+			:global(.card) {
+				transition: transform 150ms ease;
+
+				&:active {
+					transform: scale(0.97);
+				}
+			}
 		}
 	}
 
@@ -145,9 +162,9 @@
 		gap: var(--space-md);
 
 		&__logo {
-			width: 48px;
-			height: 48px;
-			border-radius: var(--radius-md);
+			width: 56px;
+			height: 56px;
+			border-radius: var(--radius-lg);
 			overflow: hidden;
 			flex-shrink: 0;
 
@@ -161,8 +178,8 @@
 		&__logo-placeholder {
 			width: 100%;
 			height: 100%;
-			background-color: var(--color-primary-bg);
-			color: var(--color-primary);
+			background: var(--color-primary-gradient);
+			color: var(--color-white);
 			display: flex;
 			align-items: center;
 			justify-content: center;

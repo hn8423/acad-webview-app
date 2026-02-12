@@ -10,6 +10,10 @@
 
 	let { isOpen = $bindable(false), title = '', onclose, children }: Props = $props();
 
+	let startY = $state(0);
+	let currentY = $state(0);
+	let isDragging = $state(false);
+
 	function handleBackdropClick(e: MouseEvent) {
 		if (e.target === e.currentTarget) {
 			onclose();
@@ -21,6 +25,24 @@
 			onclose();
 		}
 	}
+
+	function handleTouchStart(e: TouchEvent) {
+		startY = e.touches[0].clientY;
+		isDragging = true;
+	}
+
+	function handleTouchMove(e: TouchEvent) {
+		if (!isDragging) return;
+		currentY = Math.max(0, e.touches[0].clientY - startY);
+	}
+
+	function handleTouchEnd() {
+		if (currentY > 100) {
+			onclose();
+		}
+		currentY = 0;
+		isDragging = false;
+	}
 </script>
 
 <svelte:window onkeydown={isOpen ? handleKeydown : undefined} />
@@ -28,36 +50,33 @@
 {#if isOpen}
 	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 	<div
-		class="modal-backdrop"
+		class="sheet-backdrop"
 		onclick={handleBackdropClick}
 		onkeydown={handleKeydown}
 		role="dialog"
 		aria-modal="true"
 		tabindex="-1"
 	>
-		<div class="modal">
-			<div class="modal__handle">
-				<span class="modal__handle-bar"></span>
+		<div
+			class="sheet"
+			style:transform="translateY({currentY}px)"
+			style:transition={isDragging ? 'none' : undefined}
+		>
+			<div
+				class="sheet__handle"
+				ontouchstart={handleTouchStart}
+				ontouchmove={handleTouchMove}
+				ontouchend={handleTouchEnd}
+				role="presentation"
+			>
+				<span class="sheet__handle-bar"></span>
 			</div>
 			{#if title}
-				<div class="modal__header">
-					<h2 class="modal__title">{title}</h2>
-					<button class="modal__close" onclick={onclose} aria-label="닫기">
-						<svg
-							width="24"
-							height="24"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							stroke-linecap="round"
-						>
-							<path d="M18 6L6 18M6 6l12 12" />
-						</svg>
-					</button>
+				<div class="sheet__header">
+					<h2 class="sheet__title">{title}</h2>
 				</div>
 			{/if}
-			<div class="modal__body">
+			<div class="sheet__body">
 				{@render children()}
 			</div>
 		</div>
@@ -65,7 +84,7 @@
 {/if}
 
 <style lang="scss">
-	.modal-backdrop {
+	.sheet-backdrop {
 		position: fixed;
 		inset: 0;
 		background-color: rgba(0, 0, 0, 0.5);
@@ -73,25 +92,27 @@
 		display: flex;
 		align-items: flex-end;
 		justify-content: center;
-		z-index: var(--z-modal-backdrop);
+		z-index: var(--z-bottomsheet);
 		padding: 0;
 	}
 
-	.modal {
+	.sheet {
 		background-color: var(--color-white);
 		border-radius: var(--radius-xl) var(--radius-xl) 0 0;
 		width: 100%;
 		max-width: 480px;
 		max-height: 90vh;
 		overflow-y: auto;
-		z-index: var(--z-modal);
 		box-shadow: var(--shadow-xl);
 		animation: slide-up 300ms cubic-bezier(0.32, 0.72, 0, 1);
+		transition: transform var(--transition-spring);
 
 		&__handle {
 			display: flex;
 			justify-content: center;
 			padding: 12px 0 4px;
+			cursor: grab;
+			touch-action: none;
 		}
 
 		&__handle-bar {
@@ -102,10 +123,7 @@
 		}
 
 		&__header {
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
-			padding: var(--space-md) var(--space-lg);
+			padding: var(--space-sm) var(--space-lg) var(--space-md);
 		}
 
 		&__title {
@@ -113,24 +131,8 @@
 			font-weight: var(--font-weight-bold);
 		}
 
-		&__close {
-			width: 44px;
-			height: 44px;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			border-radius: var(--radius-full);
-			color: var(--color-text-secondary);
-			transition: background-color var(--transition-fast);
-
-			&:hover {
-				background-color: var(--color-bg);
-				color: var(--color-text);
-			}
-		}
-
 		&__body {
-			padding: var(--space-sm) var(--space-lg) var(--space-2xl);
+			padding: 0 var(--space-lg) var(--space-2xl);
 		}
 	}
 

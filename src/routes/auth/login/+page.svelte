@@ -38,7 +38,13 @@
 		<p class="login-page__subtitle">학원 관리 서비스</p>
 	</div>
 
-	<form class="login-page__form" onsubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
+	<form
+		class="login-page__form"
+		onsubmit={(e) => {
+			e.preventDefault();
+			handleSubmit();
+		}}
+	>
 		<Input
 			type="tel"
 			label="전화번호"
@@ -73,17 +79,21 @@
 
 		&__logo {
 			text-align: center;
-			margin-bottom: var(--space-2xl);
+			margin-bottom: var(--space-3xl);
 		}
 
 		&__title {
-			font-size: var(--font-size-2xl);
-			font-weight: var(--font-weight-bold);
-			color: var(--color-primary);
+			font-size: var(--font-size-4xl);
+			font-weight: var(--font-weight-extrabold);
+			letter-spacing: var(--letter-spacing-tight);
+			background: var(--color-primary-gradient);
+			-webkit-background-clip: text;
+			-webkit-text-fill-color: transparent;
+			background-clip: text;
 		}
 
 		&__subtitle {
-			font-size: var(--font-size-sm);
+			font-size: var(--font-size-base);
 			color: var(--color-text-secondary);
 			margin-top: var(--space-xs);
 		}
@@ -91,7 +101,7 @@
 		&__form {
 			display: flex;
 			flex-direction: column;
-			gap: var(--space-md);
+			gap: var(--space-lg);
 		}
 
 		&__error {
@@ -108,6 +118,7 @@
 		&__link {
 			font-size: var(--font-size-sm);
 			color: var(--color-primary);
+			font-weight: var(--font-weight-medium);
 		}
 	}
 </style>

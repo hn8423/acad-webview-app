@@ -154,10 +154,24 @@
 								<span class="pass-item__name">{pass.pass_name}</span>
 								<Badge variant={getStatusVariant(pass.status)}>{getStatusLabel(pass.status)}</Badge>
 							</div>
+							<div class="pass-item__progress">
+								<div class="pass-item__progress-bar">
+									<div
+										class="pass-item__progress-fill"
+										style="width: {pass.total_lessons > 0
+											? ((pass.total_lessons - pass.remaining_lessons) / pass.total_lessons) * 100
+											: 0}%"
+									></div>
+								</div>
+								<span class="pass-item__progress-text"
+									>잔여 {pass.remaining_lessons}/{pass.total_lessons}회</span
+								>
+							</div>
 							<div class="pass-item__body">
 								<span>{pass.instructor_name} 선생님</span>
-								<span>잔여 {pass.remaining_lessons}/{pass.total_lessons}회</span>
-								<span class="pass-item__date">{formatDate(pass.start_date)} ~ {formatDate(pass.end_date)}</span>
+								<span class="pass-item__date"
+									>{formatDate(pass.start_date)} ~ {formatDate(pass.end_date)}</span
+								>
 							</div>
 						</div>
 					</Card>
@@ -168,10 +182,21 @@
 </div>
 
 <Modal isOpen={showCreateModal} title="수강권 부여" onclose={() => (showCreateModal = false)}>
-	<form class="create-form" onsubmit={(e) => { e.preventDefault(); handleCreate(); }}>
+	<form
+		class="create-form"
+		onsubmit={(e) => {
+			e.preventDefault();
+			handleCreate();
+		}}
+	>
 		<div class="create-form__field">
 			<label class="create-form__label" for="pass-type">수강권 종류</label>
-			<select id="pass-type" class="create-form__select" value={selectedPassTypeId} onchange={handlePassTypeChange}>
+			<select
+				id="pass-type"
+				class="create-form__select"
+				value={selectedPassTypeId}
+				onchange={handlePassTypeChange}
+			>
 				<option value="">선택하세요</option>
 				{#each passTypes as pt}
 					<option value={pt.id}>{pt.pass_name} ({pt.pass_category})</option>
@@ -197,8 +222,8 @@
 		{/if}
 
 		<div class="create-form__actions">
-			<Button variant="secondary" onclick={() => (showCreateModal = false)}>취소</Button>
-			<Button type="submit" loading={creating}>부여하기</Button>
+			<Button type="submit" fullWidth loading={creating}>부여하기</Button>
+			<Button variant="secondary" fullWidth onclick={() => (showCreateModal = false)}>취소</Button>
 		</div>
 	</form>
 </Modal>
@@ -244,6 +269,33 @@
 
 		&__name {
 			font-weight: var(--font-weight-semibold);
+			color: var(--color-text);
+		}
+
+		&__progress {
+			margin-bottom: var(--space-sm);
+		}
+
+		&__progress-bar {
+			width: 100%;
+			height: 6px;
+			background: var(--color-bg);
+			border-radius: var(--radius-full);
+			overflow: hidden;
+			margin-bottom: var(--space-xs);
+		}
+
+		&__progress-fill {
+			height: 100%;
+			background: var(--color-primary-gradient);
+			border-radius: var(--radius-full);
+			transition: width var(--transition-base);
+		}
+
+		&__progress-text {
+			font-size: var(--font-size-xs);
+			color: var(--color-text-secondary);
+			font-weight: var(--font-weight-medium);
 		}
 
 		&__body {
@@ -274,19 +326,27 @@
 		&__label {
 			font-size: var(--font-size-sm);
 			font-weight: var(--font-weight-medium);
+			color: var(--color-text-secondary);
 		}
 
 		&__select {
 			width: 100%;
-			padding: 12px 16px;
-			border: 1px solid var(--color-border);
+			padding: 14px 16px;
+			border: none;
+			background: var(--color-bg);
 			border-radius: var(--radius-md);
 			font-size: var(--font-size-base);
-			background-color: var(--color-white);
+			color: var(--color-text);
 			outline: none;
+			appearance: none;
+			background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%238b95a1' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+			background-repeat: no-repeat;
+			background-position: right 16px center;
+			padding-right: 40px;
+			transition: box-shadow var(--transition-fast);
 
 			&:focus {
-				border-color: var(--color-primary);
+				box-shadow: 0 0 0 2px var(--color-primary-light);
 			}
 		}
 
@@ -297,7 +357,7 @@
 
 		&__actions {
 			display: flex;
-			justify-content: flex-end;
+			flex-direction: column;
 			gap: var(--space-sm);
 		}
 	}

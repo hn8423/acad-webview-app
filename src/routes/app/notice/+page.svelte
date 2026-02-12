@@ -2,7 +2,6 @@
 	import { academyStore } from '$lib/stores/academy.svelte';
 	import { getNotices } from '$lib/api/academy';
 	import BackHeader from '$lib/components/layout/BackHeader.svelte';
-	import Card from '$lib/components/ui/Card.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import { formatDate } from '$lib/utils/format';
@@ -55,21 +54,22 @@
 		{:else if notices.length === 0}
 			<p class="notice-page__empty">공지사항이 없습니다.</p>
 		{:else}
-			<div class="notice-list">
-				{#each notices as notice}
-					<Card onclick={() => goto(`/app/notice/${notice.id}`)}>
-						<div class="notice-row">
-							<div class="notice-row__left">
-								{#if notice.is_pinned}
-									<Badge variant="info">고정</Badge>
-								{/if}
-								<h3 class="notice-row__title">{notice.title}</h3>
-							</div>
-							<div class="notice-row__right">
-								<span class="notice-row__date">{formatDate(notice.created_at)}</span>
-							</div>
+			<div class="notice-section">
+				{#each notices as notice, i}
+					<button type="button" class="notice-row" onclick={() => goto(`/app/notice/${notice.id}`)}>
+						<div class="notice-row__left">
+							{#if notice.is_pinned}
+								<Badge variant="info">고정</Badge>
+							{/if}
+							<h3 class="notice-row__title">{notice.title}</h3>
 						</div>
-					</Card>
+						<div class="notice-row__right">
+							<span class="notice-row__date">{formatDate(notice.created_at)}</span>
+						</div>
+					</button>
+					{#if i < notices.length - 1}
+						<div class="notice-divider"></div>
+					{/if}
 				{/each}
 			</div>
 
@@ -109,10 +109,15 @@
 		}
 	}
 
-	.notice-list {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-xs);
+	.notice-section {
+		background: var(--color-white);
+		border-radius: var(--radius-lg);
+		padding: var(--space-sm) var(--space-lg);
+	}
+
+	.notice-divider {
+		height: 1px;
+		background-color: var(--color-divider);
 	}
 
 	.notice-row {
@@ -120,6 +125,17 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--space-sm);
+		padding: 14px 0;
+		width: 100%;
+		text-align: left;
+		background: none;
+		border: none;
+		cursor: pointer;
+		transition: opacity var(--transition-fast);
+
+		&:active {
+			opacity: 0.6;
+		}
 
 		&__left {
 			display: flex;
@@ -135,6 +151,7 @@
 			overflow: hidden;
 			text-overflow: ellipsis;
 			white-space: nowrap;
+			color: var(--color-text);
 		}
 
 		&__date {
@@ -153,17 +170,20 @@
 		&__btn {
 			width: 36px;
 			height: 36px;
-			border-radius: var(--radius-md);
+			border-radius: var(--radius-full);
 			font-size: var(--font-size-sm);
 			color: var(--color-text-secondary);
+			background: none;
+			border: none;
+			cursor: pointer;
 			transition: all var(--transition-fast);
 
 			&:hover {
-				background-color: var(--color-bg);
+				background-color: var(--color-divider);
 			}
 
 			&--active {
-				background-color: var(--color-primary);
+				background: var(--color-primary-gradient);
 				color: var(--color-white);
 			}
 		}
