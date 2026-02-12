@@ -124,7 +124,7 @@ export async function apiRequest<T>(endpoint: string, options: RequestOptions = 
 		let message = '요청에 실패했습니다.';
 		try {
 			const errorJson = await res.json();
-			message = errorJson.message || message;
+			message = errorJson.response?.data?.result_message || errorJson.message || message;
 		} catch {
 			// ignore parse error
 		}

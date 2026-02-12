@@ -3,20 +3,28 @@
 	import { authStore } from '$lib/stores/auth.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
+	import Toast from '$lib/components/ui/Toast.svelte';
 
 	let phone = $state('');
 	let password = $state('');
-	let error = $state('');
 	let loading = $state(false);
+	let toastMessage = $state('');
+	let showToast = $state(false);
+
+	function showError(msg: string) {
+		toastMessage = msg;
+		showToast = true;
+	}
 
 	async function handleSubmit() {
-		error = '';
+		showToast = false;
+
 		if (!phone.trim()) {
-			error = '전화번호를 입력해주세요.';
+			showError('전화번호를 입력해주세요.');
 			return;
 		}
 		if (!password.trim()) {
-			error = '비밀번호를 입력해주세요.';
+			showError('비밀번호를 입력해주세요.');
 			return;
 		}
 
@@ -25,7 +33,7 @@
 			await authStore.login(phone.replace(/-/g, ''), password);
 			goto('/auth/select-academy', { replaceState: true });
 		} catch (err) {
-			error = err instanceof Error ? err.message : '로그인에 실패했습니다.';
+			showError(err instanceof Error ? err.message : '로그인에 실패했습니다.');
 		} finally {
 			loading = false;
 		}
@@ -60,10 +68,6 @@
 			bind:value={password}
 		/>
 
-		{#if error}
-			<p class="login-page__error">{error}</p>
-		{/if}
-
 		<Button type="submit" fullWidth {loading}>로그인</Button>
 	</form>
 
@@ -71,6 +75,10 @@
 		<a href="/auth/signup" class="login-page__link">회원가입</a>
 	</div>
 </div>
+
+{#if showToast}
+	<Toast message={toastMessage} type="error" onclose={() => (showToast = false)} />
+{/if}
 
 <style lang="scss">
 	.login-page {
@@ -102,12 +110,6 @@
 			display: flex;
 			flex-direction: column;
 			gap: var(--space-lg);
-		}
-
-		&__error {
-			font-size: var(--font-size-sm);
-			color: var(--color-danger);
-			text-align: center;
 		}
 
 		&__footer {
