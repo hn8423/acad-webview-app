@@ -132,6 +132,17 @@ export async function apiRequest<T>(endpoint: string, options: RequestOptions = 
 	}
 
 	const json = await res.json();
+
+	// 서버 응답 envelope 언래핑: { response: { data: { result_status, result_data, ... } } }
+	if (json.response?.data) {
+		const inner = json.response.data;
+		return {
+			status: inner.result_status === 'success',
+			message: inner.result_message || json.response.message || '',
+			data: inner.result_data
+		} as T;
+	}
+
 	return json as T;
 }
 
