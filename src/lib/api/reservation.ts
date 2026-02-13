@@ -3,19 +3,20 @@ import type { ApiResponse } from '$lib/types/api';
 import type {
 	AvailableSlot,
 	CreateReservationRequest,
+	CreateReservationResponse,
 	MyReservation,
 	ReservationStatus
 } from '$lib/types/reservation';
 
 export function getAvailableSlots(academyId: number, date: string) {
 	const params = new URLSearchParams({ date });
-	return get<ApiResponse<AvailableSlot[]>>(
+	return get<ApiResponse<{ slots: AvailableSlot[] }>>(
 		`/academic/academies/${academyId}/reservations/available?${params.toString()}`
 	);
 }
 
 export function createReservation(academyId: number, data: CreateReservationRequest) {
-	return post<ApiResponse<{ reservation_id: number; status: ReservationStatus }>>(
+	return post<ApiResponse<CreateReservationResponse>>(
 		`/academic/academies/${academyId}/reservations`,
 		data
 	);
@@ -25,7 +26,7 @@ export function getMyReservations(academyId: number, status?: ReservationStatus)
 	const params = new URLSearchParams();
 	if (status) params.set('status', status);
 	const query = params.size > 0 ? `?${params.toString()}` : '';
-	return get<ApiResponse<MyReservation[]>>(
+	return get<ApiResponse<{ reservations: MyReservation[] }>>(
 		`/academic/academies/${academyId}/reservations/me${query}`
 	);
 }

@@ -33,7 +33,7 @@
 		try {
 			const res = await getMemberDrinkTickets(academyId, memberId);
 			if (res.status && res.data) {
-				tickets = res.data;
+				tickets = res.data.drink_tickets;
 			}
 		} catch {
 			// handle error

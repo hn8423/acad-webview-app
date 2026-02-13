@@ -54,19 +54,19 @@
 	let processingConfirm = $state(false);
 
 	let isLeader = $derived(
-		ensemble !== null && ensemble.creator.member_id === academyStore.memberId
+		ensemble !== null && ensemble.leader.member_id === academyStore.memberId
 	);
 	let myMembership = $derived(ensemble?.members.find((m) => m.member_id === academyStore.memberId));
-	let isPending = $derived(myMembership?.member_status === 'PENDING');
+	let isPending = $derived(myMembership?.status === 'PENDING');
 	let isMember = $derived(
-		myMembership?.member_status === 'MEMBER' || myMembership?.member_status === 'LEADER'
+		myMembership?.status === 'MEMBER' || myMembership?.status === 'LEADER'
 	);
 	let canApply = $derived(!myMembership && ensemble?.status === 'RECRUITING');
 	let pendingMembers = $derived(
-		ensemble?.members.filter((m) => m.member_status === 'PENDING') ?? []
+		ensemble?.members.filter((m) => m.status === 'PENDING') ?? []
 	);
 	let activeMembers = $derived(
-		ensemble?.members.filter((m) => m.member_status !== 'PENDING') ?? []
+		ensemble?.members.filter((m) => m.status !== 'PENDING') ?? []
 	);
 
 	$effect(() => {
@@ -99,7 +99,7 @@
 				return;
 			}
 			if (commentsRes.status === 'fulfilled' && commentsRes.value.status) {
-				comments = commentsRes.value.data;
+				comments = commentsRes.value.data.comments;
 			}
 		} finally {
 			loading = false;
@@ -259,10 +259,10 @@
 		switch (status) {
 			case 'RECRUITING':
 				return '모집중';
-			case 'FULL':
+			case 'CLOSED':
 				return '마감';
-			case 'CANCELLED':
-				return '취소됨';
+			case 'COMPLETED':
+				return '완료';
 			default:
 				return status;
 		}
@@ -272,10 +272,10 @@
 		switch (status) {
 			case 'RECRUITING':
 				return 'success' as const;
-			case 'FULL':
+			case 'CLOSED':
 				return 'warning' as const;
-			case 'CANCELLED':
-				return 'danger' as const;
+			case 'COMPLETED':
+				return 'neutral' as const;
 			default:
 				return 'neutral' as const;
 		}
@@ -334,14 +334,14 @@
 						{getStatusLabel(ensemble.status)}
 					</Badge>
 					<span class="detail__meta">
-						{ensemble.current_members}/{ensemble.max_members}명
+						{activeMembers.length}/{ensemble.max_members}명
 					</span>
 				</div>
 				{#if ensemble.description}
 					<p class="detail__description">{ensemble.description}</p>
 				{/if}
 				<div class="detail__meta-list">
-					<span class="detail__meta">방장: {ensemble.creator.user_name}</span>
+					<span class="detail__meta">방장: {ensemble.leader.user_name}</span>
 					{#if ensemble.practice_date}
 						<span class="detail__meta">
 							연습: {formatDate(ensemble.practice_date)}
@@ -359,8 +359,8 @@
 						<div class="member-item">
 							<div class="member-item__info">
 								<span class="member-item__name">{member.user_name}</span>
-								<Badge variant={getMemberStatusVariant(member.member_status)}>
-									{member.member_status === 'LEADER' ? '방장' : member.role}
+								<Badge variant={getMemberStatusVariant(member.status)}>
+									{member.status === 'LEADER' ? '방장' : member.role}
 								</Badge>
 							</div>
 						</div>

@@ -27,13 +27,13 @@
 			]);
 
 			if (passRes.status === 'fulfilled' && passRes.value.status) {
-				passes = passRes.value.data;
+				passes = passRes.value.data.passes;
 			}
 			if (drinkRes.status === 'fulfilled' && drinkRes.value.status) {
-				drinkTickets = drinkRes.value.data;
+				drinkTickets = drinkRes.value.data.drink_tickets;
 			}
 			if (noticeRes.status === 'fulfilled' && noticeRes.value.status) {
-				recentNotices = noticeRes.value.data;
+				recentNotices = noticeRes.value.data.notices;
 			}
 		} catch {
 			// errors handled per-section
@@ -48,10 +48,9 @@
 		switch (status) {
 			case 'ACTIVE':
 				return 'success' as const;
-			case 'HOLDING':
+			case 'PAUSED':
 				return 'warning' as const;
 			case 'EXPIRED':
-			case 'COMPLETED':
 				return 'neutral' as const;
 			default:
 				return 'neutral' as const;
@@ -62,12 +61,10 @@
 		switch (status) {
 			case 'ACTIVE':
 				return '이용중';
-			case 'HOLDING':
+			case 'PAUSED':
 				return '홀딩';
 			case 'EXPIRED':
 				return '만료';
-			case 'COMPLETED':
-				return '완료';
 			default:
 				return status;
 		}

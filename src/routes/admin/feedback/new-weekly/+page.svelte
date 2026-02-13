@@ -47,7 +47,7 @@
 		try {
 			const res = await getMembers(academyId, undefined, 20, search || undefined);
 			if (res.status && res.data) {
-				members = res.data.list;
+				members = res.data.members;
 			}
 		} catch {
 			// handled by client.ts
@@ -71,9 +71,9 @@
 
 		passesLoading = true;
 		try {
-			const res = await getMemberPasses(academyId, member.member_id);
+			const res = await getMemberPasses(academyId, member.id);
 			if (res.status && res.data) {
-				passes = res.data;
+				passes = res.data.passes;
 			}
 		} catch {
 			// handled by client.ts
@@ -96,7 +96,7 @@
 		creating = true;
 		try {
 			const res = await createWeeklyFeedback(academyId, {
-				member_id: selectedMember.member_id,
+				member_id: selectedMember.id,
 				member_pass_id: Number(selectedPassId),
 				feedback_date: feedbackDate,
 				lesson_content: lessonContent.trim(),
@@ -175,8 +175,8 @@
 									<span class="member-row__name">{member.user_name}</span>
 									<span class="member-row__phone">{formatPhone(member.user_phone)}</span>
 								</div>
-								{#if member.active_passes > 0}
-									<Badge variant="success">수강권 {member.active_passes}</Badge>
+								{#if member.active_passes_count > 0}
+									<Badge variant="success">수강권 {member.active_passes_count}</Badge>
 								{/if}
 							</div>
 							{#if i < members.length - 1}

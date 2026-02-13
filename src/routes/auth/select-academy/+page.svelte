@@ -68,9 +68,9 @@
 
 	async function selectAcademy(academy: UserAcademy) {
 		try {
-			await academyStore.selectAcademy(academy.academy_id, academy.member_role, academy.member_id);
+			await academyStore.selectAcademy(academy.academy_id, academy.role);
 
-			const role = academy.member_role;
+			const role = academy.role;
 			if (role === 'ADMIN' || role === 'INSTRUCTOR') {
 				goto('/admin', { replaceState: true });
 			} else {
@@ -103,7 +103,7 @@
 		try {
 			const res = await getAcademies();
 			if (res.status && res.data) {
-				allAcademies = res.data.list;
+				allAcademies = res.data.academies;
 			} else {
 				throw new Error(res.message || '학원 목록을 불러오지 못했습니다.');
 			}
@@ -139,7 +139,7 @@
 
 		const parsed = nicknameSchema.safeParse(nickname);
 		if (!parsed.success) {
-			joinError = parsed.error.errors[0].message;
+			joinError = parsed.error.issues[0].message;
 			return;
 		}
 
@@ -179,17 +179,13 @@
 				<Card onclick={() => selectAcademy(academy)}>
 					<div class="academy-card">
 						<div class="academy-card__logo">
-							{#if academy.academy_logo_img}
-								<img src={academy.academy_logo_img} alt={academy.academy_name} />
-							{:else}
-								<div class="academy-card__logo-placeholder">
-									{academy.academy_name.charAt(0)}
-								</div>
-							{/if}
+							<div class="academy-card__logo-placeholder">
+								{academy.academy_name.charAt(0)}
+							</div>
 						</div>
 						<div class="academy-card__info">
 							<h3 class="academy-card__name">{academy.academy_name}</h3>
-							<span class="academy-card__role">{getRoleBadge(academy.member_role)}</span>
+							<span class="academy-card__role">{getRoleBadge(academy.role)}</span>
 						</div>
 						<svg
 							class="academy-card__arrow"
@@ -248,8 +244,8 @@
 
 			<div class="join-step__academy">
 				<div class="academy-card__logo">
-					{#if selectedAcademy.academy_logo_img}
-						<img src={selectedAcademy.academy_logo_img} alt={selectedAcademy.academy_name} />
+					{#if selectedAcademy.logo_url}
+						<img src={selectedAcademy.logo_url} alt={selectedAcademy.academy_name} />
 					{:else}
 						<div class="academy-card__logo-placeholder">
 							{selectedAcademy.academy_name.charAt(0)}
@@ -258,8 +254,8 @@
 				</div>
 				<div class="join-step__academy-info">
 					<h3 class="join-step__academy-name">{selectedAcademy.academy_name}</h3>
-					{#if selectedAcademy.academy_address}
-						<p class="join-step__academy-address">{selectedAcademy.academy_address}</p>
+					{#if selectedAcademy.address}
+						<p class="join-step__academy-address">{selectedAcademy.address}</p>
 					{/if}
 				</div>
 			</div>
@@ -295,8 +291,8 @@
 						<Card onclick={() => selectAcademyToJoin(academy)}>
 							<div class="academy-card">
 								<div class="academy-card__logo academy-card__logo--sm">
-									{#if academy.academy_logo_img}
-										<img src={academy.academy_logo_img} alt={academy.academy_name} />
+									{#if academy.logo_url}
+										<img src={academy.logo_url} alt={academy.academy_name} />
 									{:else}
 										<div class="academy-card__logo-placeholder">
 											{academy.academy_name.charAt(0)}
@@ -305,8 +301,8 @@
 								</div>
 								<div class="academy-card__info">
 									<h3 class="academy-card__name">{academy.academy_name}</h3>
-									{#if academy.academy_address}
-										<span class="academy-card__address">{academy.academy_address}</span>
+									{#if academy.address}
+										<span class="academy-card__address">{academy.address}</span>
 									{/if}
 								</div>
 								<svg

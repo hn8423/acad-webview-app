@@ -7,12 +7,12 @@
 	import EnsembleCreateForm from '$lib/components/ensemble/EnsembleCreateForm.svelte';
 	import EnsembleDetailModal from '$lib/components/ensemble/EnsembleDetailModal.svelte';
 	import { formatDate } from '$lib/utils/format';
-	import type { EnsembleListItem } from '$lib/types/ensemble';
+	import type { EnsembleListItem, MyEnsembleListItem } from '$lib/types/ensemble';
 	import { onMount } from 'svelte';
 
 	let activeTab = $state<'recruiting' | 'my'>('recruiting');
 	let recruitingList = $state<EnsembleListItem[]>([]);
-	let myList = $state<EnsembleListItem[]>([]);
+	let myList = $state<MyEnsembleListItem[]>([]);
 	let loading = $state(true);
 	let currentPage = $state(1);
 	let totalPages = $state(1);
@@ -35,13 +35,13 @@
 			if (activeTab === 'recruiting') {
 				const res = await getEnsembles(academyId, 'RECRUITING', currentPage, LIMIT);
 				if (res.status && res.data) {
-					recruitingList = res.data.list;
-					totalPages = Math.ceil(res.data.meta.total / LIMIT);
+					recruitingList = res.data.ensembles;
+					totalPages = Math.ceil(res.data.total_count / LIMIT);
 				}
 			} else {
 				const res = await getMyEnsembles(academyId);
 				if (res.status && res.data) {
-					myList = res.data;
+					myList = res.data.ensembles;
 				}
 			}
 		} catch {
@@ -84,10 +84,10 @@
 		switch (status) {
 			case 'RECRUITING':
 				return '모집중';
-			case 'FULL':
+			case 'CLOSED':
 				return '마감';
-			case 'CANCELLED':
-				return '취소됨';
+			case 'COMPLETED':
+				return '완료';
 			default:
 				return status;
 		}
@@ -97,16 +97,18 @@
 		switch (status) {
 			case 'RECRUITING':
 				return 'success' as const;
-			case 'FULL':
+			case 'CLOSED':
 				return 'warning' as const;
-			case 'CANCELLED':
-				return 'danger' as const;
+			case 'COMPLETED':
+				return 'info' as const;
 			default:
 				return 'neutral' as const;
 		}
 	}
 
-	let currentList = $derived(activeTab === 'recruiting' ? recruitingList : myList);
+	let isEmpty = $derived(
+		activeTab === 'recruiting' ? recruitingList.length === 0 : myList.length === 0
+	);
 </script>
 
 <div class="ensemble-page">
@@ -132,7 +134,7 @@
 			<div class="ensemble-page__loading">
 				<Spinner />
 			</div>
-		{:else if currentList.length === 0}
+		{:else if isEmpty}
 			<div class="ensemble-page__empty">
 				<p>
 					{activeTab === 'recruiting'
@@ -145,9 +147,9 @@
 					</button>
 				{/if}
 			</div>
-		{:else}
+		{:else if activeTab === 'recruiting'}
 			<div class="ensemble-list">
-				{#each currentList as ensemble}
+				{#each recruitingList as ensemble}
 					<button class="ensemble-card" onclick={() => openDetail(ensemble.id)}>
 						<div class="ensemble-card__header">
 							<h3 class="ensemble-card__title">{ensemble.group_name}</h3>
@@ -160,13 +162,9 @@
 						{/if}
 						<div class="ensemble-card__footer">
 							<div class="ensemble-card__meta">
-								<span class="ensemble-card__creator">{ensemble.creator_name}</span>
+								<span class="ensemble-card__creator">{ensemble.leader_name}</span>
 								<span class="ensemble-card__dot"></span>
 								<span>{ensemble.current_members}/{ensemble.max_members}명</span>
-								{#if ensemble.comment_count > 0}
-									<span class="ensemble-card__dot"></span>
-									<span>댓글 {ensemble.comment_count}</span>
-								{/if}
 							</div>
 							{#if ensemble.practice_date}
 								<span class="ensemble-card__date">
@@ -179,7 +177,7 @@
 				{/each}
 			</div>
 
-			{#if activeTab === 'recruiting' && totalPages > 1}
+			{#if totalPages > 1}
 				<div class="pagination">
 					{#each Array.from({ length: totalPages }, (_, i) => i + 1) as page}
 						<button
@@ -192,6 +190,33 @@
 					{/each}
 				</div>
 			{/if}
+		{:else}
+			<div class="ensemble-list">
+				{#each myList as ensemble}
+					<button class="ensemble-card" onclick={() => openDetail(ensemble.id)}>
+						<div class="ensemble-card__header">
+							<h3 class="ensemble-card__title">{ensemble.group_name}</h3>
+							<Badge variant={getStatusVariant(ensemble.status)}>
+								{getStatusLabel(ensemble.status)}
+							</Badge>
+						</div>
+						{#if ensemble.description}
+							<p class="ensemble-card__desc">{ensemble.description}</p>
+						{/if}
+						<div class="ensemble-card__footer">
+							<div class="ensemble-card__meta">
+								<span>{ensemble.my_role}</span>
+								{#if ensemble.is_leader}
+									<span class="ensemble-card__dot"></span>
+									<Badge variant="info">리더</Badge>
+								{/if}
+								<span class="ensemble-card__dot"></span>
+								<span>{ensemble.current_members}/{ensemble.max_members}명</span>
+							</div>
+						</div>
+					</button>
+				{/each}
+			</div>
 		{/if}
 	</div>
 

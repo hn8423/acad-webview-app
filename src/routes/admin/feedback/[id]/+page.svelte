@@ -54,7 +54,7 @@
 
 	const feedbackId = $derived(Number(page.params.id));
 
-	const isWeekly = $derived(feedback?.feedback_type === 'WEEKLY');
+	const isWeekly = $derived(feedback?.type === 'WEEKLY');
 	const weekly = $derived(feedback as WeeklyFeedbackDetail | null);
 	const monthly = $derived(feedback as MonthlyFeedbackDetail | null);
 
@@ -124,7 +124,7 @@
 		try {
 			const catRes = await getCategories(academyId);
 			if (catRes.status && catRes.data) {
-				categories = catRes.data.sort((a, b) => a.sort_order - b.sort_order);
+				categories = catRes.data.categories.sort((a, b) => a.sort_order - b.sort_order);
 			}
 		} catch {
 			// handled by client.ts
@@ -250,13 +250,6 @@
 				{/if}
 			{:else if !isWeekly && monthly}
 				<!-- 먼슬리 상세 -->
-				{#if monthly.overall_level}
-					<div class="detail-card">
-						<h3 class="detail-card__title">종합 레벨</h3>
-						<p class="detail-card__level">{monthly.overall_level}</p>
-					</div>
-				{/if}
-
 				{#if monthly.skill_details.length > 0}
 					<div class="detail-card">
 						<h3 class="detail-card__title">카테고리별 평가</h3>
@@ -293,17 +286,16 @@
 				{#if monthly.curriculum_direction}
 					<div class="detail-card">
 						<h3 class="detail-card__title">커리큘럼 방향</h3>
-						{#if monthly.curriculum_direction.next_month_focus}
-							<p class="detail-card__body">{monthly.curriculum_direction.next_month_focus}</p>
+						{#if monthly.curriculum_direction.next_month}
+							<div class="detail-card__section">
+								<p class="detail-card__subtitle">다음 달 계획</p>
+								<p class="detail-card__body">{monthly.curriculum_direction.next_month}</p>
+							</div>
 						{/if}
-						{#if monthly.curriculum_direction.recommended_songs?.length}
-							<div class="detail-card__songs">
-								<p class="detail-card__subtitle">추천 곡</p>
-								<ul>
-									{#each monthly.curriculum_direction.recommended_songs as song}
-										<li>{song}</li>
-									{/each}
-								</ul>
+						{#if monthly.curriculum_direction.long_term}
+							<div class="detail-card__section">
+								<p class="detail-card__subtitle">장기 계획</p>
+								<p class="detail-card__body">{monthly.curriculum_direction.long_term}</p>
 							</div>
 						{/if}
 					</div>
@@ -540,15 +532,6 @@
 			white-space: pre-wrap;
 		}
 
-		&__level {
-			font-size: var(--font-size-2xl);
-			font-weight: var(--font-weight-bold);
-			background: var(--color-primary-gradient);
-			-webkit-background-clip: text;
-			-webkit-text-fill-color: transparent;
-			background-clip: text;
-		}
-
 		&__link {
 			font-size: var(--font-size-sm);
 			color: var(--color-primary);
@@ -561,15 +544,6 @@
 			line-height: var(--line-height-base);
 		}
 
-		&__songs {
-			ul {
-				list-style: disc;
-				padding-left: var(--space-lg);
-				font-size: var(--font-size-sm);
-				color: var(--color-text);
-				line-height: var(--line-height-base);
-			}
-		}
 	}
 
 	.skill-list {

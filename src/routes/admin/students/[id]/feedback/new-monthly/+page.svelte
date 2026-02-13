@@ -53,12 +53,12 @@
 			]);
 
 			if (catRes.status === 'fulfilled' && catRes.value.status) {
-				categories = catRes.value.data.sort((a, b) => a.sort_order - b.sort_order);
+				categories = catRes.value.data.categories.sort((a, b) => a.sort_order - b.sort_order);
 				scores = Object.fromEntries(categories.map((cat) => [cat.id, 10]));
 				comments = Object.fromEntries(categories.map((cat) => [cat.id, '']));
 			}
 			if (passRes.status === 'fulfilled' && passRes.value.status) {
-				passes = passRes.value.data;
+				passes = passRes.value.data.passes;
 			}
 		} catch {
 			// handled by client.ts
@@ -91,11 +91,6 @@
 			comment: comments[cat.id]?.trim() || undefined
 		}));
 
-		const songList = recommendedSongs
-			.split('\n')
-			.map((s) => s.trim())
-			.filter(Boolean);
-
 		creating = true;
 		try {
 			const res = await createMonthlyFeedback(academyId, {
@@ -112,10 +107,10 @@
 						: undefined,
 				skill_details: skillDetails,
 				curriculum_direction:
-					nextMonthFocus || songList.length > 0
+					nextMonthFocus || recommendedSongs.trim()
 						? {
-								next_month_focus: nextMonthFocus.trim() || undefined,
-								recommended_songs: songList.length > 0 ? songList : undefined
+								next_month: nextMonthFocus.trim() || '',
+								long_term: recommendedSongs.trim() || ''
 							}
 						: undefined,
 				instructor_goals: instructorGoals.trim() || undefined,
