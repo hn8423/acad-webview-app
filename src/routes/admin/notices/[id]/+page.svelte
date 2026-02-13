@@ -53,15 +53,12 @@
 
 		loading = true;
 		try {
-			const formData = new FormData();
-			formData.append('title', title);
-			formData.append('content', content);
-			formData.append('is_pinned', String(isPinned));
+			const data = { title, content, is_pinned: isPinned };
 
 			if (isNew) {
-				await createNotice(academyId, formData);
+				await createNotice(academyId, data);
 			} else {
-				await updateNotice(academyId, Number(page.params.id), formData);
+				await updateNotice(academyId, Number(page.params.id), data);
 			}
 			goto('/admin/notices', { replaceState: true });
 		} catch (err) {
