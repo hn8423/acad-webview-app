@@ -71,7 +71,8 @@ export interface Instructor {
 }
 
 export interface CreateInstructorRequest {
-	user_name: string;
+	member_id: number;
 	specialties: string;
 	introduction?: string;
+	is_admin?: number;
 }
