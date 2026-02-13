@@ -59,7 +59,7 @@
 		try {
 			const res = await getMembers(academyId, undefined, 20, search || undefined);
 			if (res.status && res.data) {
-				members = res.data.members;
+				members = res.data.list;
 			}
 		} catch {
 			// handled by client.ts

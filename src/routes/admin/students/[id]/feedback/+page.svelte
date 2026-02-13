@@ -53,8 +53,8 @@
 			]);
 
 			if (feedbackRes.status === 'fulfilled' && feedbackRes.value.status) {
-				feedbackList = feedbackRes.value.data.feedbacks;
-				totalPages = Math.ceil(feedbackRes.value.data.total_count / LIMIT);
+				feedbackList = feedbackRes.value.data.list;
+				totalPages = Math.ceil(feedbackRes.value.data.meta.total / LIMIT);
 			}
 			if (passRes.status === 'fulfilled' && passRes.value.status) {
 				passes = passRes.value.data.passes;
@@ -74,8 +74,8 @@
 		try {
 			const res = await getFeedbackList(academyId, memberId, typeFilter, currentPage, LIMIT);
 			if (res.status && res.data) {
-				feedbackList = res.data.feedbacks;
-				totalPages = Math.ceil(res.data.total_count / LIMIT);
+				feedbackList = res.data.list;
+				totalPages = Math.ceil(res.data.meta.total / LIMIT);
 			}
 		} catch {
 			// handled by client.ts

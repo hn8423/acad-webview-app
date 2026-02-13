@@ -1,5 +1,5 @@
 import { get, post, patch, del } from './client';
-import type { ApiResponse } from '$lib/types/api';
+import type { ApiResponse, PaginatedList } from '$lib/types/api';
 import type { Academy, AppConfig, Notice, NoticeFile, CalendarEvent } from '$lib/types/academy';
 
 export function getAcademies(search?: string, page = 1, limit = 10) {
@@ -7,7 +7,7 @@ export function getAcademies(search?: string, page = 1, limit = 10) {
 	if (search) params.set('search', search);
 	params.set('page', String(page));
 	params.set('limit', String(limit));
-	return get<ApiResponse<{ academies: Academy[]; total_count: number }>>(
+	return get<ApiResponse<PaginatedList<Academy>>>(
 		`/academic/academies?${params.toString()}`
 	);
 }
@@ -50,7 +50,7 @@ export function deleteCalendarEvent(academyId: number, eventId: number) {
 
 // Notices
 export function getNotices(academyId: number, page = 1, limit = 10) {
-	return get<ApiResponse<{ notices: Notice[]; total_count: number }>>(
+	return get<ApiResponse<PaginatedList<Notice>>>(
 		`/academic/academies/${academyId}/notices?page=${page}&limit=${limit}`
 	);
 }
