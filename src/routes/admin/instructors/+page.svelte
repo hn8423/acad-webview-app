@@ -46,7 +46,7 @@
 		try {
 			const res = await getInstructors(academyId);
 			if (res.status && res.data) {
-				instructors = res.data;
+				instructors = res.data.instructors;
 			}
 		} catch {
 			fetchError = '강사 목록을 불러오는데 실패했습니다.';
@@ -85,12 +85,12 @@
 			const res = await getMembers(academyId, cursor, 20, memberSearch || undefined);
 			if (res.status && res.data) {
 				if (append) {
-					memberList = [...memberList, ...res.data.list];
+					memberList = [...memberList, ...res.data.members];
 				} else {
-					memberList = res.data.list;
+					memberList = res.data.members;
 				}
 				memberNextCursor = res.data.next_cursor;
-				memberHasMore = res.data.has_more;
+				memberHasMore = res.data.next_cursor !== null;
 			}
 		} catch {
 			error = '멤버 목록을 불러오는데 실패했습니다.';
@@ -143,7 +143,7 @@
 		try {
 			const trimmedIntro = introduction.trim();
 			const res = await createInstructor(academyId, {
-				member_id: selectedMember.member_id,
+				member_id: selectedMember.id,
 				specialties: specialties.trim(),
 				...(trimmedIntro ? { introduction: trimmedIntro } : {}),
 				is_admin: isAdmin ? 1 : 0
@@ -247,7 +247,7 @@
 								<span class="member-select__name">{member.user_name}</span>
 								<span class="member-select__phone">{formatPhone(member.user_phone)}</span>
 							</div>
-							<Badge variant="neutral">{member.member_role}</Badge>
+							<Badge variant="neutral">{member.role}</Badge>
 						</button>
 						{#if i < memberList.length - 1}
 							<div class="member-select__divider"></div>

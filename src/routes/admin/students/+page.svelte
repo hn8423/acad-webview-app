@@ -35,12 +35,12 @@
 			const res = await getMembers(academyId, cursor, 20, search || undefined);
 			if (res.status && res.data) {
 				if (append) {
-					members = [...members, ...res.data.list];
+					members = [...members, ...res.data.members];
 				} else {
-					members = res.data.list;
+					members = res.data.members;
 				}
 				nextCursor = res.data.next_cursor;
-				hasMore = res.data.has_more;
+				hasMore = res.data.next_cursor !== null;
 			}
 		} catch {
 			// handle error
@@ -87,11 +87,11 @@
 					class="student-row"
 					role="button"
 					tabindex="0"
-					onclick={() => goto(`/admin/students/${member.member_id}`)}
+					onclick={() => goto(`/admin/students/${member.id}`)}
 					onkeydown={(e) => {
 						if (e.key === 'Enter' || e.key === ' ') {
 							e.preventDefault();
-							goto(`/admin/students/${member.member_id}`);
+							goto(`/admin/students/${member.id}`);
 						}
 					}}
 				>
@@ -100,11 +100,8 @@
 						<span class="student-row__phone">{formatPhone(member.user_phone)}</span>
 					</div>
 					<div class="student-row__stats">
-						{#if member.active_passes > 0}
-							<Badge variant="success">수강권 {member.active_passes}</Badge>
-						{/if}
-						{#if member.remaining_drinks > 0}
-							<Badge variant="info">음료 {member.remaining_drinks}</Badge>
+						{#if member.active_passes_count > 0}
+							<Badge variant="success">수강권 {member.active_passes_count}</Badge>
 						{/if}
 					</div>
 				</div>

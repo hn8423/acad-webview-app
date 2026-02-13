@@ -1,58 +1,44 @@
-export interface BusinessType {
-	id: number;
-	type_key: string;
-	type_name: string;
-}
-
 export interface Academy {
 	id: number;
 	academy_name: string;
-	academy_address: string;
-	academy_phone: string;
-	academy_logo_img: string;
-	business_type: BusinessType;
-	operating_hours_start: string;
-	operating_hours_end: string;
-	status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
+	business_type: string;
+	address: string;
+	phone: string;
+	logo_url: string;
+	member_count: number;
+	description?: string;
+	created_at?: string;
 }
 
 export interface NavFeature {
 	feature_id: number;
 	feature_key: string;
-	feature_name: string;
-	is_enabled: boolean;
+	is_enabled: number;
 }
 
 export interface NavItem {
 	nav_id: number;
-	nav_position: number;
-	nav_label: string;
+	nav_name: string;
 	nav_icon: string;
-	is_enabled: boolean;
+	sort_order: number;
 	features: NavFeature[];
 }
 
 export interface AppConfig {
-	app_type: 'USER' | 'ADMIN';
-	nav_list: NavItem[];
+	nav_items: NavItem[];
 }
 
 export interface Notice {
 	id: number;
 	title: string;
-	is_pinned: boolean;
-	view_count: number;
+	content: string;
+	is_pinned: number;
 	author_name: string;
+	files: NoticeFile[];
 	created_at: string;
 }
 
-export interface NoticeDetail extends Notice {
-	content: string;
-	files: NoticeFile[];
-}
-
 export interface NoticeFile {
-	id: number;
 	file_url: string;
 	file_name: string;
 	file_type: string;
@@ -68,5 +54,5 @@ export interface CalendarEvent {
 	end_time: string | null;
 	description: string;
 	color: string;
-	is_all_day: boolean;
+	is_all_day: number;
 }

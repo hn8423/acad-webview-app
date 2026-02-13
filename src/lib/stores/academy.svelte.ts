@@ -1,4 +1,5 @@
 import * as academyApi from '$lib/api/academy';
+import { getMyMembership } from '$lib/api/member';
 import { getJson, setJson, removeItem } from '$lib/utils/storage';
 import type { Academy, AppConfig, NavItem } from '$lib/types/academy';
 import type { MemberRole } from '$lib/types/auth';
@@ -62,6 +63,16 @@ export function getAcademyStore() {
 		if (memberId) {
 			currentMemberId = memberId;
 			setJson(MEMBER_ID_STORAGE_KEY, memberId);
+		} else {
+			try {
+				const memberRes = await getMyMembership(academyId);
+				if (memberRes.status && memberRes.data) {
+					currentMemberId = memberRes.data.id;
+					setJson(MEMBER_ID_STORAGE_KEY, memberRes.data.id);
+				}
+			} catch {
+				// membership fetch failed, continue without memberId
+			}
 		}
 
 		await loadAppConfig(academyId);
@@ -89,7 +100,7 @@ export function getAcademyStore() {
 	function getEnabledNavItems(appType: 'USER' | 'ADMIN'): NavItem[] {
 		const config = appType === 'USER' ? userAppConfig : adminAppConfig;
 		if (!config) return [];
-		return config.nav_list.filter((nav) => nav.is_enabled);
+		return config.nav_items;
 	}
 
 	function clear(): void {

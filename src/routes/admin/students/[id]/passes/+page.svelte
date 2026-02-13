@@ -42,13 +42,13 @@
 			]);
 
 			if (passRes.status === 'fulfilled' && passRes.value.status) {
-				passes = passRes.value.data;
+				passes = passRes.value.data.passes;
 			}
 			if (typesRes.status === 'fulfilled' && typesRes.value.status) {
-				passTypes = typesRes.value.data;
+				passTypes = typesRes.value.data.pass_types;
 			}
 			if (instrRes.status === 'fulfilled' && instrRes.value.status) {
-				instructors = instrRes.value.data;
+				instructors = instrRes.value.data.instructors;
 			}
 		} catch {
 			// handle error
@@ -108,7 +108,7 @@
 		switch (status) {
 			case 'ACTIVE':
 				return 'success' as const;
-			case 'HOLDING':
+			case 'PAUSED':
 				return 'warning' as const;
 			default:
 				return 'neutral' as const;
@@ -119,12 +119,10 @@
 		switch (status) {
 			case 'ACTIVE':
 				return '이용중';
-			case 'HOLDING':
+			case 'PAUSED':
 				return '홀딩';
 			case 'EXPIRED':
 				return '만료';
-			case 'COMPLETED':
-				return '완료';
 			default:
 				return status;
 		}
@@ -209,7 +207,7 @@
 			<select id="instructor" class="create-form__select" bind:value={selectedInstructorId}>
 				<option value="">선택하세요</option>
 				{#each instructors as instr}
-					<option value={instr.instructor_id}>{instr.user_name} ({instr.specialties})</option>
+					<option value={instr.id}>{instr.user_name} ({instr.specialties})</option>
 				{/each}
 			</select>
 		</div>

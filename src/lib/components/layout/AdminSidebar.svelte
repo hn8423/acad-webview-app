@@ -32,7 +32,7 @@
 			? academyStore.getEnabledNavItems('ADMIN')
 			: academyStore
 					.getEnabledNavItems('ADMIN')
-					.filter((item) => !ADMIN_ONLY_POSITIONS.has(item.nav_position))
+					.filter((item) => !ADMIN_ONLY_POSITIONS.has(item.sort_order))
 	);
 
 	function getMenuPath(position: number): string {
@@ -99,7 +99,7 @@
 		</a>
 
 		{#each navItems as item}
-			{@const path = getMenuPath(item.nav_position)}
+			{@const path = getMenuPath(item.sort_order)}
 			<a
 				href={path}
 				class="sidebar__item"
@@ -116,9 +116,9 @@
 					stroke-linecap="round"
 					stroke-linejoin="round"
 				>
-					<path d={getIconPath(item.nav_position)} />
+					<path d={getIconPath(item.sort_order)} />
 				</svg>
-				<span>{item.nav_label}</span>
+				<span>{item.nav_name}</span>
 			</a>
 		{/each}
 	</nav>

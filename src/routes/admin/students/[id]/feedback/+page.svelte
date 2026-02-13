@@ -53,11 +53,11 @@
 			]);
 
 			if (feedbackRes.status === 'fulfilled' && feedbackRes.value.status) {
-				feedbackList = feedbackRes.value.data.list;
-				totalPages = Math.ceil(feedbackRes.value.data.meta.total / LIMIT);
+				feedbackList = feedbackRes.value.data.feedbacks;
+				totalPages = Math.ceil(feedbackRes.value.data.total_count / LIMIT);
 			}
 			if (passRes.status === 'fulfilled' && passRes.value.status) {
-				passes = passRes.value.data;
+				passes = passRes.value.data.passes;
 			}
 		} catch {
 			// handled by client.ts
@@ -74,8 +74,8 @@
 		try {
 			const res = await getFeedbackList(academyId, memberId, typeFilter, currentPage, LIMIT);
 			if (res.status && res.data) {
-				feedbackList = res.data.list;
-				totalPages = Math.ceil(res.data.meta.total / LIMIT);
+				feedbackList = res.data.feedbacks;
+				totalPages = Math.ceil(res.data.total_count / LIMIT);
 			}
 		} catch {
 			// handled by client.ts
@@ -181,8 +181,8 @@
 						}}
 					>
 						<div class="feedback-row__left">
-							<Badge variant={item.feedback_type === 'WEEKLY' ? 'info' : 'success'}>
-								{item.feedback_type === 'WEEKLY' ? '위클리' : '먼슬리'}
+							<Badge variant={item.type === 'WEEKLY' ? 'info' : 'success'}>
+								{item.type === 'WEEKLY' ? '위클리' : '먼슬리'}
 							</Badge>
 							<div class="feedback-row__info">
 								<span class="feedback-row__date">{formatDate(item.feedback_date)}</span>
@@ -190,20 +190,6 @@
 							</div>
 						</div>
 						<div class="feedback-row__right">
-							{#if item.has_video}
-								<svg
-									width="16"
-									height="16"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="2"
-								>
-									<path
-										d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-									/>
-								</svg>
-							{/if}
 							<svg
 								width="16"
 								height="16"

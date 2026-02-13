@@ -97,7 +97,7 @@ export function getAuthStore() {
 	async function fetchMyAcademies(): Promise<UserAcademy[]> {
 		const res = await authApi.getMyAcademies();
 		if (res.status && res.data) {
-			return res.data;
+			return res.data.academies;
 		}
 		return [];
 	}

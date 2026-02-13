@@ -1,5 +1,5 @@
 import { get, post, patch, del } from './client';
-import type { ApiResponse, PaginatedData } from '$lib/types/api';
+import type { ApiResponse } from '$lib/types/api';
 import type {
 	FeedbackLevel,
 	FeedbackCategory,
@@ -18,7 +18,7 @@ const BASE = (academyId: number) => `/academic/academies/${academyId}/feedback`;
 
 // Levels (public)
 export function getFeedbackLevels() {
-	return get<ApiResponse<FeedbackLevel[]>>('/academic/feedback/levels', true);
+	return get<ApiResponse<{ levels: FeedbackLevel[] }>>('/academic/feedback/levels', true);
 }
 
 // Categories
@@ -26,15 +26,24 @@ export function getCategories(academyId: number, instructorId?: number) {
 	const params = new URLSearchParams();
 	if (instructorId) params.set('instructor_id', String(instructorId));
 	const query = params.toString() ? `?${params.toString()}` : '';
-	return get<ApiResponse<FeedbackCategory[]>>(`${BASE(academyId)}/categories${query}`);
+	return get<ApiResponse<{ categories: FeedbackCategory[] }>>(
+		`${BASE(academyId)}/categories${query}`
+	);
 }
 
 export function createCategory(academyId: number, data: CreateCategoryRequest) {
 	return post<ApiResponse<FeedbackCategory>>(`${BASE(academyId)}/categories`, data);
 }
 
-export function updateCategory(academyId: number, categoryId: number, data: UpdateCategoryRequest) {
-	return patch<ApiResponse<FeedbackCategory>>(`${BASE(academyId)}/categories/${categoryId}`, data);
+export function updateCategory(
+	academyId: number,
+	categoryId: number,
+	data: UpdateCategoryRequest
+) {
+	return patch<ApiResponse<FeedbackCategory>>(
+		`${BASE(academyId)}/categories/${categoryId}`,
+		data
+	);
 }
 
 export function deleteCategory(academyId: number, categoryId: number) {
@@ -73,7 +82,7 @@ export function getMyFeedback(academyId: number, type?: FeedbackType, page = 1, 
 	if (type) params.set('type', type);
 	params.set('page', String(page));
 	params.set('limit', String(limit));
-	return get<ApiResponse<PaginatedData<FeedbackListItem>>>(
+	return get<ApiResponse<{ feedbacks: FeedbackListItem[]; total_count: number }>>(
 		`${BASE(academyId)}/me?${params.toString()}`
 	);
 }
@@ -90,7 +99,7 @@ export function getFeedbackList(
 	if (type) params.set('type', type);
 	params.set('page', String(page));
 	params.set('limit', String(limit));
-	return get<ApiResponse<PaginatedData<FeedbackListItem>>>(
+	return get<ApiResponse<{ feedbacks: FeedbackListItem[]; total_count: number }>>(
 		`${BASE(academyId)}?${params.toString()}`
 	);
 }

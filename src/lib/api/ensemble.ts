@@ -1,7 +1,8 @@
 import { get, post, patch, del } from './client';
-import type { ApiResponse, PaginatedData } from '$lib/types/api';
+import type { ApiResponse } from '$lib/types/api';
 import type {
 	EnsembleListItem,
+	MyEnsembleListItem,
 	EnsembleDetail,
 	EnsembleComment,
 	EnsembleStatus,
@@ -18,13 +19,13 @@ export function getEnsembles(academyId: number, status?: EnsembleStatus, page = 
 	if (status) params.set('status', status);
 	params.set('page', String(page));
 	params.set('limit', String(limit));
-	return get<ApiResponse<PaginatedData<EnsembleListItem>>>(
+	return get<ApiResponse<{ ensembles: EnsembleListItem[]; total_count: number }>>(
 		`${base(academyId)}?${params.toString()}`
 	);
 }
 
 export function getMyEnsembles(academyId: number) {
-	return get<ApiResponse<EnsembleListItem[]>>(`${base(academyId)}/me`);
+	return get<ApiResponse<{ ensembles: MyEnsembleListItem[] }>>(`${base(academyId)}/me`);
 }
 
 export function getEnsembleDetail(academyId: number, groupId: number) {
@@ -57,7 +58,10 @@ export function acceptMember(
 	memberId: number,
 	data: AcceptMemberRequest
 ) {
-	return post<ApiResponse<null>>(`${base(academyId)}/${groupId}/members/${memberId}/accept`, data);
+	return post<ApiResponse<null>>(
+		`${base(academyId)}/${groupId}/members/${memberId}/accept`,
+		data
+	);
 }
 
 export function rejectMember(academyId: number, groupId: number, memberId: number) {
@@ -69,7 +73,9 @@ export function leaveEnsemble(academyId: number, groupId: number) {
 }
 
 export function getComments(academyId: number, groupId: number) {
-	return get<ApiResponse<EnsembleComment[]>>(`${base(academyId)}/${groupId}/comments`);
+	return get<ApiResponse<{ comments: EnsembleComment[] }>>(
+		`${base(academyId)}/${groupId}/comments`
+	);
 }
 
 export function createComment(academyId: number, groupId: number, data: CreateCommentRequest) {

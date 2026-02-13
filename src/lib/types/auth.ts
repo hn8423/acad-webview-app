@@ -49,8 +49,7 @@ export type MemberRole = 'STUDENT' | 'INSTRUCTOR' | 'ADMIN';
 export interface UserAcademy {
 	academy_id: number;
 	academy_name: string;
-	academy_logo_img: string;
-	member_role: MemberRole;
-	member_id: number;
+	role: MemberRole;
+	member_nickname: string;
 	joined_at: string;
 }
