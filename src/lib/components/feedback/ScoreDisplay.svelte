@@ -22,10 +22,7 @@
 		</span>
 	</div>
 	<div class="score-display__bar">
-		<div
-			class="score-display__fill"
-			style="width: {percentage}%; background-color: {color}"
-		></div>
+		<div class="score-display__fill" style="width: {percentage}%; background-color: {color}"></div>
 	</div>
 	{#if comment}
 		<p class="score-display__comment">{comment}</p>

@@ -6,11 +6,13 @@ import type { MemberRole } from '$lib/types/auth';
 const ACADEMY_STORAGE_KEY = 'current_academy';
 const APP_CONFIG_STORAGE_KEY = 'app_config';
 const MEMBER_ROLE_STORAGE_KEY = 'member_role';
+const MEMBER_ID_STORAGE_KEY = 'member_id';
 
 let currentAcademy = $state<Academy | null>(null);
 let userAppConfig = $state<AppConfig | null>(null);
 let adminAppConfig = $state<AppConfig | null>(null);
 let memberRole = $state<MemberRole | null>(null);
+let currentMemberId = $state<number | null>(null);
 
 export function getAcademyStore() {
 	function initialize() {
@@ -31,9 +33,18 @@ export function getAcademyStore() {
 		if (storedRole === 'STUDENT' || storedRole === 'INSTRUCTOR' || storedRole === 'ADMIN') {
 			memberRole = storedRole;
 		}
+
+		const storedMemberId = getJson<number>(MEMBER_ID_STORAGE_KEY);
+		if (storedMemberId) {
+			currentMemberId = storedMemberId;
+		}
 	}
 
-	async function selectAcademy(academyId: number, role: MemberRole): Promise<void> {
+	async function selectAcademy(
+		academyId: number,
+		role: MemberRole,
+		memberId?: number
+	): Promise<void> {
 		const res = await academyApi.getAcademy(academyId);
 		if (res.status && res.data) {
 			currentAcademy = res.data;
@@ -42,6 +53,11 @@ export function getAcademyStore() {
 
 		memberRole = role;
 		setJson(MEMBER_ROLE_STORAGE_KEY, role);
+
+		if (memberId) {
+			currentMemberId = memberId;
+			setJson(MEMBER_ID_STORAGE_KEY, memberId);
+		}
 
 		await loadAppConfig(academyId);
 	}
@@ -76,9 +92,11 @@ export function getAcademyStore() {
 		userAppConfig = null;
 		adminAppConfig = null;
 		memberRole = null;
+		currentMemberId = null;
 		removeItem(ACADEMY_STORAGE_KEY);
 		removeItem(APP_CONFIG_STORAGE_KEY);
 		removeItem(MEMBER_ROLE_STORAGE_KEY);
+		removeItem(MEMBER_ID_STORAGE_KEY);
 	}
 
 	return {
@@ -96,6 +114,9 @@ export function getAcademyStore() {
 		},
 		get memberRole() {
 			return memberRole;
+		},
+		get memberId() {
+			return currentMemberId;
 		},
 		get isAdmin() {
 			return memberRole === 'ADMIN';

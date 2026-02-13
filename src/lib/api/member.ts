@@ -30,9 +30,7 @@ export function getMembers(academyId: number, cursor?: number, limit = 20, searc
 }
 
 export function getMemberDetail(academyId: number, memberId: number) {
-	return get<ApiResponse<MemberListItem>>(
-		`/academic/academies/${academyId}/members/${memberId}`
-	);
+	return get<ApiResponse<MemberListItem>>(`/academic/academies/${academyId}/members/${memberId}`);
 }
 
 export function getMyMembership(academyId: number) {

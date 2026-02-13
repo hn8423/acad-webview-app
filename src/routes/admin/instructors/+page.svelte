@@ -242,11 +242,7 @@
 			{:else}
 				<div class="member-select__list">
 					{#each memberList as member, i}
-						<button
-							type="button"
-							class="member-select__row"
-							onclick={() => selectMember(member)}
-						>
+						<button type="button" class="member-select__row" onclick={() => selectMember(member)}>
 							<div class="member-select__info">
 								<span class="member-select__name">{member.user_name}</span>
 								<span class="member-select__phone">{formatPhone(member.user_phone)}</span>
@@ -339,8 +335,7 @@
 
 			<div class="create-form__actions">
 				<Button type="submit" fullWidth loading={creating}>추가하기</Button>
-				<Button variant="secondary" fullWidth onclick={() => (showCreateModal = false)}
-					>취소</Button
+				<Button variant="secondary" fullWidth onclick={() => (showCreateModal = false)}>취소</Button
 				>
 			</div>
 		</form>

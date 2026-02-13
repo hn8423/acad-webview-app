@@ -274,7 +274,11 @@
 </Modal>
 
 <!-- 위클리 피드백 작성 모달 -->
-<Modal isOpen={showWeeklyModal} title="위클리 피드백 작성" onclose={() => (showWeeklyModal = false)}>
+<Modal
+	isOpen={showWeeklyModal}
+	title="위클리 피드백 작성"
+	onclose={() => (showWeeklyModal = false)}
+>
 	<form
 		class="create-form"
 		onsubmit={(e) => {
