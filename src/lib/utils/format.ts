@@ -51,3 +51,27 @@ export function getRelativeTime(dateStr: string): string {
 
 	return formatDate(dateStr);
 }
+
+export function formatTime(timeStr: string): string {
+	const parts = timeStr.split(':');
+	if (parts.length < 2) return timeStr;
+
+	const [hours, minutes] = parts;
+	const h = parseInt(hours, 10);
+	if (isNaN(h)) return timeStr;
+
+	const period = h >= 12 ? '오후' : '오전';
+	const displayHour = h > 12 ? h - 12 : h === 0 ? 12 : h;
+	return `${period} ${displayHour}:${minutes}`;
+}
+
+export function formatTimeRange(startTime: string, endTime: string): string {
+	return `${formatTime(startTime)} - ${formatTime(endTime)}`;
+}
+
+export function getDayOfWeek(dateStr: string): string {
+	const days = ['일', '월', '화', '수', '목', '금', '토'];
+	const [year, month, day] = dateStr.split('-').map(Number);
+	const date = new Date(year, month - 1, day);
+	return days[date.getDay()];
+}
