@@ -245,9 +245,7 @@
 				{#if weekly.video_url}
 					<div class="detail-card">
 						<h3 class="detail-card__title">영상</h3>
-						<a href={weekly.video_url} target="_blank" class="detail-card__link">
-							영상 보기
-						</a>
+						<a href={weekly.video_url} target="_blank" class="detail-card__link"> 영상 보기 </a>
 					</div>
 				{/if}
 			{:else if !isWeekly && monthly}
@@ -328,9 +326,7 @@
 				{#if monthly.video_url}
 					<div class="detail-card">
 						<h3 class="detail-card__title">영상</h3>
-						<a href={monthly.video_url} target="_blank" class="detail-card__link">
-							영상 보기
-						</a>
+						<a href={monthly.video_url} target="_blank" class="detail-card__link"> 영상 보기 </a>
 					</div>
 				{/if}
 			{/if}
@@ -378,11 +374,7 @@
 
 		<div class="edit-form__field">
 			<label class="edit-form__label" for="edit-strengths">잘한 점</label>
-			<textarea
-				id="edit-strengths"
-				class="edit-form__textarea"
-				bind:value={editStrengths}
-				rows="2"
+			<textarea id="edit-strengths" class="edit-form__textarea" bind:value={editStrengths} rows="2"
 			></textarea>
 		</div>
 
@@ -398,11 +390,7 @@
 
 		<div class="edit-form__field">
 			<label class="edit-form__label" for="edit-notes">메모</label>
-			<textarea
-				id="edit-notes"
-				class="edit-form__textarea"
-				bind:value={editNotes}
-				rows="2"
+			<textarea id="edit-notes" class="edit-form__textarea" bind:value={editNotes} rows="2"
 			></textarea>
 		</div>
 
@@ -450,21 +438,13 @@
 
 		<div class="edit-form__field">
 			<label class="edit-form__label" for="edit-goals">강사 목표</label>
-			<textarea
-				id="edit-goals"
-				class="edit-form__textarea"
-				bind:value={editGoals}
-				rows="2"
+			<textarea id="edit-goals" class="edit-form__textarea" bind:value={editGoals} rows="2"
 			></textarea>
 		</div>
 
 		<div class="edit-form__field">
 			<label class="edit-form__label" for="edit-message">강사 메시지</label>
-			<textarea
-				id="edit-message"
-				class="edit-form__textarea"
-				bind:value={editMessage}
-				rows="3"
+			<textarea id="edit-message" class="edit-form__textarea" bind:value={editMessage} rows="3"
 			></textarea>
 		</div>
 
@@ -486,8 +466,7 @@
 <style lang="scss">
 	.detail-page {
 		&__content {
-			padding: calc(var(--header-height) + var(--space-md)) var(--space-md)
-				var(--space-2xl);
+			padding: calc(var(--header-height) + var(--space-md)) var(--space-md) var(--space-2xl);
 		}
 
 		&__loading {
