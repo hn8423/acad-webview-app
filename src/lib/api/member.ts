@@ -1,4 +1,4 @@
-import { get, post, patch } from './client';
+import { get, post } from './client';
 import type { ApiResponse, CursorPaginatedData } from '$lib/types/api';
 import type {
 	Member,
