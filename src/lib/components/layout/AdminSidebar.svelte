@@ -25,7 +25,15 @@
 		5: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z'
 	};
 
-	let navItems = $derived(academyStore.getEnabledNavItems('ADMIN'));
+	const ADMIN_ONLY_POSITIONS = new Set([1, 2, 3]);
+
+	let navItems = $derived(
+		academyStore.isAdmin
+			? academyStore.getEnabledNavItems('ADMIN')
+			: academyStore
+					.getEnabledNavItems('ADMIN')
+					.filter((item) => !ADMIN_ONLY_POSITIONS.has(item.nav_position))
+	);
 
 	function getMenuPath(position: number): string {
 		return MENU_ROUTE_MAP[position] ?? '/admin';

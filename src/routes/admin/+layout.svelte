@@ -2,9 +2,12 @@
 	import Header from '$lib/components/layout/Header.svelte';
 	import AdminSidebar from '$lib/components/layout/AdminSidebar.svelte';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { academyStore } from '$lib/stores/academy.svelte';
 	import { onMount } from 'svelte';
+
+	const ADMIN_ONLY_ROUTES = ['/admin/notices', '/admin/instructors', '/admin/students'];
 
 	let { children } = $props();
 	let sidebarOpen = $state(false);
@@ -16,6 +19,19 @@
 		}
 		if (!academyStore.academyId) {
 			goto('/auth/select-academy', { replaceState: true });
+			return;
+		}
+		if (!academyStore.memberRole || academyStore.memberRole === 'STUDENT') {
+			goto('/auth/select-academy', { replaceState: true });
+			return;
+		}
+	});
+
+	$effect(() => {
+		const pathname = page.url.pathname;
+		const isRestricted = ADMIN_ONLY_ROUTES.some((route) => pathname.startsWith(route));
+		if (isRestricted && !academyStore.isAdmin) {
+			goto('/admin', { replaceState: true });
 		}
 	});
 
