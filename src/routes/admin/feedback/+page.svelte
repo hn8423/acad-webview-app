@@ -11,6 +11,8 @@
 	import type { FeedbackListItem, FeedbackType } from '$lib/types/feedback';
 	import { onMount } from 'svelte';
 
+	let showTypeModal = $state(false);
+
 	let feedbackList = $state<FeedbackListItem[]>([]);
 	let loading = $state(true);
 	let currentPage = $state(1);
@@ -69,9 +71,12 @@
 <div class="admin-feedback">
 	<div class="admin-feedback__header">
 		<h1 class="admin-feedback__title">피드백 관리</h1>
-		<Button size="sm" variant="secondary" onclick={() => goto('/admin/feedback/categories')}>
-			카테고리 관리
-		</Button>
+		<div class="admin-feedback__actions">
+			<Button size="sm" onclick={() => (showTypeModal = true)}>피드백 작성</Button>
+			<Button size="sm" variant="secondary" onclick={() => goto('/admin/feedback/categories')}>
+				카테고리 관리
+			</Button>
+		</div>
 	</div>
 
 	<div class="admin-feedback__filter">
@@ -189,6 +194,37 @@
 	</div>
 </Modal>
 
+<Modal isOpen={showTypeModal} title="피드백 유형 선택" onclose={() => (showTypeModal = false)}>
+	<div class="type-select">
+		<button
+			class="type-select__option"
+			onclick={() => {
+				showTypeModal = false;
+				goto('/admin/feedback/new-weekly');
+			}}
+		>
+			<div class="type-select__icon type-select__icon--weekly">W</div>
+			<div class="type-select__text">
+				<strong>위클리 피드백</strong>
+				<span>주간 레슨 내용, 잘한 점, 개선점</span>
+			</div>
+		</button>
+		<button
+			class="type-select__option"
+			onclick={() => {
+				showTypeModal = false;
+				goto('/admin/feedback/new-monthly');
+			}}
+		>
+			<div class="type-select__icon type-select__icon--monthly">M</div>
+			<div class="type-select__text">
+				<strong>먼슬리 피드백</strong>
+				<span>월간 종합 평가, 카테고리별 점수</span>
+			</div>
+		</button>
+	</div>
+</Modal>
+
 <style lang="scss">
 	.admin-feedback {
 		&__header {
@@ -300,6 +336,71 @@
 			&:hover {
 				color: var(--color-danger);
 				background-color: var(--color-danger-bg);
+			}
+		}
+	}
+
+	.admin-feedback__actions {
+		display: flex;
+		gap: var(--space-xs);
+	}
+
+	.type-select {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-sm);
+
+		&__option {
+			display: flex;
+			align-items: center;
+			gap: var(--space-md);
+			padding: var(--space-md);
+			background: var(--color-bg);
+			border-radius: var(--radius-md);
+			cursor: pointer;
+			transition: all var(--transition-fast);
+			text-align: left;
+
+			&:active {
+				opacity: 0.7;
+			}
+		}
+
+		&__icon {
+			width: 40px;
+			height: 40px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			border-radius: var(--radius-md);
+			font-weight: var(--font-weight-bold);
+			font-size: var(--font-size-lg);
+			color: var(--color-white);
+			flex-shrink: 0;
+
+			&--weekly {
+				background: var(--color-info);
+			}
+
+			&--monthly {
+				background: var(--color-success);
+			}
+		}
+
+		&__text {
+			display: flex;
+			flex-direction: column;
+			gap: 2px;
+
+			strong {
+				font-size: var(--font-size-base);
+				font-weight: var(--font-weight-semibold);
+				color: var(--color-text);
+			}
+
+			span {
+				font-size: var(--font-size-xs);
+				color: var(--color-text-secondary);
 			}
 		}
 	}

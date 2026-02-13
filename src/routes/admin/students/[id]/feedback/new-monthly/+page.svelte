@@ -166,16 +166,10 @@
 					<div class="create-form">
 						<div class="create-form__field">
 							<label class="create-form__label" for="pass-select">수강권</label>
-							<select
-								id="pass-select"
-								class="create-form__select"
-								bind:value={selectedPassId}
-							>
+							<select id="pass-select" class="create-form__select" bind:value={selectedPassId}>
 								<option value="">선택하세요</option>
 								{#each activePasses as pass}
-									<option value={pass.id}
-										>{pass.pass_name} ({pass.instructor_name})</option
-									>
+									<option value={pass.id}>{pass.pass_name} ({pass.instructor_name})</option>
 								{/each}
 							</select>
 						</div>
@@ -289,8 +283,7 @@
 <style lang="scss">
 	.monthly-page {
 		&__content {
-			padding: calc(var(--header-height) + var(--space-md)) var(--space-md)
-				var(--space-2xl);
+			padding: calc(var(--header-height) + var(--space-md)) var(--space-md) var(--space-2xl);
 		}
 
 		&__loading {

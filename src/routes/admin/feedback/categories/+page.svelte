@@ -2,12 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { academyStore } from '$lib/stores/academy.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
-	import {
-		getCategories,
-		createCategory,
-		updateCategory,
-		deleteCategory
-	} from '$lib/api/feedback';
+	import { getCategories, createCategory, updateCategory, deleteCategory } from '$lib/api/feedback';
 	import BackHeader from '$lib/components/layout/BackHeader.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
