@@ -53,14 +53,21 @@ export function getRecentNotices(academyId: number) {
 	return get<ApiResponse<Notice[]>>(`/academic/academies/${academyId}/notices/recent`);
 }
 
-export function createNotice(academyId: number, formData: FormData) {
-	return post<ApiResponse<NoticeDetail>>(`/academic/academies/${academyId}/notices`, formData);
+export function createNotice(
+	academyId: number,
+	data: { title: string; content: string; is_pinned: boolean }
+) {
+	return post<ApiResponse<NoticeDetail>>(`/academic/academies/${academyId}/notices`, data);
 }
 
-export function updateNotice(academyId: number, noticeId: number, formData: FormData) {
+export function updateNotice(
+	academyId: number,
+	noticeId: number,
+	data: { title: string; content: string; is_pinned: boolean }
+) {
 	return patch<ApiResponse<NoticeDetail>>(
 		`/academic/academies/${academyId}/notices/${noticeId}`,
-		formData
+		data
 	);
 }
 
