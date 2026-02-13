@@ -33,15 +33,8 @@ export function createCategory(academyId: number, data: CreateCategoryRequest) {
 	return post<ApiResponse<FeedbackCategory>>(`${BASE(academyId)}/categories`, data);
 }
 
-export function updateCategory(
-	academyId: number,
-	categoryId: number,
-	data: UpdateCategoryRequest
-) {
-	return patch<ApiResponse<FeedbackCategory>>(
-		`${BASE(academyId)}/categories/${categoryId}`,
-		data
-	);
+export function updateCategory(academyId: number, categoryId: number, data: UpdateCategoryRequest) {
+	return patch<ApiResponse<FeedbackCategory>>(`${BASE(academyId)}/categories/${categoryId}`, data);
 }
 
 export function deleteCategory(academyId: number, categoryId: number) {
@@ -75,12 +68,7 @@ export function updateMonthlyFeedback(
 }
 
 // Feedback Lists
-export function getMyFeedback(
-	academyId: number,
-	type?: FeedbackType,
-	page = 1,
-	limit = 10
-) {
+export function getMyFeedback(academyId: number, type?: FeedbackType, page = 1, limit = 10) {
 	const params = new URLSearchParams();
 	if (type) params.set('type', type);
 	params.set('page', String(page));

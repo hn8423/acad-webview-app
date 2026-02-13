@@ -21,7 +21,8 @@
 			class="score-input__level"
 			style="background-color: {levelInfo.color}15; color: {levelInfo.color}"
 		>
-			{levelInfo.group} {score}/20
+			{levelInfo.group}
+			{score}/20
 		</span>
 	</div>
 	<input

@@ -68,7 +68,7 @@
 
 	async function selectAcademy(academy: UserAcademy) {
 		try {
-			await academyStore.selectAcademy(academy.academy_id, academy.member_role);
+			await academyStore.selectAcademy(academy.academy_id, academy.member_role, academy.member_id);
 
 			const role = academy.member_role;
 			if (role === 'ADMIN' || role === 'INSTRUCTOR') {

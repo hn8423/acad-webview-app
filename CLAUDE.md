@@ -57,28 +57,28 @@ static/                # 정적 파일
 
 ## 라우팅 구조
 
-- /auth/login          # 전화번호 + 비밀번호 로그인
-- /auth/signup         # SMS 인증 → 회원가입
+- /auth/login # 전화번호 + 비밀번호 로그인
+- /auth/signup # SMS 인증 → 회원가입
 - /auth/select-academy # 학원 선택 (로그인 후)
-- /app                 # 회원 메인 (음료권, 수강권, 공지)
-- /app/notice          # 공지사항 목록
-- /app/notice/[id]     # 공지사항 상세
-- /app/profile         # 내 정보
-- /admin               # 관리자 대시보드
-- /admin/notices       # 공지사항 관리 (CRUD)
-- /admin/students      # 수강생 목록 (무한스크롤)
+- /app # 회원 메인 (음료권, 수강권, 공지)
+- /app/notice # 공지사항 목록
+- /app/notice/[id] # 공지사항 상세
+- /app/profile # 내 정보
+- /admin # 관리자 대시보드
+- /admin/notices # 공지사항 관리 (CRUD)
+- /admin/students # 수강생 목록 (무한스크롤)
 - /admin/students/[id] # 수강생 상세 (수강권/음료권 관리)
 
 ## 환경 변수
 
-- PUBLIC_API_BASE_URL  # 백엔드 API URL (SvelteKit PUBLIC_ 접두사 → 클라이언트 접근 가능)
-- PUBLIC_WS_URL        # WebSocket URL (합주조 채팅용, 후순위)
+- PUBLIC*API_BASE_URL # 백엔드 API URL (SvelteKit PUBLIC* 접두사 → 클라이언트 접근 가능)
+- PUBLIC_WS_URL # WebSocket URL (합주조 채팅용, 후순위)
 
 ## 백엔드 API
 
 - 인증: ACADEMIC_USER 전용 JWT (기존 auth와 분리)
 - 멀티테넌시: 모든 API에 academy_id path param
-- API 경로: /academic/auth/*, /academic/academies/:academy_id/*
+- API 경로: /academic/auth/_, /academic/academies/:academy_id/_
 - 앱설정: /academic/academies/:academy_id/app-config?app_type=USER|ADMIN
   → 바텀 네비/메뉴를 동적으로 렌더링
 
@@ -92,8 +92,8 @@ static/                # 정적 파일
 
 ## 테스트 규칙
 
-- 컴포넌트 테스트: *.svelte.spec.ts → Vitest + Playwright 브라우저 환경
-- 서버/유틸 테스트: *.spec.ts → Vitest Node 환경
+- 컴포넌트 테스트: \*.svelte.spec.ts → Vitest + Playwright 브라우저 환경
+- 서버/유틸 테스트: \*.spec.ts → Vitest Node 환경
 - E2E 테스트: e2e/ → Playwright
 - 모든 테스트에 assertion 필수 (requireAssertions: true)
 - 최소 커버리지: 80%

@@ -12,11 +12,7 @@ import type {
 } from '$lib/types/auth';
 
 export function sendVerification(data: SendVerificationRequest) {
-	return post<ApiResponse<{ expires_in: number }>>(
-		'/academic/auth/send-verification',
-		data,
-		true
-	);
+	return post<ApiResponse<{ expires_in: number }>>('/academic/auth/send-verification', data, true);
 }
 
 export function verifyCode(data: VerifyCodeRequest) {
@@ -47,7 +43,9 @@ export function getMe() {
 	return get<ApiResponse<User>>('/academic/auth/me');
 }
 
-export function updateMe(data: Partial<Pick<User, 'user_name' | 'user_birthday' | 'user_gender' | 'profile_img'>>) {
+export function updateMe(
+	data: Partial<Pick<User, 'user_name' | 'user_birthday' | 'user_gender' | 'profile_img'>>
+) {
 	return patch<ApiResponse<User>>('/academic/auth/me', data);
 }
 

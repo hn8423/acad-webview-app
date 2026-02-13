@@ -91,9 +91,7 @@
 				{#if weekly.video_url}
 					<div class="detail-card">
 						<h3 class="detail-card__title">영상</h3>
-						<a href={weekly.video_url} target="_blank" class="detail-card__link">
-							영상 보기
-						</a>
+						<a href={weekly.video_url} target="_blank" class="detail-card__link"> 영상 보기 </a>
 					</div>
 				{/if}
 			{:else if !isWeekly && monthly}
@@ -156,9 +154,7 @@
 				{#if monthly.video_url}
 					<div class="detail-card">
 						<h3 class="detail-card__title">영상</h3>
-						<a href={monthly.video_url} target="_blank" class="detail-card__link">
-							영상 보기
-						</a>
+						<a href={monthly.video_url} target="_blank" class="detail-card__link"> 영상 보기 </a>
 					</div>
 				{/if}
 			{/if}
