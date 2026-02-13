@@ -69,3 +69,9 @@ export interface Instructor {
 	introduction: string;
 	profile_img: string;
 }
+
+export interface CreateInstructorRequest {
+	user_name: string;
+	specialties: string;
+	introduction?: string;
+}
