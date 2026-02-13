@@ -2,6 +2,10 @@ import { get, post, patch, del } from './client';
 import type { ApiResponse, PaginatedData } from '$lib/types/api';
 import type { Academy, AppConfig, Notice, NoticeDetail, CalendarEvent } from '$lib/types/academy';
 
+export function getAcademies() {
+	return get<ApiResponse<Academy[]>>('/academic/academies');
+}
+
 export function getAcademy(academyId: number) {
 	return get<ApiResponse<Academy>>(`/academic/academies/${academyId}`);
 }
