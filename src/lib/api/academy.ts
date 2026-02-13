@@ -3,7 +3,7 @@ import type { ApiResponse, PaginatedData } from '$lib/types/api';
 import type { Academy, AppConfig, Notice, NoticeDetail, CalendarEvent } from '$lib/types/academy';
 
 export function getAcademies() {
-	return get<ApiResponse<Academy[]>>('/academic/academies');
+	return get<ApiResponse<PaginatedData<Academy>>>('/academic/academies');
 }
 
 export function getAcademy(academyId: number) {
