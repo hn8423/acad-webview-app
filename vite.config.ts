@@ -4,6 +4,14 @@ import { sveltekit } from '@sveltejs/kit/vite';
 
 export default defineConfig({
 	plugins: [sveltekit()],
+	server: {
+		proxy: {
+			'/academic': {
+				target: 'http://localhost:3001',
+				changeOrigin: true
+			}
+		}
+	},
 	test: {
 		expect: { requireAssertions: true },
 		projects: [
