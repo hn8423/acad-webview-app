@@ -8,7 +8,8 @@ import type {
 	DrinkTicket,
 	CreateDrinkTicketRequest,
 	PassType,
-	Instructor
+	Instructor,
+	CreateInstructorRequest
 } from '$lib/types/member';
 
 // Membership
@@ -41,6 +42,10 @@ export function getMyMembership(academyId: number) {
 // Instructors
 export function getInstructors(academyId: number) {
 	return get<ApiResponse<Instructor[]>>(`/academic/academies/${academyId}/instructors`);
+}
+
+export function createInstructor(academyId: number, data: CreateInstructorRequest) {
+	return post<ApiResponse<Instructor>>(`/academic/academies/${academyId}/instructors`, data);
 }
 
 // Pass Types
