@@ -13,9 +13,12 @@ let userAppConfig = $state<AppConfig | null>(null);
 let adminAppConfig = $state<AppConfig | null>(null);
 let memberRole = $state<MemberRole | null>(null);
 let currentMemberId = $state<number | null>(null);
+let isInitialized = $state(false);
 
 export function getAcademyStore() {
 	function initialize() {
+		if (isInitialized) return;
+
 		const storedAcademy = getJson<Academy>(ACADEMY_STORAGE_KEY);
 		const storedConfig = getJson<{ user: AppConfig | null; admin: AppConfig | null }>(
 			APP_CONFIG_STORAGE_KEY
@@ -38,6 +41,8 @@ export function getAcademyStore() {
 		if (storedMemberId) {
 			currentMemberId = storedMemberId;
 		}
+
+		isInitialized = true;
 	}
 
 	async function selectAcademy(
@@ -121,6 +126,9 @@ export function getAcademyStore() {
 		get isAdmin() {
 			return memberRole === 'ADMIN';
 		},
+		get isInitialized() {
+			return isInitialized;
+		},
 		initialize,
 		selectAcademy,
 		loadAppConfig,
@@ -130,3 +138,7 @@ export function getAcademyStore() {
 }
 
 export const academyStore = getAcademyStore();
+
+if (typeof window !== 'undefined') {
+	academyStore.initialize();
+}

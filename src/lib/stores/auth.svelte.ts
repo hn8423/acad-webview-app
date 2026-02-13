@@ -8,9 +8,12 @@ const USER_STORAGE_KEY = 'user';
 let user = $state<User | null>(null);
 let isAuthenticated = $state(false);
 let isLoading = $state(true);
+let isInitialized = $state(false);
 
 export function getAuthStore() {
 	function initialize() {
+		if (isInitialized) return;
+
 		const token = getAccessToken();
 		const storedUser = getJson<User>(USER_STORAGE_KEY);
 
@@ -19,6 +22,7 @@ export function getAuthStore() {
 			isAuthenticated = true;
 		}
 		isLoading = false;
+		isInitialized = true;
 	}
 
 	async function login(phone: string, password: string): Promise<void> {
@@ -108,6 +112,9 @@ export function getAuthStore() {
 		get isLoading() {
 			return isLoading;
 		},
+		get isInitialized() {
+			return isInitialized;
+		},
 		initialize,
 		login,
 		signup,
@@ -117,3 +124,7 @@ export function getAuthStore() {
 }
 
 export const authStore = getAuthStore();
+
+if (typeof window !== 'undefined') {
+	authStore.initialize();
+}
