@@ -4,11 +4,11 @@
 	import { goto } from '$app/navigation';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { academyStore } from '$lib/stores/academy.svelte';
-	import { onMount } from 'svelte';
 
 	let { children } = $props();
 
-	onMount(() => {
+	$effect(() => {
+		if (!authStore.isInitialized || !academyStore.isInitialized) return;
 		if (!authStore.isAuthenticated) {
 			goto('/auth/login', { replaceState: true });
 			return;
