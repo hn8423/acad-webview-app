@@ -27,8 +27,8 @@
 		try {
 			const res = await getMyFeedback(academyId, typeFilter, currentPage, LIMIT);
 			if (res.status && res.data) {
-				feedbackList = res.data.feedbacks;
-				totalPages = Math.ceil(res.data.total_count / LIMIT);
+				feedbackList = res.data.list;
+				totalPages = Math.ceil(res.data.meta.total / LIMIT);
 			}
 		} catch {
 			// handled by client.ts

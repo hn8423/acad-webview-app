@@ -27,8 +27,8 @@
 		try {
 			const res = await getNotices(academyId, currentPage, LIMIT);
 			if (res.status && res.data) {
-				notices = res.data.notices;
-				totalPages = Math.ceil(res.data.total_count / LIMIT);
+				notices = res.data.list;
+				totalPages = Math.ceil(res.data.meta.total / LIMIT);
 			}
 		} catch {
 			// handle error

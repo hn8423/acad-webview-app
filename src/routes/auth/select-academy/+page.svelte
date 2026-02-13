@@ -103,7 +103,7 @@
 		try {
 			const res = await getAcademies();
 			if (res.status && res.data) {
-				allAcademies = res.data.academies;
+				allAcademies = res.data.list;
 			} else {
 				throw new Error(res.message || '학원 목록을 불러오지 못했습니다.');
 			}

@@ -1,5 +1,5 @@
 import { get, post, patch, del } from './client';
-import type { ApiResponse } from '$lib/types/api';
+import type { ApiResponse, CursorPaginatedList } from '$lib/types/api';
 import type {
 	Member,
 	MemberListItem,
@@ -30,7 +30,7 @@ export function getMembers(academyId: number, cursor?: number, limit = 20, searc
 	if (cursor) params.set('cursor', String(cursor));
 	params.set('limit', String(limit));
 	if (search) params.set('search', search);
-	return get<ApiResponse<{ members: MemberListItem[]; next_cursor: number | null }>>(
+	return get<ApiResponse<CursorPaginatedList<MemberListItem>>>(
 		`/academic/academies/${academyId}/members?${params.toString()}`
 	);
 }

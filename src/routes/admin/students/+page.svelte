@@ -35,12 +35,12 @@
 			const res = await getMembers(academyId, cursor, 20, search || undefined);
 			if (res.status && res.data) {
 				if (append) {
-					members = [...members, ...res.data.members];
+					members = [...members, ...res.data.list];
 				} else {
-					members = res.data.members;
+					members = res.data.list;
 				}
-				nextCursor = res.data.next_cursor;
-				hasMore = res.data.next_cursor !== null;
+				nextCursor = res.data.meta.next_cursor;
+				hasMore = res.data.meta.next_cursor !== null;
 			}
 		} catch {
 			// handle error

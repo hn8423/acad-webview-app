@@ -85,12 +85,12 @@
 			const res = await getMembers(academyId, cursor, 20, memberSearch || undefined);
 			if (res.status && res.data) {
 				if (append) {
-					memberList = [...memberList, ...res.data.members];
+					memberList = [...memberList, ...res.data.list];
 				} else {
-					memberList = res.data.members;
+					memberList = res.data.list;
 				}
-				memberNextCursor = res.data.next_cursor;
-				memberHasMore = res.data.next_cursor !== null;
+				memberNextCursor = res.data.meta.next_cursor;
+				memberHasMore = res.data.meta.next_cursor !== null;
 			}
 		} catch {
 			error = '멤버 목록을 불러오는데 실패했습니다.';

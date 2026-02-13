@@ -35,8 +35,8 @@
 			if (activeTab === 'recruiting') {
 				const res = await getEnsembles(academyId, 'RECRUITING', currentPage, LIMIT);
 				if (res.status && res.data) {
-					recruitingList = res.data.ensembles;
-					totalPages = Math.ceil(res.data.total_count / LIMIT);
+					recruitingList = res.data.list;
+					totalPages = Math.ceil(res.data.meta.total / LIMIT);
 				}
 			} else {
 				const res = await getMyEnsembles(academyId);

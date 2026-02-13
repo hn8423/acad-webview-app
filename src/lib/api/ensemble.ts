@@ -1,5 +1,5 @@
 import { get, post, patch, del } from './client';
-import type { ApiResponse } from '$lib/types/api';
+import type { ApiResponse, PaginatedList } from '$lib/types/api';
 import type {
 	EnsembleListItem,
 	MyEnsembleListItem,
@@ -19,7 +19,7 @@ export function getEnsembles(academyId: number, status?: EnsembleStatus, page = 
 	if (status) params.set('status', status);
 	params.set('page', String(page));
 	params.set('limit', String(limit));
-	return get<ApiResponse<{ ensembles: EnsembleListItem[]; total_count: number }>>(
+	return get<ApiResponse<PaginatedList<EnsembleListItem>>>(
 		`${base(academyId)}?${params.toString()}`
 	);
 }

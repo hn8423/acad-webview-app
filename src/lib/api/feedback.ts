@@ -1,5 +1,5 @@
 import { get, post, patch, del } from './client';
-import type { ApiResponse } from '$lib/types/api';
+import type { ApiResponse, PaginatedList } from '$lib/types/api';
 import type {
 	FeedbackLevel,
 	FeedbackCategory,
@@ -82,7 +82,7 @@ export function getMyFeedback(academyId: number, type?: FeedbackType, page = 1, 
 	if (type) params.set('type', type);
 	params.set('page', String(page));
 	params.set('limit', String(limit));
-	return get<ApiResponse<{ feedbacks: FeedbackListItem[]; total_count: number }>>(
+	return get<ApiResponse<PaginatedList<FeedbackListItem>>>(
 		`${BASE(academyId)}/me?${params.toString()}`
 	);
 }
@@ -99,7 +99,7 @@ export function getFeedbackList(
 	if (type) params.set('type', type);
 	params.set('page', String(page));
 	params.set('limit', String(limit));
-	return get<ApiResponse<{ feedbacks: FeedbackListItem[]; total_count: number }>>(
+	return get<ApiResponse<PaginatedList<FeedbackListItem>>>(
 		`${BASE(academyId)}?${params.toString()}`
 	);
 }
