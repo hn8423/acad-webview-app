@@ -115,7 +115,7 @@ export async function apiRequest<T>(endpoint: string, options: RequestOptions = 
 			});
 		} else {
 			clearTokens();
-			if (typeof window !== 'undefined') {
+			if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth/')) {
 				window.location.href = '/auth/login';
 			}
 			throw new ApiError(401, '인증이 만료되었습니다. 다시 로그인해주세요.');

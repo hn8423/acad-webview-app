@@ -5,14 +5,14 @@
 	import { page } from '$app/state';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { academyStore } from '$lib/stores/academy.svelte';
-	import { onMount } from 'svelte';
 
 	const ADMIN_ONLY_ROUTES = ['/admin/notices', '/admin/instructors', '/admin/students'];
 
 	let { children } = $props();
 	let sidebarOpen = $state(false);
 
-	onMount(() => {
+	$effect(() => {
+		if (!authStore.isInitialized || !academyStore.isInitialized) return;
 		if (!authStore.isAuthenticated) {
 			goto('/auth/login', { replaceState: true });
 			return;
