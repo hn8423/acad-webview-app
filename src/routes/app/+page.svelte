@@ -27,13 +27,13 @@
 			]);
 
 			if (passRes.status === 'fulfilled' && passRes.value.status) {
-				passes = passRes.value.data.passes;
+				passes = passRes.value.data;
 			}
 			if (drinkRes.status === 'fulfilled' && drinkRes.value.status) {
-				drinkTickets = drinkRes.value.data.drink_tickets;
+				drinkTickets = drinkRes.value.data;
 			}
 			if (noticeRes.status === 'fulfilled' && noticeRes.value.status) {
-				recentNotices = noticeRes.value.data.notices;
+				recentNotices = noticeRes.value.data;
 			}
 		} catch {
 			// errors handled per-section
