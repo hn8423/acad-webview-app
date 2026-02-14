@@ -3,6 +3,13 @@
 	import { isRouteAllowed } from '$lib/config/admin-permissions';
 	import Card from '$lib/components/ui/Card.svelte';
 	import { goto } from '$app/navigation';
+
+	const PASS_TYPES_NAV_ID = 26;
+
+	let showPassTypes = $derived(
+		isRouteAllowed('/admin/pass-types', academyStore.memberRole) &&
+			academyStore.getEnabledNavItems('ADMIN').some((item) => item.nav_id === PASS_TYPES_NAV_ID)
+	);
 </script>
 
 <div class="admin-dashboard">
@@ -45,12 +52,34 @@
 							stroke-linecap="round"
 							stroke-linejoin="round"
 						>
-							<path
-								d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-							/>
+							<path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
 						</svg>
 					</div>
 					<span class="dashboard-card__label">강사 관리</span>
+				</div>
+			</Card>
+		{/if}
+
+		{#if showPassTypes}
+			<Card onclick={() => goto('/admin/pass-types')}>
+				<div class="dashboard-card">
+					<div class="dashboard-card__icon">
+						<svg
+							width="24"
+							height="24"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="var(--color-primary)"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path
+								d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"
+							/>
+						</svg>
+					</div>
+					<span class="dashboard-card__label">수강권 종류 관리</span>
 				</div>
 			</Card>
 		{/if}
