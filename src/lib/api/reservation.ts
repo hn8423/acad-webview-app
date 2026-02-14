@@ -10,7 +10,7 @@ import type {
 
 export function getAvailableSlots(academyId: number, date: string) {
 	const params = new URLSearchParams({ date });
-	return get<ApiResponse<{ slots: AvailableSlot[] }>>(
+	return get<ApiResponse<AvailableSlot[]>>(
 		`/academic/academies/${academyId}/reservations/available?${params.toString()}`
 	);
 }
@@ -26,7 +26,7 @@ export function getMyReservations(academyId: number, status?: ReservationStatus)
 	const params = new URLSearchParams();
 	if (status) params.set('status', status);
 	const query = params.size > 0 ? `?${params.toString()}` : '';
-	return get<ApiResponse<{ reservations: MyReservation[] }>>(
+	return get<ApiResponse<MyReservation[]>>(
 		`/academic/academies/${academyId}/reservations/me${query}`
 	);
 }

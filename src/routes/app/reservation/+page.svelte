@@ -75,7 +75,7 @@
 		try {
 			const res = await getAvailableSlots(academyId, date);
 			if (res.status && res.data) {
-				availableSlots = res.data.slots;
+				availableSlots = res.data;
 			}
 		} catch {
 			// handled by client.ts
@@ -106,7 +106,7 @@
 		try {
 			const res = await getMyReservations(academyId);
 			if (res.status && res.data) {
-				myReservations = res.data.reservations;
+				myReservations = res.data;
 			}
 		} catch {
 			// handled by client.ts
@@ -171,7 +171,7 @@
 
 		cancelling = true;
 		try {
-			const res = await cancelReservation(academyId, selectedReservation.id);
+			const res = await cancelReservation(academyId, selectedReservation.reservation_id);
 			if (res.status) {
 				toastStore.success('예약이 취소되었습니다.');
 				cancelSheetOpen = false;
