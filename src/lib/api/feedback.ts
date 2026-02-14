@@ -18,7 +18,7 @@ const BASE = (academyId: number) => `/academic/academies/${academyId}/feedback`;
 
 // Levels (public)
 export function getFeedbackLevels() {
-	return get<ApiResponse<{ levels: FeedbackLevel[] }>>('/academic/feedback/levels', true);
+	return get<ApiResponse<FeedbackLevel[]>>('/academic/feedback/levels', true);
 }
 
 // Categories
@@ -26,9 +26,7 @@ export function getCategories(academyId: number, instructorId?: number) {
 	const params = new URLSearchParams();
 	if (instructorId) params.set('instructor_id', String(instructorId));
 	const query = params.toString() ? `?${params.toString()}` : '';
-	return get<ApiResponse<{ categories: FeedbackCategory[] }>>(
-		`${BASE(academyId)}/categories${query}`
-	);
+	return get<ApiResponse<FeedbackCategory[]>>(`${BASE(academyId)}/categories${query}`);
 }
 
 export function createCategory(academyId: number, data: CreateCategoryRequest) {

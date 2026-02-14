@@ -105,8 +105,8 @@
 							}
 						}}
 					>
-						<Badge variant={item.type === 'WEEKLY' ? 'info' : 'success'}>
-							{item.type === 'WEEKLY' ? '위클리' : '먼슬리'}
+						<Badge variant={item.feedback_type === 'WEEKLY' ? 'info' : 'success'}>
+							{item.feedback_type === 'WEEKLY' ? '위클리' : '먼슬리'}
 						</Badge>
 						<div class="feedback-row__info">
 							<span class="feedback-row__name">{item.member_name ?? ''}</span>

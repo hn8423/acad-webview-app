@@ -25,7 +25,7 @@
 	let selectedPassId = $state('');
 	let feedbackDate = $state(new Date().toISOString().split('T')[0]);
 	let genre = $state('');
-	let instrument = $state('');
+	let favoriteArtist = $state('');
 	let experienceYears = $state('');
 
 	// Step 2: 카테고리별 점수
@@ -33,8 +33,8 @@
 	let comments = $state<Record<number, string>>({});
 
 	// Step 3: 커리큘럼 + 메시지
-	let nextMonthFocus = $state('');
-	let recommendedSongs = $state('');
+	let direction = $state('');
+	let focus = $state('');
 	let instructorGoals = $state('');
 	let instructorMessage = $state('');
 	let videoUrl = $state('');
@@ -53,7 +53,7 @@
 			]);
 
 			if (catRes.status === 'fulfilled' && catRes.value.status) {
-				categories = catRes.value.data.categories.sort((a, b) => a.sort_order - b.sort_order);
+				categories = [...catRes.value.data].sort((a, b) => a.sort_order - b.sort_order);
 				scores = Object.fromEntries(categories.map((cat) => [cat.id, 10]));
 				comments = Object.fromEntries(categories.map((cat) => [cat.id, '']));
 			}
@@ -98,19 +98,19 @@
 				member_pass_id: Number(selectedPassId),
 				feedback_date: feedbackDate,
 				member_music_info:
-					genre || instrument || experienceYears
+					genre || favoriteArtist || experienceYears
 						? {
 								genre: genre.trim() || undefined,
-								instrument: instrument.trim() || undefined,
+								favorite_artist: favoriteArtist.trim() || undefined,
 								experience_years: experienceYears ? Number(experienceYears) : undefined
 							}
 						: undefined,
 				skill_details: skillDetails,
 				curriculum_direction:
-					nextMonthFocus || recommendedSongs.trim()
+					direction || focus.trim()
 						? {
-								next_month: nextMonthFocus.trim() || '',
-								long_term: recommendedSongs.trim() || ''
+								direction: direction.trim() || '',
+								focus: focus.trim() || ''
 							}
 						: undefined,
 				instructor_goals: instructorGoals.trim() || undefined,
@@ -173,7 +173,7 @@
 
 						<h3 class="step-section__subtitle">학생 음악 정보 (선택)</h3>
 						<Input label="장르" bind:value={genre} placeholder="예: 팝, 재즈, 클래식" />
-						<Input label="악기/파트" bind:value={instrument} placeholder="예: 보컬, 기타" />
+						<Input label="좋아하는 아티스트" bind:value={favoriteArtist} placeholder="예: Dream Theater, BTS" />
 						<Input
 							type="number"
 							label="경력 (년)"
@@ -218,22 +218,22 @@
 
 					<div class="create-form">
 						<div class="create-form__field">
-							<label class="create-form__label" for="next-focus">다음 달 중점 사항</label>
+							<label class="create-form__label" for="next-focus">커리큘럼 방향</label>
 							<textarea
 								id="next-focus"
 								class="create-form__textarea"
-								bind:value={nextMonthFocus}
+								bind:value={direction}
 								placeholder="선택 사항"
 								rows="2"
 							></textarea>
 						</div>
 
 						<div class="create-form__field">
-							<label class="create-form__label" for="songs">추천 곡 (줄바꿈으로 구분)</label>
+							<label class="create-form__label" for="songs">중점 사항</label>
 							<textarea
 								id="songs"
 								class="create-form__textarea"
-								bind:value={recommendedSongs}
+								bind:value={focus}
 								placeholder="선택 사항"
 								rows="3"
 							></textarea>
