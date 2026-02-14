@@ -5,7 +5,6 @@
 	import { getMemberDetail } from '$lib/api/member';
 	import BackHeader from '$lib/components/layout/BackHeader.svelte';
 	import Card from '$lib/components/ui/Card.svelte';
-	import Badge from '$lib/components/ui/Badge.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import { formatPhone, formatDate } from '$lib/utils/format';
 	import type { MemberDetail } from '$lib/types/member';
@@ -63,9 +62,6 @@
 					>
 						<span class="menu-item__label">수강권 관리</span>
 						<div class="menu-item__right">
-							{#if member.passes.filter((p) => p.status === 'ACTIVE').length > 0}
-								<Badge variant="success">{member.passes.filter((p) => p.status === 'ACTIVE').length}개 활성</Badge>
-							{/if}
 							<svg
 								width="20"
 								height="20"
