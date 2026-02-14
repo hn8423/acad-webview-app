@@ -58,7 +58,7 @@
 				comments = Object.fromEntries(categories.map((cat) => [cat.id, '']));
 			}
 			if (passRes.status === 'fulfilled' && passRes.value.status) {
-				passes = passRes.value.data.passes;
+				passes = passRes.value.data;
 			}
 		} catch {
 			// handled by client.ts

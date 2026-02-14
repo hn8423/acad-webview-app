@@ -89,7 +89,7 @@
 			]);
 
 			if (passRes.status === 'fulfilled' && passRes.value.status) {
-				passes = passRes.value.data.passes;
+				passes = passRes.value.data;
 			}
 			if (catRes.status === 'fulfilled' && catRes.value.status) {
 				categories = catRes.value.data.categories.sort((a, b) => a.sort_order - b.sort_order);

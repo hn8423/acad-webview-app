@@ -57,7 +57,7 @@
 				totalPages = Math.ceil(feedbackRes.value.data.meta.total / LIMIT);
 			}
 			if (passRes.status === 'fulfilled' && passRes.value.status) {
-				passes = passRes.value.data.passes;
+				passes = passRes.value.data;
 			}
 		} catch {
 			// handled by client.ts

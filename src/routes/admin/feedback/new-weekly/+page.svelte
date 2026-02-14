@@ -73,7 +73,7 @@
 		try {
 			const res = await getMemberPasses(academyId, member.member_id);
 			if (res.status && res.data) {
-				passes = res.data.passes;
+				passes = res.data;
 			}
 		} catch {
 			// handled by client.ts
