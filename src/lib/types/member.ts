@@ -70,11 +70,14 @@ export interface UpdatePassRequest {
 
 export interface DrinkTicket {
 	id: number;
+	academy_id: number;
+	member_id: number;
 	total_count: number;
-	used_count: number;
 	remaining_count: number;
 	expiry_date: string;
-	status: string;
+	is_deleted: number;
+	created_at: string;
+	updated_at: string;
 }
 
 export interface CreateDrinkTicketRequest {
