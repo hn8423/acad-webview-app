@@ -50,5 +50,5 @@ export function updateMe(
 }
 
 export function getMyAcademies() {
-	return get<ApiResponse<{ academies: UserAcademy[] }>>('/academic/auth/me/academies');
+	return get<ApiResponse<UserAcademy[]>>('/academic/auth/me/academies');
 }
