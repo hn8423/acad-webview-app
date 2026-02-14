@@ -24,7 +24,7 @@ export function getAppConfig(academyId: number, appType: 'USER' | 'ADMIN') {
 
 // Calendar
 export function getCalendarEvents(academyId: number, year: number, month: number) {
-	return get<ApiResponse<{ events: CalendarEvent[] }>>(
+	return get<ApiResponse<CalendarEvent[]>>(
 		`/academic/academies/${academyId}/calendar?year=${year}&month=${month}`
 	);
 }

@@ -6,7 +6,8 @@
 		formatTimeRange,
 		getDaysInMonth,
 		getFirstDayOfMonth,
-		getTodayString
+		getTodayString,
+		toLocalDateString
 	} from '$lib/utils/format';
 	import type { CalendarEvent } from '$lib/types/academy';
 	import Spinner from './Spinner.svelte';
@@ -54,8 +55,8 @@
 		events
 			.filter((e) => e.event_date === selectedDate)
 			.sort((a, b) => {
-				const aAllDay = a.is_all_day === 1;
-				const bAllDay = b.is_all_day === 1;
+				const aAllDay = a.is_all_day;
+				const bAllDay = b.is_all_day;
 				if (aAllDay && !bAllDay) return -1;
 				if (!aAllDay && bAllDay) return 1;
 				return (a.start_time ?? '').localeCompare(b.start_time ?? '');
@@ -180,7 +181,10 @@
 		try {
 			const res = await getCalendarEvents(academyId, year, month);
 			if (res.status && res.data) {
-				events = res.data.events;
+				events = res.data.map((event) => ({
+					...event,
+					event_date: toLocalDateString(event.event_date)
+				}));
 			} else {
 				events = [];
 				errorMessage = '일정을 불러올 수 없습니다.';
@@ -200,118 +204,117 @@
 </script>
 
 <div class="section-card">
-	<h2 class="section-title">캘린더 조회</h2>
+	<h2 class="section-title">캘린더</h2>
 
-	{#if loading}
-		<div class="calendar-loading">
-			<Spinner size="sm" />
-		</div>
-	{:else if errorMessage}
-		<p class="empty-text">{errorMessage}</p>
-	{:else}
-		<div class="calendar-nav">
-			<button type="button" class="nav-btn" onclick={goToPreviousMonth} aria-label="이전 달">
-				<svg
-					width="20"
-					height="20"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					stroke-linecap="round"
-					stroke-linejoin="round"
+	<div class="calendar-nav">
+		<button type="button" class="nav-btn" onclick={goToPreviousMonth} aria-label="이전 달">
+			<svg
+				width="20"
+				height="20"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+			>
+				<polyline points="15 18 9 12 15 6" />
+			</svg>
+		</button>
+		<span class="month-label">{monthLabel}</span>
+		<button type="button" class="nav-btn" onclick={goToNextMonth} aria-label="다음 달">
+			<svg
+				width="20"
+				height="20"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+			>
+				<polyline points="9 18 15 12 9 6" />
+			</svg>
+		</button>
+	</div>
+
+	<div class="calendar-grid">
+		{#each DAY_NAMES as day, i}
+			<div class="calendar-header" class:calendar-header--weekend={i === 0 || i === 6}>
+				{day}
+			</div>
+		{/each}
+
+		{#each calendarCells as row}
+			{#each row as cell}
+				<button
+					type="button"
+					class="calendar-cell"
+					class:calendar-cell--other={!cell.isCurrentMonth}
+					class:calendar-cell--today={cell.isToday}
+					class:calendar-cell--selected={cell.fullDate === selectedDate}
+					onclick={() => selectDate(cell.fullDate)}
 				>
-					<polyline points="15 18 9 12 15 6" />
-				</svg>
-			</button>
-			<span class="month-label">{monthLabel}</span>
-			<button type="button" class="nav-btn" onclick={goToNextMonth} aria-label="다음 달">
-				<svg
-					width="20"
-					height="20"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-				>
-					<polyline points="9 18 15 12 9 6" />
-				</svg>
-			</button>
-		</div>
-
-		<div class="calendar-grid">
-			{#each DAY_NAMES as day, i}
-				<div class="calendar-header" class:calendar-header--weekend={i === 0 || i === 6}>
-					{day}
-				</div>
-			{/each}
-
-			{#each calendarCells as row}
-				{#each row as cell}
-					<button
-						type="button"
-						class="calendar-cell"
-						class:calendar-cell--other={!cell.isCurrentMonth}
-						class:calendar-cell--today={cell.isToday}
-						class:calendar-cell--selected={cell.fullDate === selectedDate}
-						onclick={() => selectDate(cell.fullDate)}
-					>
-						<span class="calendar-cell__date">{cell.date}</span>
-						{#if cell.events.length > 0}
-							<div class="event-dots">
-								{#each cell.events.slice(0, MAX_EVENT_DOTS) as event}
-									<span class="event-dot" style="background-color: {getEventColor(event)}"></span>
-								{/each}
-							</div>
-						{/if}
-					</button>
-				{/each}
-			{/each}
-		</div>
-
-		<div class="event-list">
-			<h3 class="event-list__title">
-				{selectedDate.split('-')[1]}월 {selectedDate.split('-')[2]}일 일정
-			</h3>
-			{#if selectedEvents.length === 0}
-				<p class="empty-text">등록된 일정이 없습니다.</p>
-			{:else}
-				{#each selectedEvents as event}
-					<div class="event-item" style="--event-color: {getEventColor(event)}">
-						<div class="event-item__header">
-							<span class="event-item__title">{event.event_title}</span>
-							<span
-								class="event-type-badge"
-								style="background-color: {getEventColor(event)}20; color: {getEventColor(event)}"
-							>
-								{EVENT_TYPE_LABELS[event.event_type] ?? event.event_type}
-							</span>
+					<span class="calendar-cell__date">{cell.date}</span>
+					{#if cell.events.length > 0}
+						<div class="event-dots">
+							{#each cell.events.slice(0, MAX_EVENT_DOTS) as event}
+								<span class="event-dot" style="background-color: {getEventColor(event)}"></span>
+							{/each}
 						</div>
-						<div class="event-item__time">
-							{#if event.is_all_day === 1}
-								종일
-							{:else if event.start_time && event.end_time}
-								{formatTimeRange(event.start_time, event.end_time)}
-							{:else if event.start_time}
-								{formatTime(event.start_time)}
-							{/if}
-						</div>
-						{#if event.description}
-							<p class="event-item__desc">{event.description}</p>
+					{/if}
+				</button>
+			{/each}
+		{/each}
+	</div>
+
+	<div class="event-list">
+		<h3 class="event-list__title">
+			{selectedDate.split('-')[1]}월 {selectedDate.split('-')[2]}일 일정
+		</h3>
+		{#if loading}
+			<div class="calendar-loading">
+				<Spinner size="sm" />
+			</div>
+		{:else if errorMessage}
+			<p class="empty-text">{errorMessage}</p>
+		{:else if selectedEvents.length === 0}
+			<p class="empty-text">등록된 일정이 없습니다.</p>
+		{:else}
+			{#each selectedEvents as event}
+				<div class="event-item" style="--event-color: {getEventColor(event)}">
+					<div class="event-item__header">
+						<span class="event-item__title">{event.event_title}</span>
+						<span
+							class="event-type-badge"
+							style="background-color: {getEventColor(event)}20; color: {getEventColor(event)}"
+						>
+							{EVENT_TYPE_LABELS[event.event_type] ?? event.event_type}
+						</span>
+					</div>
+					<div class="event-item__time">
+						{#if event.is_all_day}
+							종일
+						{:else if event.start_time && event.end_time}
+							{formatTimeRange(event.start_time, event.end_time)}
+						{:else if event.start_time}
+							{formatTime(event.start_time)}
 						{/if}
 					</div>
-				{/each}
-			{/if}
-		</div>
-	{/if}
+					{#if event.description}
+						<p class="event-item__desc">{event.description}</p>
+					{/if}
+				</div>
+			{/each}
+		{/if}
+	</div>
 </div>
 
 <style lang="scss">
+	@use '$lib/styles/mixins' as *;
+
 	.section-card {
-		background: var(--color-white);
-		border-radius: var(--radius-lg);
+		@include toss-card;
 		padding: var(--space-xl) var(--space-lg);
 	}
 
@@ -336,9 +339,8 @@
 	}
 
 	.nav-btn {
-		display: flex;
-		align-items: center;
-		justify-content: center;
+		@include flex-center;
+		@include press-scale;
 		width: 36px;
 		height: 36px;
 		border: none;
@@ -347,11 +349,6 @@
 		border-radius: var(--radius-sm);
 		cursor: pointer;
 		transition: all var(--transition-fast);
-
-		&:active {
-			background: var(--color-bg);
-			opacity: 0.6;
-		}
 	}
 
 	.month-label {
@@ -380,6 +377,7 @@
 	}
 
 	.calendar-cell {
+		@include press-scale;
 		aspect-ratio: 1;
 		display: flex;
 		flex-direction: column;
@@ -391,11 +389,8 @@
 		cursor: pointer;
 		position: relative;
 		padding: 2px;
+		min-height: 44px;
 		transition: background var(--transition-fast);
-
-		&:active {
-			background: var(--color-bg);
-		}
 
 		&--other {
 			.calendar-cell__date {
