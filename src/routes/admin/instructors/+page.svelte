@@ -1,6 +1,12 @@
 <script lang="ts">
 	import { academyStore } from '$lib/stores/academy.svelte';
-	import { getInstructors, createInstructor, getMembers } from '$lib/api/member';
+	import {
+		getInstructors,
+		createInstructor,
+		getMembers,
+		getInstructorDetail,
+		updateInstructor
+	} from '$lib/api/member';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
@@ -16,6 +22,16 @@
 	let showCreateModal = $state(false);
 	let creating = $state(false);
 	let error = $state('');
+
+	// Edit modal state
+	let showEditModal = $state(false);
+	let editingInstructor = $state<Instructor | null>(null);
+	let loadingDetail = $state(false);
+	let editError = $state('');
+	let saving = $state(false);
+	let editSpecialties = $state('');
+	let editIntroduction = $state('');
+	let editIsAdmin = $state(false);
 
 	// Step management: 'select-member' | 'fill-details'
 	let step = $state<'select-member' | 'fill-details'>('select-member');
@@ -126,6 +142,70 @@
 		}
 	}
 
+	function getInstructorId(instructor: Instructor): number {
+		return instructor.instructor_id ?? instructor.id ?? 0;
+	}
+
+	async function openEditModal(instructor: Instructor) {
+		const academyId = academyStore.academyId;
+		if (!academyId) return;
+
+		showEditModal = true;
+		loadingDetail = true;
+		editError = '';
+		editingInstructor = instructor;
+		editSpecialties = instructor.specialties;
+		editIntroduction = instructor.introduction;
+		editIsAdmin = instructor.is_admin === 1;
+
+		try {
+			const res = await getInstructorDetail(academyId, getInstructorId(instructor));
+			if (res.status && res.data) {
+				editingInstructor = res.data;
+				editSpecialties = res.data.specialties;
+				editIntroduction = res.data.introduction;
+				editIsAdmin = res.data.is_admin === 1;
+			}
+		} catch {
+			editError = '강사 정보를 불러오는데 실패했습니다.';
+		} finally {
+			loadingDetail = false;
+		}
+	}
+
+	async function handleUpdate() {
+		editError = '';
+		if (!editingInstructor) return;
+
+		if (!editSpecialties.trim()) {
+			editError = '전문분야를 입력해주세요.';
+			return;
+		}
+
+		const academyId = academyStore.academyId;
+		if (!academyId) return;
+
+		saving = true;
+		try {
+			const res = await updateInstructor(academyId, getInstructorId(editingInstructor), {
+				specialties: editSpecialties.trim(),
+				introduction: editIntroduction.trim(),
+				is_admin: editIsAdmin ? 1 : 0
+			});
+			if (res.status && res.data) {
+				const updatedId = getInstructorId(res.data);
+				instructors = instructors.map((inst) =>
+					getInstructorId(inst) === updatedId ? res.data! : inst
+				);
+				showEditModal = false;
+			}
+		} catch (err) {
+			editError = err instanceof Error ? err.message : '강사 수정에 실패했습니다.';
+		} finally {
+			saving = false;
+		}
+	}
+
 	async function handleCreate() {
 		error = '';
 		if (!selectedMember) {
@@ -178,7 +258,12 @@
 	{:else}
 		<div class="instructor-list">
 			{#each instructors as instructor, i}
-				<div class="instructor-row">
+				<button
+					type="button"
+					class="instructor-row"
+					onclick={() => openEditModal(instructor)}
+					aria-label="{instructor.user_name} 강사 정보 수정"
+				>
 					<div class="instructor-row__avatar">
 						{#if instructor.profile_img}
 							<img
@@ -212,7 +297,7 @@
 							<p class="instructor-row__intro">{instructor.introduction}</p>
 						{/if}
 					</div>
-				</div>
+				</button>
 				{#if i < instructors.length - 1}
 					<div class="instructor-list__divider"></div>
 				{/if}
@@ -343,6 +428,81 @@
 	{/if}
 </Modal>
 
+<Modal isOpen={showEditModal} title="강사 정보 수정" onclose={() => (showEditModal = false)}>
+	{#if loadingDetail}
+		<div class="modal-loading">
+			<Spinner />
+			<p class="modal-loading__text">강사 정보를 불러오는 중...</p>
+		</div>
+	{:else if editingInstructor}
+		<form
+			class="create-form"
+			onsubmit={(e) => {
+				e.preventDefault();
+				handleUpdate();
+			}}
+		>
+			<div class="instructor-info">
+				<div class="instructor-info__avatar">
+					{#if editingInstructor.profile_img}
+						<img
+							src={editingInstructor.profile_img}
+							alt={editingInstructor.user_name}
+							class="instructor-info__avatar-img"
+						/>
+					{:else}
+						<svg
+							width="32"
+							height="32"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="1.5"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+						</svg>
+					{/if}
+				</div>
+				<h3 class="instructor-info__name">{editingInstructor.user_name}</h3>
+			</div>
+
+			<Input
+				label="전문분야"
+				placeholder="예: 피아노, 기타, 드럼"
+				bind:value={editSpecialties}
+				maxlength={100}
+			/>
+
+			<div class="create-form__field">
+				<label class="create-form__label" for="edit-instructor-intro">소개</label>
+				<textarea
+					id="edit-instructor-intro"
+					class="create-form__textarea"
+					placeholder="강사 소개를 입력하세요"
+					bind:value={editIntroduction}
+					maxlength={500}
+				></textarea>
+			</div>
+
+			<label class="create-form__checkbox">
+				<input type="checkbox" bind:checked={editIsAdmin} />
+				<span>관리자 권한 부여</span>
+			</label>
+
+			{#if editError}
+				<p class="create-form__error">{editError}</p>
+			{/if}
+
+			<div class="create-form__actions">
+				<Button type="submit" fullWidth loading={saving}>저장</Button>
+				<Button variant="secondary" fullWidth onclick={() => (showEditModal = false)}>취소</Button>
+			</div>
+		</form>
+	{/if}
+</Modal>
+
 <style lang="scss">
 	.admin-instructors {
 		&__header {
@@ -397,6 +557,14 @@
 		align-items: flex-start;
 		gap: var(--space-md);
 		padding: var(--space-md) 0;
+		width: 100%;
+		text-align: left;
+		cursor: pointer;
+		transition: background-color var(--transition-fast);
+
+		&:active {
+			background-color: var(--color-bg);
+		}
 
 		&__avatar {
 			width: 48px;
@@ -633,6 +801,53 @@
 			display: flex;
 			flex-direction: column;
 			gap: var(--space-sm);
+		}
+	}
+
+	.modal-loading {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-md);
+		padding: var(--space-2xl);
+
+		&__text {
+			font-size: var(--font-size-sm);
+			color: var(--color-text-secondary);
+		}
+	}
+
+	.instructor-info {
+		display: flex;
+		align-items: center;
+		gap: var(--space-md);
+		padding: var(--space-md);
+		background: var(--color-bg);
+		border-radius: var(--radius-md);
+
+		&__avatar {
+			width: 48px;
+			height: 48px;
+			border-radius: var(--radius-full);
+			background-color: var(--color-white);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			flex-shrink: 0;
+			overflow: hidden;
+			color: var(--color-text-muted);
+		}
+
+		&__avatar-img {
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+		}
+
+		&__name {
+			font-size: var(--font-size-lg);
+			font-weight: var(--font-weight-bold);
+			color: var(--color-text);
 		}
 	}
 

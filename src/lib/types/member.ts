@@ -83,7 +83,8 @@ export interface CreateDrinkTicketRequest {
 }
 
 export interface Instructor {
-	id: number;
+	id?: number;
+	instructor_id?: number;
 	member_id: number;
 	user_name: string;
 	profile_img: string;
