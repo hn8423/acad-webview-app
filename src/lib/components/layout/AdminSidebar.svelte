@@ -12,38 +12,38 @@
 
 	let { isOpen = $bindable(false), onclose }: Props = $props();
 
-	const MENU_ROUTE_MAP: Record<string, string> = {
-		1: '/admin/notices',
-		2: '/admin/instructors',
-		3: '/admin/students',
-		4: '/admin/feedback',
-		5: '/admin/ensembles'
+	const MENU_ROUTE_MAP: Record<number, string> = {
+		16: '/admin/notices',
+		17: '/admin/instructors',
+		18: '/admin/students',
+		19: '/admin/feedback',
+		20: '/admin/reservations'
 	};
 
-	const MENU_ICON_MAP: Record<string, string> = {
-		1: 'M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z',
-		2: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
-		3: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
-		4: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
-		5: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z'
+	const MENU_ICON_MAP: Record<number, string> = {
+		16: 'M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z',
+		17: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
+		18: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
+		19: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+		20: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'
 	};
 
 	let navItems = $derived(
 		academyStore
 			.getEnabledNavItems('ADMIN')
 			.filter((item) => {
-				const route = MENU_ROUTE_MAP[item.nav_position];
+				const route = MENU_ROUTE_MAP[item.nav_id];
 				if (!route) return false;
 				return isRouteAllowed(route, academyStore.memberRole);
 			})
 	);
 
-	function getMenuPath(position: number): string {
-		return MENU_ROUTE_MAP[position] ?? '/admin';
+	function getMenuPath(navId: number): string {
+		return MENU_ROUTE_MAP[navId] ?? '/admin';
 	}
 
-	function getIconPath(position: number): string {
-		return MENU_ICON_MAP[position] ?? MENU_ICON_MAP[1];
+	function getIconPath(navId: number): string {
+		return MENU_ICON_MAP[navId] ?? MENU_ICON_MAP[16];
 	}
 
 	function isActive(path: string): boolean {
@@ -109,7 +109,7 @@
 		</a>
 
 		{#each navItems as item}
-			{@const path = getMenuPath(item.nav_position)}
+			{@const path = getMenuPath(item.nav_id)}
 			<a
 				href={path}
 				class="sidebar__item"
@@ -126,7 +126,7 @@
 					stroke-linecap="round"
 					stroke-linejoin="round"
 				>
-					<path d={getIconPath(item.nav_position)} />
+					<path d={getIconPath(item.nav_id)} />
 				</svg>
 				<span>{item.nav_label}</span>
 			</a>
