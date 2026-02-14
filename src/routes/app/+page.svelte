@@ -4,6 +4,7 @@
 	import { getRecentNotices } from '$lib/api/academy';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
+	import CalendarSection from '$lib/components/ui/CalendarSection.svelte';
 	import { formatDate } from '$lib/utils/format';
 	import type { MemberPass, DrinkTicket } from '$lib/types/member';
 	import type { Notice } from '$lib/types/academy';
@@ -43,6 +44,14 @@
 	});
 
 	let totalDrinks = $derived(drinkTickets.reduce((sum, t) => sum + t.remaining_count, 0));
+
+	let calendarEnabled = $derived.by(() => {
+		const config = academyStore.userAppConfig;
+		if (!config) return false;
+		return config.nav_list.some((nav) =>
+			nav.features.some((f) => f.feature_key === 'CALENDER' && f.is_enabled)
+		);
+	});
 
 	function getPassStatusVariant(status: string) {
 		switch (status) {
@@ -148,6 +157,13 @@
 				{/if}
 			</div>
 		</section>
+
+		<!-- 캘린더 조회 -->
+		{#if calendarEnabled && academyStore.academyId}
+			<section class="main-page__section">
+				<CalendarSection academyId={academyStore.academyId} />
+			</section>
+		{/if}
 
 		<!-- 공지사항 -->
 		<section class="main-page__section">
