@@ -84,7 +84,7 @@
 		dataLoading = true;
 		try {
 			const [passRes, catRes] = await Promise.allSettled([
-				getMemberPasses(academyId, member.id),
+				getMemberPasses(academyId, member.member_id),
 				getCategories(academyId)
 			]);
 
@@ -146,7 +146,7 @@
 		creating = true;
 		try {
 			const res = await createMonthlyFeedback(academyId, {
-				member_id: selectedMember.id,
+				member_id: selectedMember.member_id,
 				member_pass_id: Number(selectedPassId),
 				feedback_date: feedbackDate,
 				member_music_info:
@@ -227,8 +227,8 @@
 									<span class="member-row__name">{member.user_name}</span>
 									<span class="member-row__phone">{formatPhone(member.user_phone)}</span>
 								</div>
-								{#if member.active_passes_count > 0}
-									<Badge variant="success">수강권 {member.active_passes_count}</Badge>
+								{#if member.active_passes > 0}
+									<Badge variant="success">수강권 {member.active_passes}</Badge>
 								{/if}
 							</div>
 							{#if i < members.length - 1}
