@@ -1,5 +1,3 @@
-import type { FeedbackListItem } from './feedback';
-
 export interface Member {
 	id: number;
 	academy_id: number;
@@ -22,15 +20,12 @@ export interface MemberListItem {
 }
 
 export interface MemberDetail {
-	id: number;
+	member_id: number;
 	user_name: string;
 	user_phone: string;
 	member_nickname: string;
-	role: 'STUDENT' | 'INSTRUCTOR' | 'ADMIN';
-	user_birthday: string | null;
-	profile_img: string;
-	passes: MemberPass[];
-	recent_feedback: FeedbackListItem[];
+	member_role: 'STUDENT' | 'INSTRUCTOR' | 'ADMIN';
+	status: string;
 	joined_at: string;
 }
 
