@@ -66,7 +66,8 @@
 				passes = passRes.value.data;
 			}
 			if (typesRes.status === 'fulfilled' && typesRes.value.status) {
-				passTypes = typesRes.value.data.pass_types;
+				const data = typesRes.value.data;
+				passTypes = Array.isArray(data) ? data : (data.pass_types ?? []);
 			}
 			if (instrRes.status === 'fulfilled' && instrRes.value.status) {
 				const data = instrRes.value.data;

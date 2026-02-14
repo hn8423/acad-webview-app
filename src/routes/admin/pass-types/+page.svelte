@@ -66,7 +66,8 @@
 		try {
 			const res = await getPassTypes(academyId);
 			if (res.status && res.data) {
-				passTypes = res.data.pass_types;
+				const data = res.data;
+				passTypes = Array.isArray(data) ? data : (data.pass_types ?? []);
 			}
 		} catch {
 			// handled by client.ts
@@ -139,6 +140,8 @@
 					toastStore.success('수강권이 수정되었습니다.');
 					showFormModal = false;
 					await fetchPassTypes();
+				} else {
+					error = res.message || '수정에 실패했습니다.';
 				}
 			} else {
 				const res = await createPassType(academyId, data as CreatePassTypeRequest);
@@ -146,6 +149,8 @@
 					toastStore.success('수강권이 추가되었습니다.');
 					showFormModal = false;
 					await fetchPassTypes();
+				} else {
+					error = res.message || '추가에 실패했습니다.';
 				}
 			}
 		} catch (err) {
