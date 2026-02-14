@@ -39,8 +39,8 @@
 				} else {
 					members = res.data.list;
 				}
-				nextCursor = res.data.meta.next_cursor;
-				hasMore = res.data.meta.next_cursor !== null;
+				nextCursor = res.data.next_cursor;
+				hasMore = res.data.next_cursor !== null;
 			}
 		} catch {
 			// handle error
@@ -87,11 +87,11 @@
 					class="student-row"
 					role="button"
 					tabindex="0"
-					onclick={() => goto(`/admin/students/${member.id}`)}
+					onclick={() => goto(`/admin/students/${member.member_id}`)}
 					onkeydown={(e) => {
 						if (e.key === 'Enter' || e.key === ' ') {
 							e.preventDefault();
-							goto(`/admin/students/${member.id}`);
+							goto(`/admin/students/${member.member_id}`);
 						}
 					}}
 				>
@@ -100,8 +100,8 @@
 						<span class="student-row__phone">{formatPhone(member.user_phone)}</span>
 					</div>
 					<div class="student-row__stats">
-						{#if member.active_passes_count > 0}
-							<Badge variant="success">수강권 {member.active_passes_count}</Badge>
+						{#if member.active_passes > 0}
+							<Badge variant="success">수강권 {member.active_passes}</Badge>
 						{/if}
 					</div>
 				</div>

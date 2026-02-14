@@ -71,7 +71,7 @@
 
 		passesLoading = true;
 		try {
-			const res = await getMemberPasses(academyId, member.id);
+			const res = await getMemberPasses(academyId, member.member_id);
 			if (res.status && res.data) {
 				passes = res.data.passes;
 			}
@@ -96,7 +96,7 @@
 		creating = true;
 		try {
 			const res = await createWeeklyFeedback(academyId, {
-				member_id: selectedMember.id,
+				member_id: selectedMember.member_id,
 				member_pass_id: Number(selectedPassId),
 				feedback_date: feedbackDate,
 				lesson_content: lessonContent.trim(),
@@ -175,8 +175,8 @@
 									<span class="member-row__name">{member.user_name}</span>
 									<span class="member-row__phone">{formatPhone(member.user_phone)}</span>
 								</div>
-								{#if member.active_passes_count > 0}
-									<Badge variant="success">수강권 {member.active_passes_count}</Badge>
+								{#if member.active_passes > 0}
+									<Badge variant="success">수강권 {member.active_passes}</Badge>
 								{/if}
 							</div>
 							{#if i < members.length - 1}

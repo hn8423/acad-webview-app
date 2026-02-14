@@ -15,13 +15,10 @@ export interface PaginatedList<T> {
 	meta: PaginationMeta;
 }
 
-export interface CursorMeta {
-	next_cursor: number | null;
-}
-
 export interface CursorPaginatedList<T> {
 	list: T[];
-	meta: CursorMeta;
+	next_cursor: number | null;
+	has_more: boolean;
 }
 
 export class ApiError extends Error {

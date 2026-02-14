@@ -11,12 +11,13 @@ export interface Member {
 }
 
 export interface MemberListItem {
-	id: number;
+	member_id: number;
 	user_name: string;
 	user_phone: string;
-	member_nickname: string;
-	role: 'STUDENT' | 'INSTRUCTOR' | 'ADMIN';
-	active_passes_count: number;
+	member_role: 'STUDENT' | 'INSTRUCTOR' | 'ADMIN';
+	status: string;
+	active_passes: number;
+	remaining_drinks: number;
 	joined_at: string;
 }
 

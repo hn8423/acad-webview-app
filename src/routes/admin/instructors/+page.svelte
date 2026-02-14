@@ -89,8 +89,8 @@
 				} else {
 					memberList = res.data.list;
 				}
-				memberNextCursor = res.data.meta.next_cursor;
-				memberHasMore = res.data.meta.next_cursor !== null;
+				memberNextCursor = res.data.next_cursor;
+				memberHasMore = res.data.next_cursor !== null;
 			}
 		} catch {
 			error = '멤버 목록을 불러오는데 실패했습니다.';
@@ -143,7 +143,7 @@
 		try {
 			const trimmedIntro = introduction.trim();
 			const res = await createInstructor(academyId, {
-				member_id: selectedMember.id,
+				member_id: selectedMember.member_id,
 				specialties: specialties.trim(),
 				...(trimmedIntro ? { introduction: trimmedIntro } : {}),
 				is_admin: isAdmin ? 1 : 0
@@ -247,7 +247,7 @@
 								<span class="member-select__name">{member.user_name}</span>
 								<span class="member-select__phone">{formatPhone(member.user_phone)}</span>
 							</div>
-							<Badge variant="neutral">{member.role}</Badge>
+							<Badge variant="neutral">{member.member_role}</Badge>
 						</button>
 						{#if i < memberList.length - 1}
 							<div class="member-select__divider"></div>
