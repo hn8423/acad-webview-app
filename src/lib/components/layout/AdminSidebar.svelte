@@ -1,5 +1,7 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
+	import { authStore } from '$lib/stores/auth.svelte';
 	import { academyStore } from '$lib/stores/academy.svelte';
 
 	interface Props {
@@ -51,6 +53,13 @@
 		if (e.target === e.currentTarget) {
 			onclose();
 		}
+	}
+
+	async function handleLogout() {
+		await authStore.logout();
+		academyStore.clear();
+		onclose();
+		goto('/auth/login', { replaceState: true });
 	}
 </script>
 
@@ -122,6 +131,26 @@
 			</a>
 		{/each}
 	</nav>
+
+	<div class="sidebar__footer">
+		<button type="button" class="sidebar__logout" onclick={handleLogout}>
+			<svg
+				width="20"
+				height="20"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+			>
+				<path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+				<polyline points="16 17 21 12 16 7" />
+				<line x1="21" y1="12" x2="9" y2="12" />
+			</svg>
+			<span>로그아웃</span>
+		</button>
+	</div>
 </aside>
 
 <style lang="scss">
@@ -182,6 +211,36 @@
 			flex: 1;
 			padding: var(--space-sm) var(--space-md);
 			overflow-y: auto;
+		}
+
+		&__footer {
+			padding: var(--space-md) var(--space-md);
+			border-top: 1px solid var(--color-border);
+		}
+
+		&__logout {
+			display: flex;
+			align-items: center;
+			gap: var(--space-md);
+			width: 100%;
+			padding: 12px var(--space-lg);
+			border-radius: var(--radius-md);
+			background: none;
+			border: none;
+			cursor: pointer;
+			font-size: var(--font-size-base);
+			color: var(--color-danger);
+			transition:
+				background-color var(--transition-fast),
+				opacity var(--transition-fast);
+
+			&:hover {
+				background-color: var(--color-bg);
+			}
+
+			&:active {
+				opacity: 0.6;
+			}
 		}
 
 		&__item {
