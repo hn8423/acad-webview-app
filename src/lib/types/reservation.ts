@@ -10,7 +10,7 @@ export interface AvailableSlot {
 }
 
 export interface MyReservation {
-	id: number;
+	reservation_id: number;
 	instructor_name: string;
 	slot_date: string;
 	start_time: string;
@@ -26,10 +26,5 @@ export interface CreateReservationRequest {
 
 export interface CreateReservationResponse {
 	reservation_id: number;
-	slot_date: string;
-	start_time: string;
-	end_time: string;
-	instructor_name: string;
 	status: ReservationStatus;
-	remaining_lessons: number;
 }
