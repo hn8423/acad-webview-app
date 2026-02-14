@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { academyStore } from '$lib/stores/academy.svelte';
+	import { isRouteAllowed } from '$lib/config/admin-permissions';
 	import Card from '$lib/components/ui/Card.svelte';
 	import { goto } from '$app/navigation';
 </script>
@@ -8,7 +9,7 @@
 	<h1 class="admin-dashboard__title">대시보드</h1>
 
 	<div class="admin-dashboard__grid">
-		{#if academyStore.isAdmin}
+		{#if isRouteAllowed('/admin/notices', academyStore.memberRole)}
 			<Card onclick={() => goto('/admin/notices')}>
 				<div class="dashboard-card">
 					<div class="dashboard-card__icon">
@@ -28,7 +29,9 @@
 					<span class="dashboard-card__label">공지사항 관리</span>
 				</div>
 			</Card>
+		{/if}
 
+		{#if isRouteAllowed('/admin/students', academyStore.memberRole)}
 			<Card onclick={() => goto('/admin/students')}>
 				<div class="dashboard-card">
 					<div class="dashboard-card__icon">

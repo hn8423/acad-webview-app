@@ -5,8 +5,7 @@
 	import { page } from '$app/state';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { academyStore } from '$lib/stores/academy.svelte';
-
-	const ADMIN_ONLY_ROUTES = ['/admin/notices', '/admin/instructors', '/admin/students'];
+	import { isRouteAllowed } from '$lib/config/admin-permissions';
 
 	let { children } = $props();
 	let sidebarOpen = $state(false);
@@ -29,8 +28,8 @@
 
 	$effect(() => {
 		const pathname = page.url.pathname;
-		const isRestricted = ADMIN_ONLY_ROUTES.some((route) => pathname.startsWith(route));
-		if (isRestricted && !academyStore.isAdmin) {
+		if (pathname === '/admin' || pathname === '/admin/') return;
+		if (!isRouteAllowed(pathname, academyStore.memberRole)) {
 			goto('/admin', { replaceState: true });
 		}
 	});
