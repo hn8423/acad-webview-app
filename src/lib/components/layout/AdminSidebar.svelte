@@ -32,9 +32,9 @@
 		academyStore
 			.getEnabledNavItems('ADMIN')
 			.filter((item) => {
-				const route = MENU_ROUTE_MAP[item.sort_order];
+				const route = MENU_ROUTE_MAP[item.nav_position];
 				if (!route) return false;
-			return isRouteAllowed(route, academyStore.memberRole);
+				return isRouteAllowed(route, academyStore.memberRole);
 			})
 	);
 
@@ -109,7 +109,7 @@
 		</a>
 
 		{#each navItems as item}
-			{@const path = getMenuPath(item.sort_order)}
+			{@const path = getMenuPath(item.nav_position)}
 			<a
 				href={path}
 				class="sidebar__item"
@@ -126,9 +126,9 @@
 					stroke-linecap="round"
 					stroke-linejoin="round"
 				>
-					<path d={getIconPath(item.sort_order)} />
+					<path d={getIconPath(item.nav_position)} />
 				</svg>
-				<span>{item.nav_name}</span>
+				<span>{item.nav_label}</span>
 			</a>
 		{/each}
 	</nav>

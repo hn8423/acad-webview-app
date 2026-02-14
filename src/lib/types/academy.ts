@@ -13,19 +13,22 @@ export interface Academy {
 export interface NavFeature {
 	feature_id: number;
 	feature_key: string;
-	is_enabled: number;
+	feature_name: string;
+	is_enabled: boolean;
 }
 
 export interface NavItem {
 	nav_id: number;
-	nav_name: string;
+	nav_label: string;
 	nav_icon: string;
-	sort_order: number;
+	nav_position: number;
+	is_enabled: boolean;
 	features: NavFeature[];
 }
 
 export interface AppConfig {
-	nav_items: NavItem[];
+	app_type: string;
+	nav_list: NavItem[];
 }
 
 export interface Notice {

@@ -26,6 +26,7 @@
 	}
 
 	function getIconPath(icon: string): string {
+		if (!icon) return NAV_ICON_MAP['home'];
 		return NAV_ICON_MAP[icon] ?? NAV_ICON_MAP['home'];
 	}
 
@@ -40,7 +41,7 @@
 
 <nav class="bottom-nav">
 	{#each navItems as item}
-		{@const path = getNavPath(item.sort_order)}
+		{@const path = getNavPath(item.nav_position)}
 		<a href={path} class="bottom-nav__item" class:bottom-nav__item--active={isActive(path)}>
 			<svg
 				class="bottom-nav__icon"
@@ -55,7 +56,7 @@
 			>
 				<path d={getIconPath(item.nav_icon)} />
 			</svg>
-			<span class="bottom-nav__label">{item.nav_name}</span>
+			<span class="bottom-nav__label">{item.nav_label}</span>
 			{#if isActive(path)}
 				<span class="bottom-nav__indicator"></span>
 			{/if}

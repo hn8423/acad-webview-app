@@ -100,7 +100,7 @@ export function getAcademyStore() {
 	function getEnabledNavItems(appType: 'USER' | 'ADMIN'): NavItem[] {
 		const config = appType === 'USER' ? userAppConfig : adminAppConfig;
 		if (!config) return [];
-		return config.nav_items;
+		return config.nav_list.filter((item) => item.is_enabled);
 	}
 
 	function clear(): void {
