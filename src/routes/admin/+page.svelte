@@ -100,6 +100,30 @@
 				</div>
 			</Card>
 		{/if}
+
+		{#if isRouteAllowed('/admin/reservations', academyStore.memberRole)}
+			<Card onclick={() => goto('/admin/reservations')}>
+				<div class="dashboard-card">
+					<div class="dashboard-card__icon">
+						<svg
+							width="24"
+							height="24"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="var(--color-primary)"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path
+								d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+							/>
+						</svg>
+					</div>
+					<span class="dashboard-card__label">예약 관리</span>
+				</div>
+			</Card>
+		{/if}
 	</div>
 </div>
 
