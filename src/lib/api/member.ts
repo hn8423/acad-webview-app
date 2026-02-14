@@ -149,9 +149,9 @@ export function getMyDrinkTickets(academyId: number) {
 	);
 }
 
-export function getMemberDrinkTickets(academyId: number, memberId: number) {
-	return get<ApiResponse<{ drink_tickets: DrinkTicket[] }>>(
-		`/academic/academies/${academyId}/members/${memberId}/drink-tickets`
+export function getMemberDrinkTickets(academyId: number) {
+	return get<ApiResponse<DrinkTicket[]>>(
+		`/academic/academies/${academyId}/members/me/drink-tickets`
 	);
 }
 
