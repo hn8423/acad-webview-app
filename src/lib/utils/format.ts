@@ -75,3 +75,23 @@ export function getDayOfWeek(dateStr: string): string {
 	const date = new Date(year, month - 1, day);
 	return days[date.getDay()];
 }
+
+export function getDaysInMonth(year: number, month: number): number {
+	return new Date(year, month, 0).getDate();
+}
+
+export function getFirstDayOfMonth(year: number, month: number): number {
+	return new Date(year, month - 1, 1).getDay();
+}
+
+export function formatMonth(year: number, month: number): string {
+	return `${year}년 ${String(month).padStart(2, '0')}월`;
+}
+
+export function getTodayString(): string {
+	const today = new Date();
+	const y = today.getFullYear();
+	const m = String(today.getMonth() + 1).padStart(2, '0');
+	const d = String(today.getDate()).padStart(2, '0');
+	return `${y}-${m}-${d}`;
+}
