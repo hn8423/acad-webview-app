@@ -48,7 +48,8 @@
 				passTypes = typesRes.value.data.pass_types;
 			}
 			if (instrRes.status === 'fulfilled' && instrRes.value.status) {
-				instructors = instrRes.value.data.instructors;
+				const data = instrRes.value.data;
+				instructors = Array.isArray(data) ? data : (data.instructors ?? []);
 			}
 		} catch {
 			// handle error
