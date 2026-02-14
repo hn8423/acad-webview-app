@@ -38,7 +38,7 @@
 		try {
 			const res = await getCategories(academyId);
 			if (res.status && res.data) {
-				categories = res.data.categories.sort((a, b) => a.sort_order - b.sort_order);
+				categories = [...res.data].sort((a, b) => a.sort_order - b.sort_order);
 			}
 		} catch {
 			// handled by client.ts

@@ -54,7 +54,7 @@
 
 	const feedbackId = $derived(Number(page.params.id));
 
-	const isWeekly = $derived(feedback?.type === 'WEEKLY');
+	const isWeekly = $derived(feedback?.feedback_type === 'WEEKLY');
 	const weekly = $derived(feedback as WeeklyFeedbackDetail | null);
 	const monthly = $derived(feedback as MonthlyFeedbackDetail | null);
 
@@ -124,7 +124,7 @@
 		try {
 			const catRes = await getCategories(academyId);
 			if (catRes.status && catRes.data) {
-				categories = catRes.data.categories.sort((a, b) => a.sort_order - b.sort_order);
+				categories = [...catRes.data].sort((a, b) => a.sort_order - b.sort_order);
 			}
 		} catch {
 			// handled by client.ts
@@ -273,8 +273,8 @@
 							{#if monthly.member_music_info.genre}
 								<p>장르: {monthly.member_music_info.genre}</p>
 							{/if}
-							{#if monthly.member_music_info.instrument}
-								<p>악기: {monthly.member_music_info.instrument}</p>
+							{#if monthly.member_music_info.favorite_artist}
+								<p>좋아하는 아티스트: {monthly.member_music_info.favorite_artist}</p>
 							{/if}
 							{#if monthly.member_music_info.experience_years}
 								<p>경력: {monthly.member_music_info.experience_years}년</p>
@@ -286,16 +286,16 @@
 				{#if monthly.curriculum_direction}
 					<div class="detail-card">
 						<h3 class="detail-card__title">커리큘럼 방향</h3>
-						{#if monthly.curriculum_direction.next_month}
+						{#if monthly.curriculum_direction.direction}
 							<div class="detail-card__section">
-								<p class="detail-card__subtitle">다음 달 계획</p>
-								<p class="detail-card__body">{monthly.curriculum_direction.next_month}</p>
+								<p class="detail-card__subtitle">커리큘럼 방향</p>
+								<p class="detail-card__body">{monthly.curriculum_direction.direction}</p>
 							</div>
 						{/if}
-						{#if monthly.curriculum_direction.long_term}
+						{#if monthly.curriculum_direction.focus}
 							<div class="detail-card__section">
-								<p class="detail-card__subtitle">장기 계획</p>
-								<p class="detail-card__body">{monthly.curriculum_direction.long_term}</p>
+								<p class="detail-card__subtitle">중점 사항</p>
+								<p class="detail-card__body">{monthly.curriculum_direction.focus}</p>
 							</div>
 						{/if}
 					</div>

@@ -18,7 +18,7 @@
 	let loading = $state(true);
 
 	const feedbackId = $derived(Number(page.params.id));
-	const isWeekly = $derived(feedback?.type === 'WEEKLY');
+	const isWeekly = $derived(feedback?.feedback_type === 'WEEKLY');
 	const weekly = $derived(feedback as WeeklyFeedbackDetail | null);
 	const monthly = $derived(feedback as MonthlyFeedbackDetail | null);
 
@@ -114,16 +114,16 @@
 				{#if monthly.curriculum_direction}
 					<div class="detail-card">
 						<h3 class="detail-card__title">커리큘럼 방향</h3>
-						{#if monthly.curriculum_direction.next_month}
+						{#if monthly.curriculum_direction.direction}
 							<div class="detail-card__section">
-								<p class="detail-card__subtitle">다음 달 목표</p>
-								<p class="detail-card__body">{monthly.curriculum_direction.next_month}</p>
+								<p class="detail-card__subtitle">커리큘럼 방향</p>
+								<p class="detail-card__body">{monthly.curriculum_direction.direction}</p>
 							</div>
 						{/if}
-						{#if monthly.curriculum_direction.long_term}
+						{#if monthly.curriculum_direction.focus}
 							<div class="detail-card__section">
-								<p class="detail-card__subtitle">장기 방향</p>
-								<p class="detail-card__body">{monthly.curriculum_direction.long_term}</p>
+								<p class="detail-card__subtitle">중점 사항</p>
+								<p class="detail-card__body">{monthly.curriculum_direction.focus}</p>
 							</div>
 						{/if}
 					</div>

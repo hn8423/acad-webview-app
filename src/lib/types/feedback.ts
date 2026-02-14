@@ -1,7 +1,8 @@
 export interface FeedbackLevel {
-	level: number;
-	name: string;
-	description: string;
+	score: number;
+	level: string;
+	label: string;
+	group: string;
 }
 
 export interface FeedbackCategory {
@@ -25,17 +26,18 @@ export type FeedbackType = 'WEEKLY' | 'MONTHLY';
 
 export interface FeedbackListItem {
 	id: number;
-	type: FeedbackType;
+	feedback_type: FeedbackType;
 	feedback_date: string;
 	instructor_name: string;
 	member_name?: string;
-	lesson_content: string;
+	lesson_content?: string;
+	has_video: boolean;
 	created_at: string;
 }
 
 export interface WeeklyFeedbackDetail {
 	id: number;
-	type: 'WEEKLY';
+	feedback_type: 'WEEKLY';
 	feedback_date: string;
 	instructor_name: string;
 	member_name: string;
@@ -57,21 +59,22 @@ export interface SkillDetail {
 
 export interface MusicInfo {
 	genre?: string;
-	instrument?: string;
+	favorite_artist?: string;
 	experience_years?: number;
 }
 
 export interface CurriculumDirection {
-	next_month: string;
-	long_term: string;
+	direction: string;
+	focus: string;
 }
 
 export interface MonthlyFeedbackDetail {
 	id: number;
-	type: 'MONTHLY';
+	feedback_type: 'MONTHLY';
 	feedback_date: string;
 	instructor_name: string;
 	member_name: string;
+	overall_level?: string;
 	member_music_info?: MusicInfo;
 	skill_details: SkillDetail[];
 	curriculum_direction?: CurriculumDirection;
