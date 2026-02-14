@@ -27,6 +27,7 @@
 	});
 
 	$effect(() => {
+		if (!authStore.isAuthenticated) return;
 		const pathname = page.url.pathname;
 		if (pathname === '/admin' || pathname === '/admin/') return;
 		if (!isRouteAllowed(pathname, academyStore.memberRole)) {
