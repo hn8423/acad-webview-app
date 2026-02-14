@@ -75,20 +75,30 @@ export function getAcademyStore() {
 			}
 		}
 
-		await loadAppConfig(academyId);
+		await loadAppConfig(academyId, role);
 	}
 
-	async function loadAppConfig(academyId: number): Promise<void> {
-		const [userRes, adminRes] = await Promise.allSettled([
-			academyApi.getAppConfig(academyId, 'USER'),
-			academyApi.getAppConfig(academyId, 'ADMIN')
-		]);
-
-		if (userRes.status === 'fulfilled' && userRes.value.status) {
-			userAppConfig = userRes.value.data;
-		}
-		if (adminRes.status === 'fulfilled' && adminRes.value.status) {
-			adminAppConfig = adminRes.value.data;
+	async function loadAppConfig(academyId: number, role: MemberRole): Promise<void> {
+		if (role === 'STUDENT') {
+			try {
+				const res = await academyApi.getAppConfig(academyId, 'USER');
+				if (res.status) {
+					userAppConfig = res.data;
+				}
+			} catch {
+				// USER config 로드 실패, 빈 상태 유지
+			}
+			adminAppConfig = null;
+		} else {
+			try {
+				const res = await academyApi.getAppConfig(academyId, 'ADMIN');
+				if (res.status) {
+					adminAppConfig = res.data;
+				}
+			} catch {
+				// ADMIN config 로드 실패, 빈 상태 유지
+			}
+			userAppConfig = null;
 		}
 
 		setJson(APP_CONFIG_STORAGE_KEY, {
