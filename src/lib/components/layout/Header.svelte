@@ -4,9 +4,10 @@
 	interface Props {
 		onMenuClick?: () => void;
 		onNotificationClick?: () => void;
+		onTitleClick?: () => void;
 	}
 
-	let { onMenuClick, onNotificationClick }: Props = $props();
+	let { onMenuClick, onNotificationClick, onTitleClick }: Props = $props();
 </script>
 
 <header class="header">
@@ -25,7 +26,13 @@
 				</svg>
 			</button>
 		{/if}
-		<h1 class="header__title">{academyStore.academy?.academy_name ?? ''}</h1>
+		{#if onTitleClick}
+			<button class="header__title-btn" onclick={onTitleClick}>
+				<h1 class="header__title">{academyStore.academy?.academy_name ?? ''}</h1>
+			</button>
+		{:else}
+			<h1 class="header__title">{academyStore.academy?.academy_name ?? ''}</h1>
+		{/if}
 	</div>
 
 	<div class="header__right">
@@ -79,6 +86,12 @@
 		font-size: var(--font-size-lg);
 		font-weight: var(--font-weight-bold);
 		letter-spacing: var(--letter-spacing-tight);
+	}
+
+	.header__title-btn {
+		display: flex;
+		align-items: center;
+		cursor: pointer;
 	}
 
 	.header__icon-btn {
