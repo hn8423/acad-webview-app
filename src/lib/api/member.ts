@@ -86,7 +86,7 @@ export function getInstructorStats(
 
 // Pass Types
 export function getPassTypes(academyId: number) {
-	return get<ApiResponse<{ pass_types: PassType[] }>>(
+	return get<ApiResponse<PassType[] | { pass_types: PassType[] }>>(
 		`/academic/academies/${academyId}/pass-types`
 	);
 }
