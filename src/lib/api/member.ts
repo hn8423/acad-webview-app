@@ -118,7 +118,7 @@ export function getMyPasses(academyId: number) {
 }
 
 export function getMemberPasses(academyId: number, memberId: number) {
-	return get<ApiResponse<{ passes: MemberPass[] }>>(
+	return get<ApiResponse<MemberPass[]>>(
 		`/academic/academies/${academyId}/members/${memberId}/passes`
 	);
 }

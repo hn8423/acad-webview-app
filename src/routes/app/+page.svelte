@@ -49,8 +49,10 @@
 		switch (status) {
 			case 'ACTIVE':
 				return 'success' as const;
-			case 'PAUSED':
+			case 'HOLDING':
 				return 'warning' as const;
+			case 'USED_UP':
+				return 'info' as const;
 			case 'EXPIRED':
 				return 'neutral' as const;
 			default:
@@ -62,8 +64,10 @@
 		switch (status) {
 			case 'ACTIVE':
 				return '이용중';
-			case 'PAUSED':
+			case 'HOLDING':
 				return '홀딩';
+			case 'USED_UP':
+				return '소진';
 			case 'EXPIRED':
 				return '만료';
 			default:

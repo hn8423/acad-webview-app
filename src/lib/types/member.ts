@@ -50,7 +50,7 @@ export interface MemberPass {
 	end_date: string;
 	total_lessons: number;
 	remaining_lessons: number;
-	status: 'ACTIVE' | 'EXPIRED' | 'PAUSED';
+	status: 'ACTIVE' | 'EXPIRED' | 'HOLDING' | 'USED_UP';
 }
 
 export interface CreatePassRequest {
@@ -65,7 +65,7 @@ export interface UpdatePassRequest {
 	end_date?: string;
 	total_lessons?: number;
 	remaining_lessons?: number;
-	status?: 'ACTIVE' | 'EXPIRED' | 'PAUSED';
+	status?: 'ACTIVE' | 'EXPIRED' | 'HOLDING' | 'USED_UP';
 }
 
 export interface DrinkTicket {
