@@ -45,7 +45,7 @@
 </script>
 
 <div class="admin-layout">
-	<Header onMenuClick={handleMenuClick} />
+	<Header onMenuClick={handleMenuClick} onTitleClick={() => goto('/admin')} />
 	<AdminSidebar bind:isOpen={sidebarOpen} onclose={handleSidebarClose} />
 	<main class="admin-layout__content">
 		{@render children()}
