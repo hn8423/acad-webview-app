@@ -47,7 +47,7 @@ export function getMyMembership(academyId: number) {
 
 // Instructors
 export function getInstructors(academyId: number) {
-	return get<ApiResponse<{ instructors: Instructor[] }>>(
+	return get<ApiResponse<Instructor[] | { instructors: Instructor[] }>>(
 		`/academic/academies/${academyId}/instructors`
 	);
 }

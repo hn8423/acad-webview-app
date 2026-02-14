@@ -46,7 +46,8 @@
 		try {
 			const res = await getInstructors(academyId);
 			if (res.status && res.data) {
-				instructors = res.data.instructors;
+				const data = res.data;
+				instructors = Array.isArray(data) ? data : (data.instructors ?? []);
 			}
 		} catch {
 			fetchError = '강사 목록을 불러오는데 실패했습니다.';
