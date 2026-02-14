@@ -1,13 +1,17 @@
+export interface BusinessType {
+	id: number;
+	type_key: string;
+	type_name: string;
+}
+
 export interface Academy {
 	id: number;
 	academy_name: string;
-	business_type: string;
-	address: string;
-	phone: string;
-	logo_url: string;
-	member_count: number;
-	description?: string;
-	created_at?: string;
+	academy_address: string;
+	academy_phone: string;
+	academy_logo_img: string;
+	business_type: BusinessType;
+	status: string;
 }
 
 export interface NavFeature {

@@ -244,8 +244,8 @@
 
 			<div class="join-step__academy">
 				<div class="academy-card__logo">
-					{#if selectedAcademy.logo_url}
-						<img src={selectedAcademy.logo_url} alt={selectedAcademy.academy_name} />
+					{#if selectedAcademy.academy_logo_img}
+						<img src={selectedAcademy.academy_logo_img} alt={selectedAcademy.academy_name} />
 					{:else}
 						<div class="academy-card__logo-placeholder">
 							{selectedAcademy.academy_name.charAt(0)}
@@ -254,8 +254,8 @@
 				</div>
 				<div class="join-step__academy-info">
 					<h3 class="join-step__academy-name">{selectedAcademy.academy_name}</h3>
-					{#if selectedAcademy.address}
-						<p class="join-step__academy-address">{selectedAcademy.address}</p>
+					{#if selectedAcademy.academy_address}
+						<p class="join-step__academy-address">{selectedAcademy.academy_address}</p>
 					{/if}
 				</div>
 			</div>
@@ -291,8 +291,8 @@
 						<Card onclick={() => selectAcademyToJoin(academy)}>
 							<div class="academy-card">
 								<div class="academy-card__logo academy-card__logo--sm">
-									{#if academy.logo_url}
-										<img src={academy.logo_url} alt={academy.academy_name} />
+									{#if academy.academy_logo_img}
+										<img src={academy.academy_logo_img} alt={academy.academy_name} />
 									{:else}
 										<div class="academy-card__logo-placeholder">
 											{academy.academy_name.charAt(0)}
@@ -301,8 +301,8 @@
 								</div>
 								<div class="academy-card__info">
 									<h3 class="academy-card__name">{academy.academy_name}</h3>
-									{#if academy.address}
-										<span class="academy-card__address">{academy.address}</span>
+									{#if academy.academy_address}
+										<span class="academy-card__address">{academy.academy_address}</span>
 									{/if}
 								</div>
 								<svg
