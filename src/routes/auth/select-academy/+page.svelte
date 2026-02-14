@@ -68,9 +68,9 @@
 
 	async function selectAcademy(academy: UserAcademy) {
 		try {
-			await academyStore.selectAcademy(academy.academy_id, academy.role);
+			await academyStore.selectAcademy(academy.academy_id, academy.member_role, academy.member_id);
 
-			const role = academy.role;
+			const role = academy.member_role;
 			if (role === 'ADMIN' || role === 'INSTRUCTOR') {
 				goto('/admin', { replaceState: true });
 			} else {
@@ -185,7 +185,7 @@
 						</div>
 						<div class="academy-card__info">
 							<h3 class="academy-card__name">{academy.academy_name}</h3>
-							<span class="academy-card__role">{getRoleBadge(academy.role)}</span>
+							<span class="academy-card__role">{getRoleBadge(academy.member_role)}</span>
 						</div>
 						<svg
 							class="academy-card__arrow"
