@@ -12,6 +12,7 @@
 	import Input from '$lib/components/ui/Input.svelte';
 	import Modal from '$lib/components/ui/Modal.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
+	import InstructorStatsModal from '$lib/components/instructor/InstructorStatsModal.svelte';
 	import type { Instructor, MemberListItem } from '$lib/types/member';
 	import { formatPhone } from '$lib/utils/format';
 	import { onMount } from 'svelte';
@@ -22,6 +23,10 @@
 	let showCreateModal = $state(false);
 	let creating = $state(false);
 	let error = $state('');
+
+	// Stats modal state
+	let showStatsModal = $state(false);
+	let statsInstructor = $state<{ id: number; name: string } | null>(null);
 
 	// Edit modal state
 	let showEditModal = $state(false);
@@ -146,6 +151,12 @@
 		return instructor.instructor_id ?? instructor.id ?? 0;
 	}
 
+	function openStatsModal(event: Event, instructor: Instructor) {
+		event.stopPropagation();
+		statsInstructor = { id: getInstructorId(instructor), name: instructor.user_name };
+		showStatsModal = true;
+	}
+
 	async function openEditModal(instructor: Instructor) {
 		const academyId = academyStore.academyId;
 		if (!academyId) return;
@@ -258,46 +269,70 @@
 	{:else}
 		<div class="instructor-list">
 			{#each instructors as instructor, i}
-				<button
-					type="button"
-					class="instructor-row"
-					onclick={() => openEditModal(instructor)}
-					aria-label="{instructor.user_name} 강사 정보 수정"
-				>
-					<div class="instructor-row__avatar">
-						{#if instructor.profile_img}
-							<img
-								src={instructor.profile_img}
-								alt={instructor.user_name}
-								class="instructor-row__avatar-img"
-							/>
-						{:else}
-							<svg
-								width="24"
-								height="24"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="1.5"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-							>
-								<path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-							</svg>
-						{/if}
-					</div>
-					<div class="instructor-row__info">
-						<div class="instructor-row__top">
-							<h3 class="instructor-row__name">{instructor.user_name}</h3>
-							{#if instructor.specialties}
-								<Badge variant="info">{instructor.specialties}</Badge>
+				<div class="instructor-row-wrapper">
+					<button
+						type="button"
+						class="instructor-row"
+						onclick={() => openEditModal(instructor)}
+						aria-label="{instructor.user_name} 강사 정보 수정"
+					>
+						<div class="instructor-row__avatar">
+							{#if instructor.profile_img}
+								<img
+									src={instructor.profile_img}
+									alt={instructor.user_name}
+									class="instructor-row__avatar-img"
+								/>
+							{:else}
+								<svg
+									width="24"
+									height="24"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="1.5"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+								>
+									<path
+										d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+									/>
+								</svg>
 							{/if}
 						</div>
-						{#if instructor.introduction}
-							<p class="instructor-row__intro">{instructor.introduction}</p>
-						{/if}
-					</div>
-				</button>
+						<div class="instructor-row__info">
+							<div class="instructor-row__top">
+								<h3 class="instructor-row__name">{instructor.user_name}</h3>
+								{#if instructor.specialties}
+									<Badge variant="info">{instructor.specialties}</Badge>
+								{/if}
+							</div>
+							{#if instructor.introduction}
+								<p class="instructor-row__intro">{instructor.introduction}</p>
+							{/if}
+						</div>
+					</button>
+					<button
+						type="button"
+						class="instructor-row__stats-btn"
+						onclick={(e) => openStatsModal(e, instructor)}
+						aria-label="{instructor.user_name} 강사 통계 보기"
+					>
+						<svg
+							width="18"
+							height="18"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path d="M18 20V10M12 20V4M6 20v-6" />
+						</svg>
+						<span>통계</span>
+					</button>
+				</div>
 				{#if i < instructors.length - 1}
 					<div class="instructor-list__divider"></div>
 				{/if}
@@ -503,6 +538,12 @@
 	{/if}
 </Modal>
 
+<InstructorStatsModal
+	isOpen={showStatsModal}
+	instructor={statsInstructor}
+	onclose={() => (showStatsModal = false)}
+/>
+
 <style lang="scss">
 	.admin-instructors {
 		&__header {
@@ -552,12 +593,19 @@
 		background-color: var(--color-divider);
 	}
 
+	.instructor-row-wrapper {
+		display: flex;
+		align-items: center;
+		gap: var(--space-sm);
+		padding: var(--space-md) 0;
+	}
+
 	.instructor-row {
 		display: flex;
 		align-items: flex-start;
 		gap: var(--space-md);
-		padding: var(--space-md) 0;
-		width: 100%;
+		flex: 1;
+		min-width: 0;
 		text-align: left;
 		cursor: pointer;
 		transition: background-color var(--transition-fast);
@@ -612,6 +660,28 @@
 			line-clamp: 2;
 			-webkit-box-orient: vertical;
 			overflow: hidden;
+		}
+
+		&__stats-btn {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			gap: 2px;
+			padding: var(--space-xs) var(--space-sm);
+			border-radius: var(--radius-md);
+			color: var(--color-primary);
+			font-size: var(--font-size-xs);
+			font-weight: var(--font-weight-medium);
+			cursor: pointer;
+			transition:
+				background-color var(--transition-fast),
+				transform var(--transition-fast);
+			flex-shrink: 0;
+
+			&:active {
+				background-color: var(--color-primary-bg);
+				transform: scale(0.95);
+			}
 		}
 	}
 
