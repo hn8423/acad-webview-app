@@ -110,12 +110,14 @@ export interface UpdateInstructorRequest {
 }
 
 export interface InstructorStats {
+	instructor_name: string;
+	year: number;
+	month: number;
 	total_lessons: number;
 	completed_lessons: number;
 	cancelled_lessons: number;
-	no_show_lessons: number;
-	student_count: number;
-	reservation_rate: number;
+	no_show_count: number;
+	total_students: number;
 }
 
 export interface CreatePassTypeRequest {
