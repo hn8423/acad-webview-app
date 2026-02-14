@@ -45,14 +45,6 @@
 
 	let totalDrinks = $derived(drinkTickets.reduce((sum, t) => sum + t.remaining_count, 0));
 
-	let calendarEnabled = $derived.by(() => {
-		const config = academyStore.userAppConfig;
-		if (!config) return false;
-		return config.nav_list.some((nav) =>
-			nav.features.some((f) => f.feature_key === 'CALENDER' && f.is_enabled)
-		);
-	});
-
 	function getPassStatusVariant(status: string) {
 		switch (status) {
 			case 'ACTIVE':
@@ -159,7 +151,7 @@
 		</section>
 
 		<!-- 캘린더 조회 -->
-		{#if calendarEnabled && academyStore.academyId}
+		{#if academyStore.academyId}
 			<section class="main-page__section">
 				<CalendarSection academyId={academyStore.academyId} />
 			</section>

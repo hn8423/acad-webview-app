@@ -61,5 +61,5 @@ export interface CalendarEvent {
 	end_time: string | null;
 	description: string;
 	color: string;
-	is_all_day: number;
+	is_all_day: boolean;
 }
