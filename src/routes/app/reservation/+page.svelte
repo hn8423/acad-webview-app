@@ -91,7 +91,7 @@
 		try {
 			const res = await getMyPasses(academyId);
 			if (res.status && res.data) {
-				memberPasses = res.data.passes;
+				memberPasses = res.data;
 			}
 		} catch {
 			// handled by client.ts

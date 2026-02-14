@@ -112,7 +112,7 @@ export function deletePassType(academyId: number, passTypeId: number) {
 
 // Member Passes
 export function getMyPasses(academyId: number) {
-	return get<ApiResponse<{ passes: MemberPass[] }>>(
+	return get<ApiResponse<MemberPass[]>>(
 		`/academic/academies/${academyId}/members/me/passes`
 	);
 }
@@ -144,7 +144,7 @@ export function updateMemberPass(
 
 // Drink Tickets
 export function getMyDrinkTickets(academyId: number) {
-	return get<ApiResponse<{ drink_tickets: DrinkTicket[] }>>(
+	return get<ApiResponse<DrinkTicket[]>>(
 		`/academic/academies/${academyId}/members/me/drink-tickets`
 	);
 }

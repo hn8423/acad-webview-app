@@ -60,7 +60,7 @@ export function getNoticeDetail(academyId: number, noticeId: number) {
 }
 
 export function getRecentNotices(academyId: number) {
-	return get<ApiResponse<{ notices: Notice[] }>>(
+	return get<ApiResponse<Notice[]>>(
 		`/academic/academies/${academyId}/notices/recent`
 	);
 }
