@@ -216,6 +216,9 @@
 
 	<div class="passes-page__content">
 		<div class="passes-page__header">
+			<button class="passes-page__link" onclick={() => goto('/admin/pass-types')}>
+				수강권 종류 관리
+			</button>
 			<Button size="sm" onclick={openCreateModal}>수강권 부여</Button>
 		</div>
 
@@ -232,9 +235,7 @@
 						<div class="pass-item">
 							<div class="pass-item__header">
 								<span class="pass-item__name">{pass.pass_name}</span>
-								<Badge variant={getStatusVariant(pass.status)}
-									>{getStatusLabel(pass.status)}</Badge
-								>
+								<Badge variant={getStatusVariant(pass.status)}>{getStatusLabel(pass.status)}</Badge>
 							</div>
 							<div class="pass-item__progress">
 								<div class="pass-item__progress-bar">
@@ -344,8 +345,20 @@
 
 		&__header {
 			display: flex;
-			justify-content: flex-end;
+			align-items: center;
+			justify-content: space-between;
 			margin-bottom: var(--space-md);
+		}
+
+		&__link {
+			font-size: var(--font-size-sm);
+			color: var(--color-primary);
+			text-decoration: underline;
+			transition: opacity var(--transition-fast);
+
+			&:active {
+				opacity: 0.6;
+			}
 		}
 
 		&__loading {
