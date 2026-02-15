@@ -1,4 +1,4 @@
-export type EnsembleStatus = 'RECRUITING' | 'CLOSED' | 'COMPLETED';
+export type EnsembleStatus = 'RECRUITING' | 'FULL' | 'CANCELLED';
 
 export type EnsembleMemberStatus = 'LEADER' | 'MEMBER' | 'PENDING';
 
@@ -6,12 +6,14 @@ export interface EnsembleListItem {
 	id: number;
 	group_name: string;
 	description: string;
-	leader_name: string;
+	creator_name: string;
 	max_members: number;
 	current_members: number;
 	practice_date: string | null;
 	practice_time: string | null;
 	status: EnsembleStatus;
+	comment_count: number;
+	created_at: string;
 }
 
 export interface MyEnsembleListItem {
@@ -29,18 +31,16 @@ export interface EnsembleMember {
 	member_id: number;
 	user_name: string;
 	role: string;
-	status: string;
-	joined_at: string;
+	member_status: EnsembleMemberStatus;
 }
 
 export interface EnsembleDetail {
 	id: number;
 	group_name: string;
 	description: string;
-	leader: {
+	creator: {
 		member_id: number;
 		user_name: string;
-		role: string;
 	};
 	max_members: number;
 	practice_date: string | null;
@@ -56,6 +56,15 @@ export interface EnsembleComment {
 	user_name: string;
 	profile_img: string;
 	content: string;
+	created_at: string;
+}
+
+export interface EnsembleMessage {
+	id: number;
+	sender_member_id: number;
+	sender_name: string;
+	message: string;
+	message_type: string;
 	created_at: string;
 }
 
