@@ -297,7 +297,7 @@
 				<select id="instructor" class="create-form__select" bind:value={selectedInstructorId}>
 					<option value="">선택하세요</option>
 					{#each instructors as instr}
-						<option value={instr.id}>{instr.user_name} ({instr.specialties})</option>
+						<option value={instr.instructor_id ?? instr.id}>{instr.user_name} ({instr.specialties})</option>
 					{/each}
 				</select>
 			</div>
