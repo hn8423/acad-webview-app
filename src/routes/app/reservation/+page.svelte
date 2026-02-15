@@ -13,6 +13,7 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import BottomSheet from '$lib/components/ui/BottomSheet.svelte';
+	import PassSummary from '$lib/components/reservation/PassSummary.svelte';
 	import { formatDate, formatTime, formatTimeRange, getDayOfWeek } from '$lib/utils/format';
 	import type { AvailableSlot, MyReservation, ReservationStatus } from '$lib/types/reservation';
 	import type { MemberPass } from '$lib/types/member';
@@ -32,6 +33,7 @@
 
 	// Shared state
 	let memberPasses = $state<MemberPass[]>([]);
+	let passesLoading = $state(true);
 
 	// Booking sheet state
 	let bookingSheetOpen = $state(false);
@@ -88,6 +90,7 @@
 		const academyId = academyStore.academyId;
 		if (!academyId) return;
 
+		passesLoading = true;
 		try {
 			const res = await getMyPasses(academyId);
 			if (res.status && res.data) {
@@ -95,6 +98,8 @@
 			}
 		} catch {
 			// handled by client.ts
+		} finally {
+			passesLoading = false;
 		}
 	}
 
@@ -266,6 +271,8 @@
 				</button>
 			{/each}
 		</div>
+
+		<PassSummary passes={memberPasses} loading={passesLoading} />
 
 		<div class="slots-content">
 			{#if slotsLoading}

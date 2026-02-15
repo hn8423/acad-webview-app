@@ -6,6 +6,7 @@
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import CalendarSection from '$lib/components/ui/CalendarSection.svelte';
 	import { formatDate } from '$lib/utils/format';
+	import { getPassStatusVariant, getPassStatusLabel } from '$lib/utils/pass';
 	import type { MemberPass, DrinkTicket } from '$lib/types/member';
 	import type { Notice } from '$lib/types/academy';
 	import { onMount } from 'svelte';
@@ -44,36 +45,6 @@
 	});
 
 	let totalDrinks = $derived(drinkTickets.reduce((sum, t) => sum + t.remaining_count, 0));
-
-	function getPassStatusVariant(status: string) {
-		switch (status) {
-			case 'ACTIVE':
-				return 'success' as const;
-			case 'HOLDING':
-				return 'warning' as const;
-			case 'USED_UP':
-				return 'info' as const;
-			case 'EXPIRED':
-				return 'neutral' as const;
-			default:
-				return 'neutral' as const;
-		}
-	}
-
-	function getPassStatusLabel(status: string): string {
-		switch (status) {
-			case 'ACTIVE':
-				return '이용중';
-			case 'HOLDING':
-				return '홀딩';
-			case 'USED_UP':
-				return '소진';
-			case 'EXPIRED':
-				return '만료';
-			default:
-				return status;
-		}
-	}
 </script>
 
 <div class="main-page">
