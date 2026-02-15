@@ -5,6 +5,7 @@ import type {
 	MyEnsembleListItem,
 	EnsembleDetail,
 	EnsembleComment,
+	EnsembleMessage,
 	EnsembleStatus,
 	CreateEnsembleRequest,
 	ApplyEnsembleRequest,
@@ -25,7 +26,7 @@ export function getEnsembles(academyId: number, status?: EnsembleStatus, page = 
 }
 
 export function getMyEnsembles(academyId: number) {
-	return get<ApiResponse<{ ensembles: MyEnsembleListItem[] }>>(`${base(academyId)}/me`);
+	return get<ApiResponse<MyEnsembleListItem[]>>(`${base(academyId)}/me`);
 }
 
 export function getEnsembleDetail(academyId: number, groupId: number) {
@@ -73,7 +74,7 @@ export function leaveEnsemble(academyId: number, groupId: number) {
 }
 
 export function getComments(academyId: number, groupId: number) {
-	return get<ApiResponse<{ comments: EnsembleComment[] }>>(
+	return get<ApiResponse<EnsembleComment[]>>(
 		`${base(academyId)}/${groupId}/comments`
 	);
 }
@@ -84,4 +85,11 @@ export function createComment(academyId: number, groupId: number, data: CreateCo
 
 export function deleteComment(academyId: number, groupId: number, commentId: number) {
 	return del<ApiResponse<null>>(`${base(academyId)}/${groupId}/comments/${commentId}`);
+}
+
+export function getMessages(academyId: number, groupId: number, page = 1, limit = 50) {
+	const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+	return get<ApiResponse<PaginatedList<EnsembleMessage>>>(
+		`${base(academyId)}/${groupId}/messages?${params}`
+	);
 }

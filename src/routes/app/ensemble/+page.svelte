@@ -41,7 +41,7 @@
 			} else {
 				const res = await getMyEnsembles(academyId);
 				if (res.status && res.data) {
-					myList = res.data.ensembles;
+					myList = res.data;
 				}
 			}
 		} catch {
@@ -84,10 +84,10 @@
 		switch (status) {
 			case 'RECRUITING':
 				return '모집중';
-			case 'CLOSED':
+			case 'FULL':
 				return '마감';
-			case 'COMPLETED':
-				return '완료';
+			case 'CANCELLED':
+				return '취소';
 			default:
 				return status;
 		}
@@ -97,10 +97,10 @@
 		switch (status) {
 			case 'RECRUITING':
 				return 'success' as const;
-			case 'CLOSED':
+			case 'FULL':
 				return 'warning' as const;
-			case 'COMPLETED':
-				return 'info' as const;
+			case 'CANCELLED':
+				return 'neutral' as const;
 			default:
 				return 'neutral' as const;
 		}
@@ -162,7 +162,7 @@
 						{/if}
 						<div class="ensemble-card__footer">
 							<div class="ensemble-card__meta">
-								<span class="ensemble-card__creator">{ensemble.leader_name}</span>
+								<span class="ensemble-card__creator">{ensemble.creator_name}</span>
 								<span class="ensemble-card__dot"></span>
 								<span>{ensemble.current_members}/{ensemble.max_members}명</span>
 							</div>
