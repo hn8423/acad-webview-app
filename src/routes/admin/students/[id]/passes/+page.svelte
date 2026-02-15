@@ -115,10 +115,8 @@
 		showFormModal = true;
 	}
 
-	function handlePassTypeChange(e: Event) {
-		const target = e.target as HTMLSelectElement;
-		selectedPassTypeId = target.value;
-		const pt = passTypes.find((t) => t.id === Number(target.value));
+	function handlePassTypeChange() {
+		const pt = passTypes.find((t) => String(t.id) === String(selectedPassTypeId));
 		if (pt) {
 			totalLessons = String(pt.total_lessons);
 		}
@@ -282,7 +280,7 @@
 				<select
 					id="pass-type"
 					class="create-form__select"
-					value={selectedPassTypeId}
+					bind:value={selectedPassTypeId}
 					onchange={handlePassTypeChange}
 				>
 					<option value="">선택하세요</option>
