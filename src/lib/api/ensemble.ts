@@ -10,7 +10,8 @@ import type {
 	CreateEnsembleRequest,
 	ApplyEnsembleRequest,
 	AcceptMemberRequest,
-	CreateCommentRequest
+	CreateCommentRequest,
+	SendMessageRequest
 } from '$lib/types/ensemble';
 
 const base = (academyId: number) => `/academic/academies/${academyId}/ensembles`;
@@ -85,6 +86,10 @@ export function createComment(academyId: number, groupId: number, data: CreateCo
 
 export function deleteComment(academyId: number, groupId: number, commentId: number) {
 	return del<ApiResponse<null>>(`${base(academyId)}/${groupId}/comments/${commentId}`);
+}
+
+export function sendMessage(academyId: number, groupId: number, data: SendMessageRequest) {
+	return post<ApiResponse<EnsembleMessage>>(`${base(academyId)}/${groupId}/messages`, data);
 }
 
 export function getMessages(academyId: number, groupId: number, page = 1, limit = 50) {

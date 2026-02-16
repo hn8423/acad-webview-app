@@ -96,6 +96,35 @@ export function getTodayString(): string {
 	return `${y}-${m}-${d}`;
 }
 
+export function formatChatTime(dateStr: string): string {
+	const date = new Date(dateStr);
+	const hours = date.getHours();
+	const minutes = String(date.getMinutes()).padStart(2, '0');
+	const period = hours >= 12 ? '오후' : '오전';
+	const displayHour = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
+	return `${period} ${displayHour}:${minutes}`;
+}
+
+export function formatChatDateSeparator(dateStr: string): string {
+	const date = new Date(dateStr);
+	const year = date.getFullYear();
+	const month = date.getMonth() + 1;
+	const day = date.getDate();
+	const days = ['일', '월', '화', '수', '목', '금', '토'];
+	const dayOfWeek = days[date.getDay()];
+	return `${year}년 ${month}월 ${day}일 ${dayOfWeek}요일`;
+}
+
+export function isSameDay(dateStr1: string, dateStr2: string): boolean {
+	const d1 = new Date(dateStr1);
+	const d2 = new Date(dateStr2);
+	return (
+		d1.getFullYear() === d2.getFullYear() &&
+		d1.getMonth() === d2.getMonth() &&
+		d1.getDate() === d2.getDate()
+	);
+}
+
 export function toLocalDateString(dateStr: string): string {
 	const date = new Date(dateStr);
 	const y = date.getFullYear();

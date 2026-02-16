@@ -3,9 +3,6 @@
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import {
 		getEnsembleDetail,
-		getComments,
-		createComment,
-		deleteComment,
 		applyToEnsemble,
 		acceptMember,
 		rejectMember,
@@ -15,9 +12,10 @@
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
-	import { formatDate, getRelativeTime } from '$lib/utils/format';
+	import EnsembleChat from './EnsembleChat.svelte';
+	import { formatDate } from '$lib/utils/format';
 	import { z } from 'zod';
-	import type { EnsembleDetail, EnsembleComment } from '$lib/types/ensemble';
+	import type { EnsembleDetail } from '$lib/types/ensemble';
 
 	interface Props {
 		isOpen: boolean;
@@ -28,14 +26,10 @@
 	let { isOpen = $bindable(false), ensembleId, onclose }: Props = $props();
 
 	const roleSchema = z.string().trim().min(1, '파트를 입력해주세요').max(20, '20자 이내');
-	const commentSchema = z.string().trim().min(1, '댓글을 입력해주세요').max(1000, '1000자 이내');
 
 	let ensemble = $state<EnsembleDetail | null>(null);
-	let comments = $state<EnsembleComment[]>([]);
 	let loading = $state(true);
 	let loadError = $state(false);
-	let newComment = $state('');
-	let submittingComment = $state(false);
 	let applyRole = $state('');
 	let showApplyInput = $state(false);
 	let submittingApply = $state(false);
@@ -47,7 +41,7 @@
 
 	// Confirm action state
 	let confirmAction = $state<{
-		type: 'reject' | 'leave' | 'deleteComment';
+		type: 'reject' | 'leave';
 		message: string;
 		targetId: number;
 	} | null>(null);
@@ -87,20 +81,14 @@
 		confirmAction = null;
 
 		try {
-			const [detailRes, commentsRes] = await Promise.allSettled([
-				getEnsembleDetail(academyId, ensembleId),
-				getComments(academyId, ensembleId)
-			]);
-
-			if (detailRes.status === 'fulfilled' && detailRes.value.status) {
-				ensemble = detailRes.value.data;
+			const res = await getEnsembleDetail(academyId, ensembleId);
+			if (res.status) {
+				ensemble = res.data;
 			} else {
 				loadError = true;
-				return;
 			}
-			if (commentsRes.status === 'fulfilled' && commentsRes.value.status) {
-				comments = commentsRes.value.data;
-			}
+		} catch {
+			loadError = true;
 		} finally {
 			loading = false;
 		}
@@ -187,14 +175,6 @@
 		confirmAction = { type: 'leave', message, targetId: ensembleId };
 	}
 
-	function requestDeleteComment(commentId: number) {
-		confirmAction = {
-			type: 'deleteComment',
-			message: '댓글을 삭제하시겠습니까?',
-			targetId: commentId
-		};
-	}
-
 	async function executeConfirmAction() {
 		if (!confirmAction) return;
 
@@ -217,41 +197,11 @@
 					confirmAction = null;
 					onclose();
 				}
-			} else if (confirmAction.type === 'deleteComment') {
-				const res = await deleteComment(academyId, ensembleId, confirmAction.targetId);
-				if (res.status) {
-					confirmAction = null;
-					await fetchData();
-				}
 			}
 		} catch {
 			// API client handles toast
 		} finally {
 			processingConfirm = false;
-		}
-	}
-
-	async function handleSubmitComment() {
-		const parsed = commentSchema.safeParse(newComment);
-		if (!parsed.success) {
-			toastStore.error(parsed.error.issues[0].message);
-			return;
-		}
-
-		const academyId = academyStore.academyId;
-		if (!academyId) return;
-
-		submittingComment = true;
-		try {
-			const res = await createComment(academyId, ensembleId, { content: parsed.data });
-			if (res.status) {
-				newComment = '';
-				await fetchData();
-			}
-		} catch {
-			// API client handles toast
-		} finally {
-			submittingComment = false;
 		}
 	}
 
@@ -422,60 +372,8 @@
 				</section>
 			{/if}
 
-			<!-- Comments -->
-			<section class="detail__section">
-				<h3 class="detail__section-title">댓글 ({comments.length})</h3>
-				{#if comments.length > 0}
-					<div class="comment-list">
-						{#each comments as comment}
-							<div class="comment-item">
-								<div class="comment-item__header">
-									<span class="comment-item__author">{comment.user_name}</span>
-									<span class="comment-item__date">
-										{getRelativeTime(comment.created_at)}
-									</span>
-								</div>
-								<p class="comment-item__content">{comment.content}</p>
-								{#if comment.member_id === academyStore.memberId}
-									<button
-										class="comment-item__delete"
-										onclick={() => requestDeleteComment(comment.id)}
-										aria-label="댓글 삭제"
-									>
-										삭제
-									</button>
-								{/if}
-							</div>
-						{/each}
-					</div>
-				{:else}
-					<p class="detail__empty">아직 댓글이 없습니다.</p>
-				{/if}
-
-				<div class="comment-input">
-					<input
-						class="comment-input__field"
-						type="text"
-						placeholder="댓글을 입력하세요"
-						bind:value={newComment}
-						maxlength={1000}
-						onkeydown={(e) => {
-							if (e.key === 'Enter' && !e.shiftKey) {
-								e.preventDefault();
-								handleSubmitComment();
-							}
-						}}
-					/>
-					<Button
-						size="sm"
-						loading={submittingComment}
-						disabled={!newComment.trim()}
-						onclick={handleSubmitComment}
-					>
-						작성
-					</Button>
-				</div>
-			</section>
+			<!-- Chat -->
+			<EnsembleChat {ensembleId} {isMember} {isOpen} />
 
 			<!-- Action Buttons -->
 			<section class="detail__actions">
@@ -670,84 +568,6 @@
 			color: var(--color-text);
 			background-color: var(--color-bg);
 			outline: none;
-
-			&:focus {
-				background-color: var(--color-primary-bg);
-				box-shadow: 0 0 0 2px var(--color-primary-light);
-			}
-		}
-	}
-
-	.comment-list {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-sm);
-	}
-
-	.comment-item {
-		padding: 10px 12px;
-		background-color: var(--color-bg);
-		border-radius: var(--radius-md);
-
-		&__header {
-			display: flex;
-			align-items: center;
-			gap: var(--space-sm);
-			margin-bottom: 4px;
-		}
-
-		&__author {
-			font-size: var(--font-size-sm);
-			font-weight: var(--font-weight-semibold);
-			color: var(--color-text);
-		}
-
-		&__date {
-			font-size: var(--font-size-xs);
-			color: var(--color-text-muted);
-		}
-
-		&__content {
-			font-size: var(--font-size-sm);
-			color: var(--color-text-secondary);
-			line-height: 1.4;
-			white-space: pre-wrap;
-		}
-
-		&__delete {
-			font-size: var(--font-size-xs);
-			color: var(--color-text-muted);
-			background: none;
-			border: none;
-			padding: 0;
-			margin-top: 4px;
-			cursor: pointer;
-
-			&:hover {
-				color: var(--color-danger);
-			}
-		}
-	}
-
-	.comment-input {
-		display: flex;
-		align-items: center;
-		gap: var(--space-sm);
-		margin-top: var(--space-sm);
-
-		&__field {
-			flex: 1;
-			padding: 10px 14px;
-			border: none;
-			border-radius: var(--radius-md);
-			font-size: var(--font-size-sm);
-			color: var(--color-text);
-			background-color: var(--color-bg);
-			outline: none;
-
-			&::placeholder {
-				color: var(--color-text-muted);
-			}
 
 			&:focus {
 				background-color: var(--color-primary-bg);
