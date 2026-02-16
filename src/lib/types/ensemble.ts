@@ -65,7 +65,7 @@ export interface EnsembleMessage {
 	id: number;
 	sender_member_id: number;
 	sender_name: string;
-	sender_profile_img?: string;
+	sender_profile_img?: string | null;
 	message: string;
 	message_type: EnsembleMessageType;
 	created_at: string;

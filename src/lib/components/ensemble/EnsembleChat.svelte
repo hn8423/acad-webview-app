@@ -26,7 +26,7 @@
 	let connected = $state(false);
 	let chat: EnsembleChatService | null = null;
 
-	async function initializeChat() {
+	async function initializeChat(signal: { cancelled: boolean }) {
 		const academyId = academyStore.academyId;
 		if (!academyId) return;
 
@@ -36,6 +36,8 @@
 				getMessages(academyId, ensembleId, 1, 50),
 				getComments(academyId, ensembleId)
 			]);
+
+			if (signal.cancelled) return;
 
 			if (msgRes.status === 'fulfilled' && msgRes.value.status) {
 				const data = msgRes.value.data;
@@ -48,8 +50,12 @@
 				legacyComments = commentRes.value.data;
 			}
 		} finally {
-			loading = false;
+			if (!signal.cancelled) {
+				loading = false;
+			}
 		}
+
+		if (signal.cancelled) return;
 
 		chat = createEnsembleChat(ensembleId, academyId);
 		chat.onMessage((msg) => {
@@ -60,6 +66,9 @@
 		});
 		chat.onConnectionChange((status) => {
 			connected = status;
+		});
+		chat.onError((msg) => {
+			toastStore.error(msg);
 		});
 		chat.connect();
 	}
@@ -96,11 +105,14 @@
 	}
 
 	$effect(() => {
+		const signal = { cancelled: false };
+
 		if (isOpen && ensembleId) {
-			initializeChat();
+			initializeChat(signal);
 		}
 
 		return () => {
+			signal.cancelled = true;
 			disconnectChat();
 			messages = [];
 			legacyComments = [];
