@@ -59,13 +59,20 @@ export interface EnsembleComment {
 	created_at: string;
 }
 
+export type EnsembleMessageType = 'TEXT' | 'SYSTEM';
+
 export interface EnsembleMessage {
 	id: number;
 	sender_member_id: number;
 	sender_name: string;
+	sender_profile_img?: string;
 	message: string;
-	message_type: string;
+	message_type: EnsembleMessageType;
 	created_at: string;
+}
+
+export interface SendMessageRequest {
+	message: string;
 }
 
 export interface CreateEnsembleRequest {

@@ -42,6 +42,7 @@
 	},
 	"dependencies": {
 		"sass": "^1.97.3",
+		"socket.io-client": "^4.8.3",
 		"zod": "^4.3.6"
 	}
 }
