@@ -31,6 +31,7 @@ export interface EnsembleMember {
 	member_id: number;
 	user_name: string;
 	role: string;
+	introduction?: string;
 	member_status: EnsembleMemberStatus;
 }
 
@@ -86,6 +87,7 @@ export interface CreateEnsembleRequest {
 
 export interface ApplyEnsembleRequest {
 	role: string;
+	introduction?: string;
 }
 
 export interface AcceptMemberRequest {
