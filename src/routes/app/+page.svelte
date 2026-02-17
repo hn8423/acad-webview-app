@@ -24,6 +24,7 @@
 	let holdingTargetPass = $state<MemberPass | null>(null);
 	let holdingSubmitting = $state(false);
 	let holdingError = $state('');
+	let holdingRequestedPassIds = $state(new Set<number>());
 
 	onMount(async () => {
 		const academyId = academyStore.academyId;
@@ -78,6 +79,7 @@
 			});
 			if (res.status) {
 				toastStore.success('홀딩 신청이 완료되었습니다.');
+				holdingRequestedPassIds = new Set([...holdingRequestedPassIds, holdingTargetPass.id]);
 				showHoldingModal = false;
 				holdingTargetPass = null;
 			} else {
@@ -158,7 +160,9 @@
 									<div class="pass-card__date">
 										{formatDate(pass.start_date)} ~ {formatDate(pass.end_date)}
 									</div>
-								{#if pass.status === 'ACTIVE'}
+								{#if holdingRequestedPassIds.has(pass.id)}
+									<span class="pass-card__holding-status">홀딩 신청중</span>
+								{:else if pass.status === 'ACTIVE'}
 									<button
 										class="pass-card__holding-btn"
 										onclick={() => openHoldingModal(pass)}
@@ -382,6 +386,17 @@
 			&:active {
 				opacity: 0.7;
 			}
+		}
+
+		&__holding-status {
+			margin-top: var(--space-sm);
+			padding: 6px 12px;
+			font-size: var(--font-size-sm);
+			font-weight: var(--font-weight-medium);
+			color: var(--color-warning);
+			background: var(--color-warning-bg);
+			border-radius: var(--radius-sm);
+			align-self: flex-start;
 		}
 	}
 

@@ -40,7 +40,8 @@
 		try {
 			const res = await getHoldings(academyId, statusFilter);
 			if (res.status && res.data) {
-				holdings = res.data.holdings ?? [];
+				const data = res.data;
+				holdings = Array.isArray(data) ? data : (data.holdings ?? []);
 			}
 		} catch {
 			// handled by client.ts
@@ -146,6 +147,9 @@
 						<div class="holding-item__pass">{holding.pass_name}</div>
 						<div class="holding-item__period">
 							{formatDate(holding.holding_start)} ~ {formatDate(holding.holding_end)}
+							{#if holding.holding_days != null && holding.holding_days > 0}
+								<span class="holding-item__days">({holding.holding_days}일)</span>
+							{/if}
 						</div>
 						{#if holding.reason}
 							<div class="holding-item__reason">{holding.reason}</div>
@@ -286,6 +290,10 @@
 			font-size: var(--font-size-sm);
 			color: var(--color-text-secondary);
 			margin-bottom: var(--space-xs);
+		}
+
+		&__days {
+			color: var(--color-text-muted);
 		}
 
 		&__reason {
