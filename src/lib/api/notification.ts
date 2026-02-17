@@ -1,6 +1,12 @@
-import { get, patch } from './client';
+import { get, post, patch, del } from './client';
 import type { ApiResponse, PaginatedList } from '$lib/types/api';
-import type { Notification } from '$lib/types/notification';
+import type {
+	Notification,
+	SendNotificationRequest,
+	SendNotificationResponse,
+	PushToken,
+	RegisterPushTokenRequest
+} from '$lib/types/notification';
 
 export function getNotifications(academyId: number, page = 1, limit = 20) {
 	const params = new URLSearchParams();
@@ -29,4 +35,25 @@ export function markAllAsRead(academyId: number) {
 		`/academic/academies/${academyId}/notifications/read-all`,
 		{}
 	);
+}
+
+export function deleteNotification(academyId: number, notificationId: number) {
+	return del<ApiResponse<null>>(
+		`/academic/academies/${academyId}/notifications/${notificationId}`
+	);
+}
+
+export function sendNotification(academyId: number, data: SendNotificationRequest) {
+	return post<ApiResponse<SendNotificationResponse>>(
+		`/academic/academies/${academyId}/notifications/send`,
+		data
+	);
+}
+
+export function registerPushToken(data: RegisterPushTokenRequest) {
+	return post<ApiResponse<PushToken>>('/academic/push-tokens', data);
+}
+
+export function deletePushToken(tokenId: number) {
+	return del<ApiResponse<null>>(`/academic/push-tokens/${tokenId}`);
 }

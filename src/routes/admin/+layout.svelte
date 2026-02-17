@@ -5,6 +5,7 @@
 	import { page } from '$app/state';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { academyStore } from '$lib/stores/academy.svelte';
+	import { notificationStore } from '$lib/stores/notification.svelte';
 	import { isRouteAllowed } from '$lib/config/admin-permissions';
 
 	let { children } = $props();
@@ -35,6 +36,13 @@
 		}
 	});
 
+	$effect(() => {
+		if (academyStore.academyId) {
+			notificationStore.startPolling();
+		}
+		return () => notificationStore.stopPolling();
+	});
+
 	function handleMenuClick() {
 		sidebarOpen = true;
 	}
@@ -42,10 +50,19 @@
 	function handleSidebarClose() {
 		sidebarOpen = false;
 	}
+
+	function handleNotificationClick() {
+		goto('/admin/notifications');
+	}
 </script>
 
 <div class="admin-layout">
-	<Header onMenuClick={handleMenuClick} onTitleClick={() => goto('/admin')} />
+	<Header
+		onMenuClick={handleMenuClick}
+		onTitleClick={() => goto('/admin')}
+		onNotificationClick={handleNotificationClick}
+		unreadCount={notificationStore.unreadCount}
+	/>
 	<AdminSidebar bind:isOpen={sidebarOpen} onclose={handleSidebarClose} />
 	<main class="admin-layout__content">
 		{@render children()}
