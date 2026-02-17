@@ -12,7 +12,8 @@ const ROUTE_ROLES: Record<string, readonly MemberRole[]> = {
 	'/admin/ensembles': ['ADMIN', 'INSTRUCTOR'],
 	'/admin/reservations': ['ADMIN', 'INSTRUCTOR'],
 	'/admin/pass-types': ['ADMIN'],
-	'/admin/holdings': ['ADMIN']
+	'/admin/holdings': ['ADMIN'],
+	'/admin/nav': ['ADMIN', 'INSTRUCTOR']
 };
 
 export function isRouteAllowed(route: string, role: MemberRole | null): boolean {
