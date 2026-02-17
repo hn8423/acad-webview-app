@@ -26,6 +26,10 @@
 	let connected = $state(false);
 	let chat: EnsembleChatService | null = null;
 
+	let lastMessageId = $derived(
+		messages.length > 0 ? Math.max(...messages.map((m) => m.id)) : 0
+	);
+
 	async function initializeChat(signal: { cancelled: boolean }) {
 		const academyId = academyStore.academyId;
 		if (!academyId) return;
@@ -70,6 +74,9 @@
 		chat.onError((msg) => {
 			toastStore.error(msg);
 		});
+		chat.onReconnect(() => {
+			loadMissedMessages();
+		});
 		chat.connect();
 	}
 
@@ -101,6 +108,27 @@
 	function handleSend(content: string) {
 		if (!chat?.send(content)) {
 			toastStore.error('연결이 끊어져 메시지를 보낼 수 없습니다.');
+		}
+	}
+
+	async function loadMissedMessages() {
+		const academyId = academyStore.academyId;
+		const sinceId = untrack(() => lastMessageId);
+		if (!academyId || sinceId === 0) return;
+
+		try {
+			const res = await getMessages(academyId, ensembleId, 1, 50, sinceId);
+			if (!chat) return;
+			if (res.status && res.data.list.length > 0) {
+				const currentMessages = untrack(() => messages);
+				const existingIds = new Set(currentMessages.map((m) => m.id));
+				const newMessages = res.data.list.filter((m) => !existingIds.has(m.id));
+				if (newMessages.length > 0) {
+					messages = [...currentMessages, ...newMessages].sort((a, b) => a.id - b.id);
+				}
+			}
+		} catch {
+			// 소켓이 재연결되어 실시간 메시지는 받으므로 silent fail
 		}
 	}
 

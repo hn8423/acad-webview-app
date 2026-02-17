@@ -92,8 +92,17 @@ export function sendMessage(academyId: number, groupId: number, data: SendMessag
 	return post<ApiResponse<EnsembleMessage>>(`${base(academyId)}/${groupId}/messages`, data);
 }
 
-export function getMessages(academyId: number, groupId: number, page = 1, limit = 50) {
+export function getMessages(
+	academyId: number,
+	groupId: number,
+	page = 1,
+	limit = 50,
+	sinceId?: number
+) {
 	const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+	if (sinceId !== undefined) {
+		params.set('since_id', String(sinceId));
+	}
 	return get<ApiResponse<PaginatedList<EnsembleMessage>>>(
 		`${base(academyId)}/${groupId}/messages?${params}`
 	);
