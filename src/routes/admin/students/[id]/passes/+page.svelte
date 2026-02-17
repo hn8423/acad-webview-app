@@ -18,6 +18,7 @@
 	import Modal from '$lib/components/ui/Modal.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import { formatDate } from '$lib/utils/format';
+	import { getPassStatusVariant, getPassStatusLabel } from '$lib/utils/pass';
 	import type { MemberPass, PassType, Instructor } from '$lib/types/member';
 	import { onMount } from 'svelte';
 
@@ -179,35 +180,6 @@
 		}
 	}
 
-	function getStatusVariant(status: string) {
-		switch (status) {
-			case 'ACTIVE':
-				return 'success' as const;
-			case 'HOLDING':
-				return 'warning' as const;
-			case 'USED_UP':
-				return 'info' as const;
-			case 'EXPIRED':
-				return 'neutral' as const;
-			default:
-				return 'neutral' as const;
-		}
-	}
-
-	function getStatusLabel(status: string): string {
-		switch (status) {
-			case 'ACTIVE':
-				return '이용중';
-			case 'HOLDING':
-				return '홀딩';
-			case 'USED_UP':
-				return '소진';
-			case 'EXPIRED':
-				return '만료';
-			default:
-				return status;
-		}
-	}
 </script>
 
 <div class="passes-page">
@@ -234,7 +206,7 @@
 						<div class="pass-item">
 							<div class="pass-item__header">
 								<span class="pass-item__name">{pass.pass_name}</span>
-								<Badge variant={getStatusVariant(pass.status)}>{getStatusLabel(pass.status)}</Badge>
+								<Badge variant={getPassStatusVariant(pass.status)}>{getPassStatusLabel(pass.status)}</Badge>
 							</div>
 							<div class="pass-item__progress">
 								<div class="pass-item__progress-bar">

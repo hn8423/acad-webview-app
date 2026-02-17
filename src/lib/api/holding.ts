@@ -13,7 +13,7 @@ export function getHoldings(academyId: number, status?: 'PENDING' | 'APPROVED' |
 	const params = new URLSearchParams();
 	if (status) params.set('status', status);
 	const query = params.toString() ? `?${params.toString()}` : '';
-	return get<ApiResponse<{ holdings: Holding[] }>>(
+	return get<ApiResponse<Holding[] | { holdings: Holding[] }>>(
 		`/academic/academies/${academyId}/holdings${query}`
 	);
 }
