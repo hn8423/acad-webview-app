@@ -4,7 +4,6 @@
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
-	import FeedbackTypeFilter from '$lib/components/feedback/FeedbackTypeFilter.svelte';
 	import { formatDate } from '$lib/utils/format';
 	import { goto } from '$app/navigation';
 	import type { FeedbackListItem, FeedbackType } from '$lib/types/feedback';
@@ -45,12 +44,31 @@
 </script>
 
 <div class="my-feedback">
-	<h1 class="my-feedback__title">피드백</h1>
-
-	<div class="my-feedback__filter">
-		<FeedbackTypeFilter selected={typeFilter} onchange={handleTypeChange} />
+	<div class="my-feedback__tabs">
+		<button
+			class="tab"
+			class:tab--active={typeFilter === undefined}
+			onclick={() => handleTypeChange(undefined)}
+		>
+			전체
+		</button>
+		<button
+			class="tab"
+			class:tab--active={typeFilter === 'WEEKLY'}
+			onclick={() => handleTypeChange('WEEKLY')}
+		>
+			위클리
+		</button>
+		<button
+			class="tab"
+			class:tab--active={typeFilter === 'MONTHLY'}
+			onclick={() => handleTypeChange('MONTHLY')}
+		>
+			먼슬리
+		</button>
 	</div>
 
+	<div class="my-feedback__content">
 	{#if loading}
 		<div class="my-feedback__loading">
 			<Spinner />
@@ -128,20 +146,22 @@
 			</div>
 		{/if}
 	{/if}
+	</div>
 </div>
 
 <style lang="scss">
 	.my-feedback {
-		&__title {
-			font-size: var(--font-size-2xl);
-			font-weight: var(--font-weight-bold);
-			letter-spacing: var(--letter-spacing-tight);
-			color: var(--color-text);
-			margin-bottom: var(--space-md);
+		&__tabs {
+			position: sticky;
+			top: var(--header-height);
+			z-index: 10;
+			display: flex;
+			background-color: var(--color-white);
+			border-bottom: 1px solid var(--color-divider);
 		}
 
-		&__filter {
-			margin-bottom: var(--space-md);
+		&__content {
+			padding: var(--space-md);
 		}
 
 		&__loading {
@@ -167,6 +187,27 @@
 		&__page {
 			font-size: var(--font-size-sm);
 			color: var(--color-text-secondary);
+		}
+	}
+
+	.tab {
+		flex: 1;
+		padding: 14px 0;
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-medium);
+		color: var(--color-text-muted);
+		background: none;
+		border: none;
+		border-bottom: 2px solid transparent;
+		cursor: pointer;
+		transition:
+			color var(--transition-fast),
+			border-color var(--transition-fast);
+
+		&--active {
+			color: var(--color-primary);
+			font-weight: var(--font-weight-semibold);
+			border-bottom-color: var(--color-primary);
 		}
 	}
 
