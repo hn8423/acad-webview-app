@@ -5,9 +5,10 @@
 		onMenuClick?: () => void;
 		onNotificationClick?: () => void;
 		onTitleClick?: () => void;
+		unreadCount?: number;
 	}
 
-	let { onMenuClick, onNotificationClick, onTitleClick }: Props = $props();
+	let { onMenuClick, onNotificationClick, onTitleClick, unreadCount = 0 }: Props = $props();
 </script>
 
 <header class="header">
@@ -37,7 +38,11 @@
 
 	<div class="header__right">
 		{#if onNotificationClick}
-			<button class="header__icon-btn" onclick={onNotificationClick} aria-label="알림">
+			<button
+				class="header__icon-btn header__notification-btn"
+				onclick={onNotificationClick}
+				aria-label="알림"
+			>
 				<svg
 					width="24"
 					height="24"
@@ -49,6 +54,11 @@
 					<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
 					<path d="M13.73 21a2 2 0 0 1-3.46 0" />
 				</svg>
+				{#if unreadCount > 0}
+					<span class="header__badge">
+						{unreadCount > 99 ? '99+' : unreadCount}
+					</span>
+				{/if}
 			</button>
 		{/if}
 	</div>
@@ -107,5 +117,28 @@
 		&:hover {
 			background-color: var(--color-bg);
 		}
+	}
+
+	.header__notification-btn {
+		position: relative;
+	}
+
+	.header__badge {
+		position: absolute;
+		top: 4px;
+		right: 4px;
+		min-width: 18px;
+		height: 18px;
+		padding: 0 5px;
+		border-radius: var(--radius-full);
+		background-color: var(--color-danger);
+		color: var(--color-white);
+		font-size: 10px;
+		font-weight: var(--font-weight-bold);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		line-height: 1;
+		pointer-events: none;
 	}
 </style>
