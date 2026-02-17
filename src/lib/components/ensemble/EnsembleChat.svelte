@@ -182,12 +182,16 @@
 	.ensemble-chat {
 		display: flex;
 		flex-direction: column;
+		background-color: var(--color-bg-card);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+		overflow: hidden;
 
 		&__header {
 			display: flex;
 			align-items: center;
 			gap: var(--space-sm);
-			margin-bottom: var(--space-sm);
+			padding: var(--space-md) var(--space-md) var(--space-sm);
 		}
 
 		&__title {
@@ -205,7 +209,8 @@
 			font-size: var(--font-size-sm);
 			color: var(--color-text-muted);
 			text-align: center;
-			padding: var(--space-md) 0;
+			padding: var(--space-md);
+			background-color: var(--color-bg);
 			border-top: 1px solid var(--color-divider);
 		}
 	}

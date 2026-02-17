@@ -151,7 +151,8 @@
 		gap: var(--space-xs);
 		overflow-y: auto;
 		max-height: 50vh;
-		padding: var(--space-sm) 0;
+		padding: var(--space-sm) var(--space-md);
+		background-color: var(--color-bg);
 		-webkit-overflow-scrolling: touch;
 
 		&__loading {
