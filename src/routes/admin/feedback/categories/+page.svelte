@@ -13,6 +13,7 @@
 
 	let categories = $state<FeedbackCategory[]>([]);
 	let loading = $state(true);
+	let fetchError = $state('');
 	let submitting = $state(false);
 	let error = $state('');
 
@@ -25,6 +26,7 @@
 	// 삭제 모달
 	let showDeleteModal = $state(false);
 	let deleteTarget = $state<FeedbackCategory | null>(null);
+	let deleting = $state(false);
 
 	let formTitle = $derived(editTarget ? '카테고리 수정' : '카테고리 추가');
 
@@ -35,13 +37,17 @@
 		if (!academyId) return;
 
 		loading = true;
+		fetchError = '';
 		try {
 			const res = await getCategories(academyId);
 			if (res.status && res.data) {
 				categories = [...res.data].sort((a, b) => a.sort_order - b.sort_order);
+			} else {
+				categories = [];
+				fetchError = res.message || '카테고리 목록을 불러오는데 실패했습니다.';
 			}
 		} catch {
-			// handled by client.ts
+			fetchError = '카테고리 목록을 불러오는데 실패했습니다.';
 		} finally {
 			loading = false;
 		}
@@ -76,16 +82,24 @@
 		submitting = true;
 		try {
 			if (editTarget) {
-				await updateCategory(academyId, editTarget.id, {
+				const res = await updateCategory(academyId, editTarget.id, {
 					category_name: categoryName.trim(),
 					sort_order: Number(sortOrder)
 				});
+				if (!res.status) {
+					error = res.message || '카테고리 수정에 실패했습니다.';
+					return;
+				}
 				toastStore.success('카테고리가 수정되었습니다.');
 			} else {
-				await createCategory(academyId, {
+				const res = await createCategory(academyId, {
 					category_name: categoryName.trim(),
 					sort_order: sortOrder ? Number(sortOrder) : undefined
 				});
+				if (!res.status) {
+					error = res.message || '카테고리 추가에 실패했습니다.';
+					return;
+				}
 				toastStore.success('카테고리가 추가되었습니다.');
 			}
 			showFormModal = false;
@@ -106,14 +120,21 @@
 		const academyId = academyStore.academyId;
 		if (!academyId || !deleteTarget) return;
 
+		deleting = true;
 		try {
-			await deleteCategory(academyId, deleteTarget.id);
+			const res = await deleteCategory(academyId, deleteTarget.id);
+			if (!res.status) {
+				toastStore.error(res.message || '카테고리 삭제에 실패했습니다.');
+				return;
+			}
 			toastStore.success('카테고리가 삭제되었습니다.');
 			showDeleteModal = false;
 			deleteTarget = null;
 			await fetchCategories();
 		} catch {
-			// handled by client.ts
+			toastStore.error('카테고리 삭제에 실패했습니다.');
+		} finally {
+			deleting = false;
 		}
 	}
 </script>
@@ -130,6 +151,8 @@
 			<div class="categories-page__loading">
 				<Spinner />
 			</div>
+		{:else if fetchError}
+			<p class="categories-page__error">{fetchError}</p>
 		{:else if categories.length === 0}
 			<p class="categories-page__empty">등록된 카테고리가 없습니다.</p>
 		{:else}
@@ -185,7 +208,7 @@
 <Modal isOpen={showDeleteModal} title="카테고리 삭제" onclose={() => (showDeleteModal = false)}>
 	<p class="modal-message">"{deleteTarget?.category_name}" 카테고리를 삭제하시겠습니까?</p>
 	<div class="modal-actions">
-		<Button variant="danger" fullWidth onclick={handleDelete}>삭제</Button>
+		<Button variant="danger" fullWidth onclick={handleDelete} loading={deleting}>삭제</Button>
 		<Button variant="secondary" fullWidth onclick={() => (showDeleteModal = false)}>취소</Button>
 	</div>
 </Modal>
@@ -211,6 +234,12 @@
 		&__empty {
 			text-align: center;
 			color: var(--color-text-muted);
+			padding: var(--space-2xl);
+		}
+
+		&__error {
+			text-align: center;
+			color: var(--color-danger);
 			padding: var(--space-2xl);
 		}
 	}
