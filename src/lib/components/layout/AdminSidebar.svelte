@@ -3,7 +3,12 @@
 	import { page } from '$app/state';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { academyStore } from '$lib/stores/academy.svelte';
-	import { isRouteAllowed } from '$lib/config/admin-permissions';
+	import {
+		getAccessibleFeatures,
+		getFeatureRoute,
+		getFeatureIcon,
+		isIconUrl
+	} from '$lib/config/admin-features';
 
 	interface Props {
 		isOpen: boolean;
@@ -12,41 +17,11 @@
 
 	let { isOpen = $bindable(false), onclose }: Props = $props();
 
-	const MENU_ROUTE_MAP: Record<number, string> = {
-		16: '/admin/notices',
-		17: '/admin/instructors',
-		18: '/admin/students',
-		19: '/admin/feedback',
-		20: '/admin/reservations',
-		26: '/admin/pass-types',
-		32: '/admin/holdings'
-	};
-
-	const MENU_ICON_MAP: Record<number, string> = {
-		16: 'M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z',
-		17: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
-		18: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
-		19: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
-		20: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
-		26: 'M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z',
-		32: 'M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z'
-	};
-
 	let navItems = $derived(
-		academyStore.getEnabledNavItems('ADMIN').filter((item) => {
-			const route = MENU_ROUTE_MAP[item.nav_id];
-			if (!route) return false;
-			return isRouteAllowed(route, academyStore.memberRole);
-		})
+		academyStore
+			.getEnabledNavItems('ADMIN')
+			.filter((item) => getAccessibleFeatures(item, academyStore.memberRole).length > 0)
 	);
-
-	function getMenuPath(navId: number): string {
-		return MENU_ROUTE_MAP[navId] ?? '/admin';
-	}
-
-	function getIconPath(navId: number): string {
-		return MENU_ICON_MAP[navId] ?? MENU_ICON_MAP[16];
-	}
 
 	function isActive(path: string): boolean {
 		return (page.url.pathname as string).startsWith(path);
@@ -110,28 +85,64 @@
 			<span>대시보드</span>
 		</a>
 
-		{#each navItems as item}
-			{@const path = getMenuPath(item.nav_id)}
-			<a
-				href={path}
-				class="sidebar__item"
-				class:sidebar__item--active={isActive(path)}
-				onclick={onclose}
-			>
-				<svg
-					width="20"
-					height="20"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					stroke-linecap="round"
-					stroke-linejoin="round"
+		{#each navItems as item (item.nav_id)}
+			{@const accessible = getAccessibleFeatures(item, academyStore.memberRole)}
+			{#if accessible.length === 1}
+				{@const feature = accessible[0]}
+				{@const path = getFeatureRoute(feature.feature_key) ?? '/admin'}
+				<a
+					href={path}
+					class="sidebar__item"
+					class:sidebar__item--active={isActive(path)}
+					onclick={onclose}
 				>
-					<path d={getIconPath(item.nav_id)} />
-				</svg>
-				<span>{item.nav_label}</span>
-			</a>
+					{#if item.nav_icon && isIconUrl(item.nav_icon)}
+						<span
+							class="sidebar__mask-icon"
+							style:--icon-url="url('{item.nav_icon}')"
+						></span>
+					{:else}
+						<svg
+							width="20"
+							height="20"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path d={getFeatureIcon(feature.feature_key)} />
+						</svg>
+					{/if}
+					<span>{item.nav_label}</span>
+				</a>
+			{:else if accessible.length > 1}
+				<div class="sidebar__section-label">{item.nav_label}</div>
+				{#each accessible as feature (feature.feature_id)}
+					{@const path = getFeatureRoute(feature.feature_key) ?? '/admin'}
+					<a
+						href={path}
+						class="sidebar__sub-item"
+						class:sidebar__sub-item--active={isActive(path)}
+						onclick={onclose}
+					>
+						<svg
+							width="18"
+							height="18"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path d={getFeatureIcon(feature.feature_key)} />
+						</svg>
+						<span>{feature.feature_name}</span>
+					</a>
+				{/each}
+			{/if}
 		{/each}
 	</nav>
 
@@ -270,6 +281,55 @@
 				font-weight: var(--font-weight-semibold);
 				border-left: 3px solid var(--color-primary);
 			}
+		}
+
+		&__section-label {
+			padding: var(--space-md) var(--space-lg) var(--space-xs);
+			font-size: var(--font-size-xs);
+			font-weight: var(--font-weight-semibold);
+			color: var(--color-text-muted);
+			text-transform: uppercase;
+			letter-spacing: 0.05em;
+		}
+
+		&__sub-item {
+			display: flex;
+			align-items: center;
+			gap: var(--space-sm);
+			padding: 10px var(--space-lg) 10px var(--space-2xl);
+			border-radius: var(--radius-md);
+			color: var(--color-text-secondary);
+			text-decoration: none;
+			font-size: var(--font-size-sm);
+			transition:
+				background-color var(--transition-fast),
+				color var(--transition-fast);
+
+			&:hover {
+				background-color: var(--color-bg);
+				text-decoration: none;
+			}
+
+			&--active {
+				background-color: var(--color-primary-bg);
+				color: var(--color-primary);
+				font-weight: var(--font-weight-semibold);
+			}
+		}
+
+		&__mask-icon {
+			display: inline-block;
+			width: 20px;
+			height: 20px;
+			background-color: currentColor;
+			-webkit-mask-image: var(--icon-url);
+			mask-image: var(--icon-url);
+			-webkit-mask-size: contain;
+			mask-size: contain;
+			-webkit-mask-repeat: no-repeat;
+			mask-repeat: no-repeat;
+			-webkit-mask-position: center;
+			mask-position: center;
 		}
 	}
 </style>
