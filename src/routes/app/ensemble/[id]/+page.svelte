@@ -11,11 +11,13 @@
 		rejectMember,
 		leaveEnsemble
 	} from '$lib/api/ensemble';
+	import { sendNotification } from '$lib/api/notification';
 	import BackHeader from '$lib/components/layout/BackHeader.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import EnsembleChat from '$lib/components/ensemble/EnsembleChat.svelte';
+	import EnsembleApplyModal from '$lib/components/ensemble/EnsembleApplyModal.svelte';
 	import { formatDate } from '$lib/utils/format';
 	import { z } from 'zod';
 	import type { EnsembleDetail } from '$lib/types/ensemble';
@@ -26,8 +28,7 @@
 	let ensemble = $state<EnsembleDetail | null>(null);
 	let loading = $state(true);
 	let loadError = $state(false);
-	let applyRole = $state('');
-	let showApplyInput = $state(false);
+	let showApplyModal = $state(false);
 	let submittingApply = $state(false);
 
 	let acceptingMemberId = $state<number | null>(null);
@@ -35,7 +36,7 @@
 	let submittingAccept = $state(false);
 
 	let confirmAction = $state<{
-		type: 'reject' | 'leave';
+		type: 'reject' | 'leave' | 'cancel';
 		message: string;
 		targetId: number;
 	} | null>(null);
@@ -44,9 +45,7 @@
 	let isLeader = $derived(
 		ensemble !== null && ensemble.creator.member_id === academyStore.memberId
 	);
-	let myMembership = $derived(
-		ensemble?.members.find((m) => m.member_id === academyStore.memberId)
-	);
+	let myMembership = $derived(ensemble?.members.find((m) => m.member_id === academyStore.memberId));
 	let isPending = $derived(myMembership?.member_status === 'PENDING');
 	let isMember = $derived(
 		myMembership?.member_status === 'MEMBER' || myMembership?.member_status === 'LEADER'
@@ -69,8 +68,7 @@
 
 		loading = true;
 		loadError = false;
-		showApplyInput = false;
-		applyRole = '';
+		showApplyModal = false;
 		acceptingMemberId = null;
 		confirmAction = null;
 
@@ -88,23 +86,19 @@
 		}
 	}
 
-	async function handleApply() {
-		const parsed = roleSchema.safeParse(applyRole);
-		if (!parsed.success) {
-			toastStore.error(parsed.error.issues[0].message);
-			return;
-		}
-
+	async function handleApply(data: { role: string; introduction?: string }) {
 		const academyId = academyStore.academyId;
 		if (!academyId) return;
 
 		submittingApply = true;
 		try {
-			const res = await applyToEnsemble(academyId, ensembleId, { role: parsed.data });
+			const res = await applyToEnsemble(academyId, ensembleId, {
+				role: data.role,
+				...(data.introduction ? { introduction: data.introduction } : {})
+			});
 			if (res.status) {
 				toastStore.success('참가 신청이 완료되었습니다.');
-				showApplyInput = false;
-				applyRole = '';
+				showApplyModal = false;
 				await fetchData();
 			}
 		} catch {
@@ -143,6 +137,12 @@
 			});
 			if (res.status) {
 				toastStore.success('멤버를 수락했습니다.');
+				sendNotification(academyId, {
+					recipient_member_ids: [acceptingMemberId],
+					title: '합주조 참가 승인',
+					content: `${ensemble?.group_name ?? '합주조'}에 참가가 승인되었습니다.`,
+					notification_type: 'GENERAL'
+				}).catch(() => {});
 				acceptingMemberId = null;
 				acceptRole = '';
 				await fetchData();
@@ -162,6 +162,14 @@
 		};
 	}
 
+	function requestCancelApplication() {
+		confirmAction = {
+			type: 'cancel',
+			message: '참가 신청을 취소하시겠습니까?',
+			targetId: ensembleId
+		};
+	}
+
 	function requestLeave() {
 		const message = isLeader
 			? '방장이 나가면 합주조가 취소됩니다. 정말 나가시겠습니까?'
@@ -178,9 +186,23 @@
 		processingConfirm = true;
 		try {
 			if (confirmAction.type === 'reject') {
-				const res = await rejectMember(academyId, ensembleId, confirmAction.targetId);
+				const rejectedMemberId = confirmAction.targetId;
+				const res = await rejectMember(academyId, ensembleId, rejectedMemberId);
 				if (res.status) {
 					toastStore.success('신청을 거절했습니다.');
+					sendNotification(academyId, {
+						recipient_member_ids: [rejectedMemberId],
+						title: '합주조 참가 거절',
+						content: `${ensemble?.group_name ?? '합주조'} 참가 신청이 거절되었습니다.`,
+						notification_type: 'GENERAL'
+					}).catch(() => {});
+					confirmAction = null;
+					await fetchData();
+				}
+			} else if (confirmAction.type === 'cancel') {
+				const res = await leaveEnsemble(academyId, ensembleId);
+				if (res.status) {
+					toastStore.success('참가 신청이 취소되었습니다.');
 					confirmAction = null;
 					await fetchData();
 				}
@@ -325,6 +347,9 @@
 										<span class="member-item__name">{member.user_name}</span>
 										<span class="member-item__role">{member.role}</span>
 									</div>
+									{#if member.introduction}
+										<p class="member-item__introduction">{member.introduction}</p>
+									{/if}
 									{#if acceptingMemberId === member.member_id}
 										<div class="member-item__accept-form">
 											<input
@@ -342,9 +367,7 @@
 											>
 												확인
 											</Button>
-											<Button size="sm" variant="secondary" onclick={cancelAccept}>
-												취소
-											</Button>
+											<Button size="sm" variant="secondary" onclick={cancelAccept}>취소</Button>
 										</div>
 									{:else}
 										<div class="member-item__actions">
@@ -376,41 +399,14 @@
 				<!-- Action Buttons -->
 				<section class="detail__actions">
 					{#if canApply}
-						{#if showApplyInput}
-							<div class="apply-form">
-								<input
-									class="apply-form__input"
-									type="text"
-									placeholder="파트를 입력하세요 (예: 기타)"
-									bind:value={applyRole}
-									maxlength={20}
-								/>
-								<div class="apply-form__buttons">
-									<Button
-										size="sm"
-										variant="secondary"
-										onclick={() => {
-											showApplyInput = false;
-											applyRole = '';
-										}}
-									>
-										취소
-									</Button>
-									<Button
-										size="sm"
-										loading={submittingApply}
-										disabled={!applyRole.trim()}
-										onclick={handleApply}
-									>
-										신청
-									</Button>
-								</div>
-							</div>
-						{:else}
-							<Button fullWidth onclick={() => (showApplyInput = true)}>참가 신청</Button>
-						{/if}
+						<Button fullWidth onclick={() => (showApplyModal = true)}>참가 신청</Button>
 					{:else if isPending}
-						<p class="detail__status-text">참가 신청 대기중입니다.</p>
+						<div class="detail__pending-actions">
+							<p class="detail__status-text">참가 신청 대기중입니다.</p>
+							<Button fullWidth variant="danger" onclick={requestCancelApplication}
+								>신청 취소</Button
+							>
+						</div>
 					{:else if isMember}
 						<Button fullWidth variant="danger" onclick={requestLeave}>나가기</Button>
 					{/if}
@@ -419,6 +415,13 @@
 		{/if}
 	</div>
 </div>
+
+<EnsembleApplyModal
+	isOpen={showApplyModal}
+	onclose={() => (showApplyModal = false)}
+	onsubmit={handleApply}
+	submitting={submittingApply}
+/>
 
 <style lang="scss">
 	.ensemble-detail-page {
@@ -491,6 +494,13 @@
 			color: var(--color-text-secondary);
 			padding: var(--space-md) 0;
 		}
+
+		&__pending-actions {
+			display: flex;
+			flex-direction: column;
+			gap: var(--space-sm);
+			align-items: center;
+		}
 	}
 
 	.confirm-dialog {
@@ -552,6 +562,14 @@
 			color: var(--color-text-secondary);
 		}
 
+		&__introduction {
+			width: 100%;
+			font-size: var(--font-size-xs);
+			color: var(--color-text-secondary);
+			line-height: 1.4;
+			padding: var(--space-xs) 0;
+		}
+
 		&__actions {
 			display: flex;
 			gap: 6px;
@@ -578,38 +596,6 @@
 				background-color: var(--color-primary-bg);
 				box-shadow: 0 0 0 2px var(--color-primary-light);
 			}
-		}
-	}
-
-	.apply-form {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-sm);
-
-		&__input {
-			width: 100%;
-			padding: 14px 16px;
-			border: none;
-			border-radius: var(--radius-md);
-			font-size: var(--font-size-base);
-			color: var(--color-text);
-			background-color: var(--color-bg);
-			outline: none;
-
-			&::placeholder {
-				color: var(--color-text-muted);
-			}
-
-			&:focus {
-				background-color: var(--color-primary-bg);
-				box-shadow: 0 0 0 2px var(--color-primary-light);
-			}
-		}
-
-		&__buttons {
-			display: flex;
-			gap: var(--space-sm);
-			justify-content: flex-end;
 		}
 	}
 </style>
