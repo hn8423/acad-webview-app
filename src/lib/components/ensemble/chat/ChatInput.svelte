@@ -61,26 +61,29 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-sm);
-		padding: var(--space-sm) 0;
+		padding: var(--space-sm) var(--space-md);
+		background-color: var(--color-bg);
 		border-top: 1px solid var(--color-divider);
 
 		&__field {
 			flex: 1;
 			padding: 10px 14px;
-			border: none;
-			border-radius: var(--radius-md);
+			border: 1px solid var(--color-divider);
+			border-radius: var(--radius-full);
 			font-size: var(--font-size-sm);
 			color: var(--color-text);
-			background-color: var(--color-bg);
+			background-color: var(--color-bg-card);
 			outline: none;
+			transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 
 			&::placeholder {
 				color: var(--color-text-muted);
 			}
 
 			&:focus {
-				background-color: var(--color-primary-bg);
-				box-shadow: 0 0 0 2px var(--color-primary-light);
+				border-color: var(--color-primary-light);
+				box-shadow: 0 0 0 2px var(--color-primary-bg);
+				background-color: var(--color-bg-card);
 			}
 
 			&:disabled {
