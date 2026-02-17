@@ -19,9 +19,15 @@ export function createEnsembleChat(groupId: number, academyId: number) {
 	const messageListeners = new Set<(msg: EnsembleMessage) => void>();
 	const connectionListeners = new Set<(connected: boolean) => void>();
 	const errorListeners = new Set<(error: string) => void>();
+	const reconnectListeners = new Set<() => void>();
 
 	function connect() {
 		if (socket?.connected) return;
+
+		if (socket) {
+			socket.removeAllListeners();
+			socket.disconnect();
+		}
 
 		socket = io(`${PUBLIC_API_BASE_URL}/academic/chat`, {
 			auth: (cb) => {
@@ -31,7 +37,9 @@ export function createEnsembleChat(groupId: number, academyId: number) {
 			transports: ['websocket', 'polling'],
 			reconnection: true,
 			reconnectionDelay: 1000,
-			reconnectionDelayMax: 30000
+			reconnectionDelayMax: 30000,
+			reconnectionAttempts: 5,
+			timeout: 10000
 		});
 
 		socket.on('connect', () => {
@@ -47,8 +55,6 @@ export function createEnsembleChat(groupId: number, academyId: number) {
 			const parsed = messagePayloadSchema.safeParse(data);
 			if (parsed.success) {
 				messageListeners.forEach((cb) => cb(parsed.data));
-			} else {
-				console.error('[EnsembleChat] Invalid message payload:', parsed.error.issues, data);
 			}
 		});
 
@@ -60,17 +66,34 @@ export function createEnsembleChat(groupId: number, academyId: number) {
 			const errorMessage = err?.message ?? '채팅 서버 오류가 발생했습니다.';
 			errorListeners.forEach((cb) => cb(errorMessage));
 		});
+
+		socket.io.on('reconnect', () => {
+			socket?.emit('join_room', { group_id: groupId, academy_id: academyId });
+			connectionListeners.forEach((cb) => cb(true));
+			reconnectListeners.forEach((cb) => cb());
+		});
+
+		socket.io.on('reconnect_failed', () => {
+			errorListeners.forEach((cb) =>
+				cb('서버 연결에 실패했습니다. 페이지를 새로고침해주세요.')
+			);
+		});
 	}
 
 	function disconnect() {
-		if (socket?.connected) {
-			socket.emit('leave_room', { group_id: groupId });
+		if (socket) {
+			if (socket.connected) {
+				socket.emit('leave_room', { group_id: groupId });
+			}
+			socket.removeAllListeners();
+			socket.io?.removeAllListeners();
+			socket.disconnect();
 		}
-		socket?.disconnect();
 		socket = null;
 		messageListeners.clear();
 		connectionListeners.clear();
 		errorListeners.clear();
+		reconnectListeners.clear();
 	}
 
 	function send(message: string): boolean {
@@ -95,6 +118,11 @@ export function createEnsembleChat(groupId: number, academyId: number) {
 		return () => errorListeners.delete(callback);
 	}
 
+	function onReconnect(callback: () => void): () => void {
+		reconnectListeners.add(callback);
+		return () => reconnectListeners.delete(callback);
+	}
+
 	return {
 		connect,
 		disconnect,
@@ -102,6 +130,7 @@ export function createEnsembleChat(groupId: number, academyId: number) {
 		onMessage,
 		onConnectionChange,
 		onError,
+		onReconnect,
 		get connected() {
 			return socket?.connected ?? false;
 		}
