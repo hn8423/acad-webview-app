@@ -4,7 +4,7 @@ import type { Holding, CreateHoldingRequest, UpdateHoldingRequest } from '$lib/t
 
 export function createHolding(academyId: number, passId: number, data: CreateHoldingRequest) {
 	return post<ApiResponse<Holding>>(
-		`/academic/academies/${academyId}/passes/${passId}/holdings`,
+		`/academic/academies/${academyId}/members/me/passes/${passId}/holdings`,
 		data
 	);
 }
