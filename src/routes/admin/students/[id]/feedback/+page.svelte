@@ -122,11 +122,18 @@
 		const academyId = academyStore.academyId;
 		if (!academyId) return;
 
+		const selectedPass = activePasses.find((p) => p.id === Number(selectedPassId));
+		if (!selectedPass?.instructor_id) {
+			error = '선택한 수강권의 강사 정보를 찾을 수 없습니다.';
+			return;
+		}
+
 		creating = true;
 		try {
 			const res = await createWeeklyFeedback(academyId, {
 				member_id: memberId,
 				member_pass_id: Number(selectedPassId),
+				instructor_id: selectedPass.instructor_id,
 				feedback_date: feedbackDate,
 				lesson_content: lessonContent.trim(),
 				strengths: strengths.trim() || undefined,

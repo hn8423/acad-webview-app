@@ -89,6 +89,7 @@ export type FeedbackDetail = WeeklyFeedbackDetail | MonthlyFeedbackDetail;
 export interface CreateWeeklyRequest {
 	member_id: number;
 	member_pass_id: number;
+	instructor_id: number;
 	feedback_date: string;
 	lesson_content: string;
 	strengths?: string;
