@@ -1,11 +1,11 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { academyStore } from '$lib/stores/academy.svelte';
 	import { getEnsembles, getMyEnsembles } from '$lib/api/ensemble';
 	import BottomSheet from '$lib/components/ui/BottomSheet.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import EnsembleCreateForm from '$lib/components/ensemble/EnsembleCreateForm.svelte';
-	import EnsembleDetailModal from '$lib/components/ensemble/EnsembleDetailModal.svelte';
 	import { formatDate } from '$lib/utils/format';
 	import type { EnsembleListItem, MyEnsembleListItem } from '$lib/types/ensemble';
 	import { onMount } from 'svelte';
@@ -19,8 +19,6 @@
 	const LIMIT = 10;
 
 	let showCreateSheet = $state(false);
-	let showDetailModal = $state(false);
-	let selectedEnsembleId = $state<number | null>(null);
 
 	onMount(() => {
 		fetchData();
@@ -64,19 +62,12 @@
 	}
 
 	function openDetail(id: number) {
-		selectedEnsembleId = id;
-		showDetailModal = true;
+		goto(`/app/ensemble/${id}`);
 	}
 
 	function handleCreateSuccess() {
 		showCreateSheet = false;
 		currentPage = 1;
-		fetchData();
-	}
-
-	function handleDetailClose() {
-		showDetailModal = false;
-		selectedEnsembleId = null;
 		fetchData();
 	}
 
@@ -244,15 +235,6 @@
 >
 	<EnsembleCreateForm oncreate={handleCreateSuccess} />
 </BottomSheet>
-
-<!-- Detail Modal -->
-{#if selectedEnsembleId !== null}
-	<EnsembleDetailModal
-		bind:isOpen={showDetailModal}
-		ensembleId={selectedEnsembleId}
-		onclose={handleDetailClose}
-	/>
-{/if}
 
 <style lang="scss">
 	.ensemble-page {

@@ -12,10 +12,9 @@
 	interface Props {
 		ensembleId: number;
 		isMember: boolean;
-		isOpen: boolean;
 	}
 
-	let { ensembleId, isMember, isOpen }: Props = $props();
+	let { ensembleId, isMember }: Props = $props();
 
 	let messages = $state<EnsembleMessage[]>([]);
 	let legacyComments = $state<EnsembleComment[]>([]);
@@ -135,7 +134,7 @@
 	$effect(() => {
 		const signal = { cancelled: false };
 
-		if (isOpen && ensembleId) {
+		if (ensembleId) {
 			initializeChat(signal);
 		}
 
