@@ -14,7 +14,14 @@
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import BottomSheet from '$lib/components/ui/BottomSheet.svelte';
 	import PassSummary from '$lib/components/reservation/PassSummary.svelte';
-	import { formatDate, formatTime, formatTimeRange, getDayOfWeek } from '$lib/utils/format';
+	import ReservationCalendar from '$lib/components/reservation/ReservationCalendar.svelte';
+	import {
+		formatDate,
+		formatTimeRange,
+		getDayOfWeek,
+		getTodayString,
+		getDaysInMonth
+	} from '$lib/utils/format';
 	import type { AvailableSlot, MyReservation, ReservationStatus } from '$lib/types/reservation';
 	import type { MemberPass } from '$lib/types/member';
 	import { onMount } from 'svelte';
@@ -22,10 +29,11 @@
 	let activeTab = $state<'book' | 'my'>('book');
 
 	// Book tab state
-	let dateRange = $state<string[]>([]);
-	let selectedDate = $state('');
+	let selectedDate = $state(getTodayString());
 	let availableSlots = $state<AvailableSlot[]>([]);
 	let slotsLoading = $state(true);
+	let slotCountMap = $state<Record<string, number>>({});
+	let countsLoading = $state(false);
 
 	// My reservations tab state
 	let myReservations = $state<MyReservation[]>([]);
@@ -51,23 +59,12 @@
 	);
 
 	onMount(() => {
-		initializeDateRange();
+		const now = new Date();
+		loadMonthSlotCounts(now.getFullYear(), now.getMonth() + 1);
+		loadAvailableSlots(selectedDate);
 		loadMemberPasses();
 		loadMyReservations();
 	});
-
-	function initializeDateRange() {
-		const today = new Date();
-		const range: string[] = [];
-		for (let i = 0; i < 7; i++) {
-			const d = new Date(today);
-			d.setDate(today.getDate() + i);
-			range.push(d.toISOString().split('T')[0]);
-		}
-		dateRange = range;
-		selectedDate = range[0];
-		loadAvailableSlots(range[0]);
-	}
 
 	async function loadAvailableSlots(date: string) {
 		const academyId = academyStore.academyId;
@@ -125,6 +122,60 @@
 		loadAvailableSlots(date);
 	}
 
+	async function loadMonthSlotCounts(year: number, month: number) {
+		const academyId = academyStore.academyId;
+		if (!academyId) return;
+
+		countsLoading = true;
+		const todayStr = getTodayString();
+		const daysInMonth = getDaysInMonth(year, month);
+		const dates: string[] = [];
+
+		for (let d = 1; d <= daysInMonth; d++) {
+			const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+			if (dateStr >= todayStr) dates.push(dateStr);
+		}
+
+		try {
+			const results = await Promise.allSettled(
+				dates.map((date) => getAvailableSlots(academyId, date))
+			);
+			const newMap: Record<string, number> = {};
+			results.forEach((result, i) => {
+				if (result.status === 'fulfilled' && result.value.status && result.value.data) {
+					const count = result.value.data.length;
+					if (count > 0) newMap[dates[i]] = count;
+				}
+			});
+			slotCountMap = newMap;
+		} catch {
+			// handled by client.ts
+		} finally {
+			countsLoading = false;
+		}
+	}
+
+	function handleMonthChange(year: number, month: number) {
+		loadMonthSlotCounts(year, month);
+	}
+
+	async function refreshSlotCount(date: string) {
+		const academyId = academyStore.academyId;
+		if (!academyId) return;
+
+		try {
+			const res = await getAvailableSlots(academyId, date);
+			if (res.status && res.data) {
+				const count = res.data.length;
+				slotCountMap = count > 0
+					? { ...slotCountMap, [date]: count }
+					: Object.fromEntries(Object.entries(slotCountMap).filter(([k]) => k !== date));
+			}
+		} catch {
+			// handled by client.ts
+		}
+	}
+
 	function handleSlotClick(slot: AvailableSlot) {
 		if (activePasses.length === 0) {
 			const message =
@@ -157,6 +208,7 @@
 				loadAvailableSlots(selectedDate);
 				loadMyReservations();
 				loadMemberPasses();
+				refreshSlotCount(selectedDate);
 			}
 		} catch {
 			// handled by client.ts
@@ -184,6 +236,7 @@
 				loadMyReservations();
 				loadAvailableSlots(selectedDate);
 				loadMemberPasses();
+				refreshSlotCount(selectedDate);
 			}
 		} catch {
 			// handled by client.ts
@@ -252,25 +305,13 @@
 
 	<!-- Book Tab -->
 	{#if activeTab === 'book'}
-		<div class="date-picker">
-			{#each dateRange as date}
-				{@const isSelected = date === selectedDate}
-				{@const [, , dayStr] = date.split('-')}
-				{@const day = parseInt(dayStr, 10)}
-				{@const weekday = getDayOfWeek(date)}
-				<button
-					type="button"
-					class="date-picker__item"
-					class:date-picker__item--selected={isSelected}
-					onclick={() => handleDateSelect(date)}
-					aria-label="{formatDate(date)} {weekday}요일"
-					aria-pressed={isSelected}
-				>
-					<span class="date-picker__weekday">{weekday}</span>
-					<span class="date-picker__day">{day}</span>
-				</button>
-			{/each}
-		</div>
+		<ReservationCalendar
+			{selectedDate}
+			{slotCountMap}
+			{countsLoading}
+			onselect={handleDateSelect}
+			onmonthchange={handleMonthChange}
+		/>
 
 		<PassSummary passes={memberPasses} loading={passesLoading} />
 
@@ -498,56 +539,6 @@
 					background: var(--color-primary);
 				}
 			}
-		}
-	}
-
-	.date-picker {
-		display: flex;
-		gap: var(--space-xs);
-		padding: var(--space-md);
-		overflow-x: auto;
-		background: var(--color-white);
-
-		&::-webkit-scrollbar {
-			display: none;
-		}
-
-		&__item {
-			display: flex;
-			flex-direction: column;
-			align-items: center;
-			gap: 4px;
-			padding: var(--space-sm) var(--space-md);
-			background: var(--color-bg);
-			border: none;
-			border-radius: var(--radius-md);
-			cursor: pointer;
-			transition: all var(--transition-fast);
-			min-width: 52px;
-
-			&--selected {
-				background: var(--color-primary);
-
-				.date-picker__weekday,
-				.date-picker__day {
-					color: var(--color-white);
-				}
-			}
-
-			&:active {
-				transform: scale(0.95);
-			}
-		}
-
-		&__weekday {
-			font-size: var(--font-size-xs);
-			color: var(--color-text-secondary);
-		}
-
-		&__day {
-			font-size: var(--font-size-lg);
-			font-weight: var(--font-weight-bold);
-			color: var(--color-text);
 		}
 	}
 
