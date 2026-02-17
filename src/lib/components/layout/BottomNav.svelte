@@ -30,6 +30,10 @@
 		return NAV_ICON_MAP[icon] ?? NAV_ICON_MAP['home'];
 	}
 
+	function isIconUrl(icon: string): boolean {
+		return icon.startsWith('http://') || icon.startsWith('https://');
+	}
+
 	function isActive(path: string): boolean {
 		const pathname = page.url.pathname as string;
 		if (path === '/app') {
@@ -43,19 +47,26 @@
 	{#each navItems as item}
 		{@const path = getNavPath(item.nav_position)}
 		<a href={path} class="bottom-nav__item" class:bottom-nav__item--active={isActive(path)}>
-			<svg
-				class="bottom-nav__icon"
-				width="24"
-				height="24"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="2"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-			>
-				<path d={getIconPath(item.nav_icon)} />
-			</svg>
+			{#if isIconUrl(item.nav_icon)}
+				<span
+					class="bottom-nav__icon bottom-nav__icon--mask"
+					style:--icon-url="url('{item.nav_icon}')"
+				></span>
+			{:else}
+				<svg
+					class="bottom-nav__icon"
+					width="24"
+					height="24"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				>
+					<path d={getIconPath(item.nav_icon)} />
+				</svg>
+			{/if}
 			<span class="bottom-nav__label">{item.nav_label}</span>
 			{#if isActive(path)}
 				<span class="bottom-nav__indicator"></span>
@@ -106,6 +117,19 @@
 		&__icon {
 			width: 24px;
 			height: 24px;
+
+			&--mask {
+				display: inline-block;
+				background-color: currentColor;
+				-webkit-mask-image: var(--icon-url);
+				mask-image: var(--icon-url);
+				-webkit-mask-size: contain;
+				mask-size: contain;
+				-webkit-mask-repeat: no-repeat;
+				mask-repeat: no-repeat;
+				-webkit-mask-position: center;
+				mask-position: center;
+			}
 		}
 
 		&__label {
