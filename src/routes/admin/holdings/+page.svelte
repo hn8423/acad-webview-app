@@ -338,13 +338,16 @@
 
 	.modal-message {
 		font-size: var(--font-size-base);
-		color: var(--color-text-secondary);
+		color: var(--color-text);
 		line-height: var(--line-height-base);
+		text-align: center;
+		padding: var(--space-sm) 0;
 	}
 
 	.modal-detail {
 		font-size: var(--font-size-sm);
 		color: var(--color-text-muted);
+		text-align: center;
 		margin-top: var(--space-sm);
 		line-height: var(--line-height-base);
 	}
@@ -353,6 +356,6 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-sm);
-		margin-top: var(--space-lg);
+		margin-top: var(--space-xl);
 	}
 </style>
