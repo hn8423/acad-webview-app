@@ -103,17 +103,21 @@
 
 		&__header {
 			display: flex;
+			flex-wrap: nowrap;
 			align-items: center;
 			justify-content: space-between;
 			padding: var(--space-md) var(--space-lg);
 		}
 
 		&__title {
+			flex: 1;
+			min-width: 0;
 			font-size: var(--font-size-lg);
 			font-weight: var(--font-weight-bold);
 		}
 
 		&__close {
+			flex-shrink: 0;
 			width: 44px;
 			height: 44px;
 			display: flex;
