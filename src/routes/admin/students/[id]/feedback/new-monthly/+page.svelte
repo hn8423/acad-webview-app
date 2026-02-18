@@ -39,6 +39,7 @@
 	let instructorMessage = $state('');
 	let videoUrl = $state('');
 
+	const stepLabels = ['기본 정보', '카테고리별 평가', '커리큘럼'];
 	const memberId = $derived(Number(page.params.id));
 	const activePasses = $derived(passes.filter((p) => p.status === 'ACTIVE'));
 
@@ -149,9 +150,12 @@
 		{:else}
 			<!-- 스텝 인디케이터 -->
 			<div class="step-indicator">
-				{#each [1, 2, 3] as s}
-					<div class="step-indicator__dot" class:step-indicator__dot--active={step >= s}></div>
-				{/each}
+				<span class="step-indicator__text">
+					STEP {step}/{stepLabels.length} · {stepLabels[step - 1]}
+				</span>
+				<div class="step-indicator__bar">
+					<div class="step-indicator__progress" style="width: {(step / stepLabels.length) * 100}%"></div>
+				</div>
 			</div>
 
 			{#if step === 1}
@@ -295,22 +299,30 @@
 	}
 
 	.step-indicator {
-		display: flex;
-		justify-content: center;
-		gap: var(--space-sm);
 		margin-bottom: var(--space-lg);
 
-		&__dot {
-			width: 8px;
-			height: 8px;
-			border-radius: var(--radius-full);
-			background: var(--color-divider);
-			transition: all var(--transition-fast);
+		&__text {
+			display: block;
+			font-size: var(--font-size-xs);
+			font-weight: var(--font-weight-semibold);
+			color: var(--color-primary);
+			letter-spacing: 0.5px;
+			margin-bottom: var(--space-xs);
+		}
 
-			&--active {
-				width: 24px;
-				background: var(--color-primary);
-			}
+		&__bar {
+			width: 100%;
+			height: 4px;
+			background: var(--color-divider);
+			border-radius: var(--radius-full);
+			overflow: hidden;
+		}
+
+		&__progress {
+			height: 100%;
+			background: var(--color-primary);
+			border-radius: var(--radius-full);
+			transition: width var(--transition-base);
 		}
 	}
 
