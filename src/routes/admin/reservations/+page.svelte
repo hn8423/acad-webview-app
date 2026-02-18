@@ -8,7 +8,7 @@
 		deleteLessonSlot,
 		updateReservationStatus
 	} from '$lib/api/reservation';
-	import { formatTimeRange, getTodayString, getDayOfWeek } from '$lib/utils/format';
+	import { formatTimeRange, getTodayString } from '$lib/utils/format';
 	import type {
 		LessonSlot,
 		SlotStatus,
@@ -20,6 +20,7 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
+	import DateCalendar from '$lib/components/ui/DateCalendar.svelte';
 
 	let selectedDate = $state(getTodayString());
 	let slots = $state<LessonSlot[]>([]);
@@ -216,41 +217,10 @@
 		<Button size="sm" onclick={openCreateModal}>+ 슬롯 추가</Button>
 	</div>
 
-	<div class="reservations__date-picker">
-		<button
-			class="date-nav-btn"
-			onclick={() => {
-				const d = new Date(selectedDate);
-				d.setDate(d.getDate() - 1);
-				selectedDate = d.toISOString().split('T')[0];
-			}}
-			aria-label="이전 날짜"
-		>
-			<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-				<path d="M15 18l-6-6 6-6" />
-			</svg>
-		</button>
-		<input
-			type="date"
-			class="date-input"
-			bind:value={selectedDate}
-		/>
-		<span class="date-day">({getDayOfWeek(selectedDate)})</span>
-		<button
-			class="date-nav-btn"
-			onclick={() => {
-				const d = new Date(selectedDate);
-				d.setDate(d.getDate() + 1);
-				selectedDate = d.toISOString().split('T')[0];
-			}}
-			aria-label="다음 날짜"
-		>
-			<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-				<path d="M9 18l6-6-6-6" />
-			</svg>
-		</button>
-		<button class="date-today-btn" onclick={() => (selectedDate = getTodayString())}>오늘</button>
-	</div>
+	<DateCalendar
+		{selectedDate}
+		onselect={(date) => (selectedDate = date)}
+	/>
 
 	{#if loading}
 		<div class="reservations__loading"><Spinner /></div>
@@ -349,12 +319,12 @@
 </div>
 
 <!-- Create Slot Modal -->
-<Modal isOpen={showCreateModal} title="수업 슬롯 추가" onclose={() => (showCreateModal = false)}>
+<Modal isOpen={showCreateModal} title="수업 슬롯 추가" position="center" onclose={() => (showCreateModal = false)}>
 	<div class="modal-form">
-		<label class="modal-form__field">
+		<div class="modal-form__field">
 			<span class="modal-form__label">날짜</span>
-			<input type="date" class="modal-form__input" bind:value={createForm.slot_date} />
-		</label>
+			<span class="modal-form__value">{createForm.slot_date}</span>
+		</div>
 		<div class="modal-form__row">
 			<label class="modal-form__field">
 				<span class="modal-form__label">시작 시간</span>
@@ -382,7 +352,7 @@
 </Modal>
 
 <!-- Edit Slot Modal -->
-<Modal isOpen={showEditModal} title="슬롯 수정" onclose={() => (showEditModal = false)}>
+<Modal isOpen={showEditModal} title="슬롯 수정" position="center" onclose={() => (showEditModal = false)}>
 	<div class="modal-form">
 		<div class="modal-form__row">
 			<label class="modal-form__field">
@@ -419,7 +389,7 @@
 </Modal>
 
 <!-- Delete Slot Confirmation Modal -->
-<Modal isOpen={showDeleteModal} title="슬롯 삭제" onclose={() => (showDeleteModal = false)}>
+<Modal isOpen={showDeleteModal} title="슬롯 삭제" position="center" onclose={() => (showDeleteModal = false)}>
 	<p class="modal-message">
 		{#if deleteTarget}
 			{formatTimeRange(deleteTarget.start_time, deleteTarget.end_time)} ({deleteTarget.instructor_name}) 슬롯을 삭제하시겠습니까?
@@ -458,13 +428,6 @@
 			color: var(--color-text);
 		}
 
-		&__date-picker {
-			display: flex;
-			align-items: center;
-			gap: var(--space-sm);
-			margin-bottom: var(--space-lg);
-		}
-
 		&__loading {
 			display: flex;
 			align-items: center;
@@ -485,53 +448,6 @@
 		&__empty-text {
 			font-size: var(--font-size-base);
 			color: var(--color-text-secondary);
-		}
-	}
-
-	.date-nav-btn {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 36px;
-		height: 36px;
-		border-radius: var(--radius-full);
-		color: var(--color-text-secondary);
-		transition: background-color var(--transition-fast);
-
-		&:hover {
-			background-color: var(--color-bg);
-		}
-
-		&:active {
-			transform: scale(0.95);
-		}
-	}
-
-	.date-input {
-		font-size: var(--font-size-base);
-		font-weight: var(--font-weight-semibold);
-		color: var(--color-text);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-md);
-		padding: var(--space-sm) var(--space-md);
-		background: var(--color-white);
-	}
-
-	.date-day {
-		font-size: var(--font-size-sm);
-		color: var(--color-text-secondary);
-	}
-
-	.date-today-btn {
-		font-size: var(--font-size-sm);
-		font-weight: var(--font-weight-medium);
-		color: var(--color-primary);
-		padding: var(--space-xs) var(--space-sm);
-		border-radius: var(--radius-sm);
-		transition: background-color var(--transition-fast);
-
-		&:hover {
-			background-color: var(--color-primary-bg);
 		}
 	}
 
@@ -722,6 +638,15 @@
 				border-color: var(--color-primary-light);
 				box-shadow: 0 0 0 2px var(--color-primary-bg);
 			}
+		}
+
+		&__value {
+			font-size: var(--font-size-base);
+			font-weight: var(--font-weight-medium);
+			color: var(--color-text);
+			padding: 14px 16px;
+			background: var(--color-bg);
+			border-radius: var(--radius-md);
 		}
 
 		&__row {
