@@ -568,12 +568,12 @@
 
 		&--complete {
 			background-color: var(--color-success-bg);
-			color: #059669;
+			color: var(--color-success);
 		}
 
 		&--noshow {
 			background-color: var(--color-danger-bg);
-			color: #dc2626;
+			color: var(--color-danger);
 		}
 
 		&--cancel {

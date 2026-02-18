@@ -309,7 +309,7 @@
 				background: var(--color-primary);
 
 				.date-calendar__date {
-					color: var(--color-white);
+					color: var(--color-on-primary);
 					font-weight: var(--font-weight-bold);
 				}
 			}

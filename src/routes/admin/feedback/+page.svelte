@@ -361,7 +361,7 @@
 			border-radius: var(--radius-md);
 			font-weight: var(--font-weight-bold);
 			font-size: var(--font-size-lg);
-			color: var(--color-white);
+			color: var(--color-on-primary);
 			flex-shrink: 0;
 
 			&--weekly {

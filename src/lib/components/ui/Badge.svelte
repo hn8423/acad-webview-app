@@ -25,17 +25,17 @@
 
 		&--success {
 			background-color: var(--color-success-bg);
-			color: #059669;
+			color: var(--color-success);
 		}
 
 		&--warning {
 			background-color: var(--color-warning-bg);
-			color: #d97706;
+			color: var(--color-warning);
 		}
 
 		&--danger {
 			background-color: var(--color-danger-bg);
-			color: #dc2626;
+			color: var(--color-danger);
 		}
 
 		&--info {

@@ -72,7 +72,7 @@
 		right: 0;
 		height: var(--header-height);
 		background-color: var(--color-white);
-		box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
+		border-bottom: 1px solid var(--color-border);
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
@@ -135,7 +135,7 @@
 		padding: 0 5px;
 		border-radius: var(--radius-full);
 		background-color: var(--color-danger);
-		color: var(--color-white);
+		color: var(--color-on-primary);
 		font-size: 10px;
 		font-weight: var(--font-weight-bold);
 		display: flex;

@@ -332,7 +332,7 @@
 
 			&--active {
 				background: var(--color-primary-gradient);
-				color: var(--color-white);
+				color: var(--color-on-primary);
 			}
 		}
 	}

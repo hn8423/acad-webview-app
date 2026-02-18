@@ -171,7 +171,7 @@
 	.sidebar-backdrop {
 		position: fixed;
 		inset: 0;
-		background-color: rgba(0, 0, 0, 0.4);
+		background-color: var(--color-backdrop);
 		backdrop-filter: blur(4px);
 		z-index: calc(var(--z-sidebar) - 1);
 	}

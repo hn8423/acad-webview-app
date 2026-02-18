@@ -181,7 +181,7 @@
 
 			&--active {
 				background-color: var(--chip-color);
-				color: var(--color-white);
+				color: var(--color-on-primary);
 				border-color: var(--chip-color);
 				font-weight: var(--font-weight-semibold);
 				box-shadow: var(--shadow-md);

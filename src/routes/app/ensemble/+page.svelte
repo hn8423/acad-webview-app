@@ -410,7 +410,7 @@
 
 			&--active {
 				background: var(--color-primary-gradient);
-				color: var(--color-white);
+				color: var(--color-on-primary);
 			}
 		}
 	}
@@ -423,12 +423,12 @@
 		height: 56px;
 		border-radius: var(--radius-full);
 		background: var(--color-primary-gradient);
-		color: var(--color-white);
+		color: var(--color-on-primary);
 		border: none;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		box-shadow: 0 4px 12px rgba(108, 92, 231, 0.4);
+		box-shadow: 0 4px 12px var(--color-glow-primary);
 		cursor: pointer;
 		z-index: 50;
 		transition: transform 150ms ease;

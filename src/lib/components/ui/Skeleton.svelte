@@ -27,7 +27,12 @@
 
 <style lang="scss">
 	.skeleton {
-		background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+		background: linear-gradient(
+			90deg,
+			var(--color-surface, #252036) 25%,
+			rgba(139, 92, 246, 0.08) 50%,
+			var(--color-surface, #252036) 75%
+		);
 		background-size: 200% 100%;
 		animation: shimmer 1.5s infinite;
 

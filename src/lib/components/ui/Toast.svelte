@@ -63,9 +63,9 @@
 		gap: var(--space-sm);
 		padding: 12px 20px;
 		border-radius: var(--radius-full);
-		background: rgba(25, 31, 40, 0.9);
+		background: rgba(30, 26, 46, 0.95);
 		backdrop-filter: blur(8px);
-		color: var(--color-white);
+		color: var(--color-text);
 		z-index: var(--z-toast);
 		animation: toast-in 300ms cubic-bezier(0.32, 0.72, 0, 1);
 		white-space: nowrap;
@@ -73,13 +73,13 @@
 
 		&--success {
 			.toast__icon {
-				color: #34d399;
+				color: var(--color-success);
 			}
 		}
 
 		&--error {
 			.toast__icon {
-				color: #f87171;
+				color: var(--color-danger);
 			}
 		}
 
