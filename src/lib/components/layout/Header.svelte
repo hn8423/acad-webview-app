@@ -84,12 +84,15 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-sm);
+		flex: 1;
+		min-width: 0;
 	}
 
 	.header__right {
 		display: flex;
 		align-items: center;
 		gap: var(--space-xs);
+		flex-shrink: 0;
 	}
 
 	.header__title {
