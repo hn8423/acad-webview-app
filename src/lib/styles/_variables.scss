@@ -1,39 +1,46 @@
 :root {
-	// Colors - Primary (Blue Violet Gradient)
-	--color-primary: #6c5ce7;
-	--color-primary-light: #a29bfe;
-	--color-primary-dark: #5a4bd1;
-	--color-primary-bg: #f0eeff;
-	--color-primary-gradient: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
-	--color-primary-gradient-hover: linear-gradient(135deg, #5a4bd1 0%, #8b7fe8 100%);
-	--color-primary-surface: #e8e5fd;
+	// Colors - Primary (Vivid Purple Gradient)
+	--color-primary: #8b5cf6;
+	--color-primary-light: #c4b5fd;
+	--color-primary-dark: #7c3aed;
+	--color-primary-bg: rgba(139, 92, 246, 0.12);
+	--color-primary-gradient: linear-gradient(135deg, #8b5cf6 0%, #c084fc 50%, #a78bfa 100%);
+	--color-primary-gradient-hover: linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #8b5cf6 100%);
+	--color-primary-surface: rgba(139, 92, 246, 0.08);
 
 	// Colors - Secondary
-	--color-secondary: #6b7280;
-	--color-secondary-light: #9ca3af;
-	--color-secondary-dark: #4b5563;
+	--color-secondary: #94a3b8;
+	--color-secondary-light: #cbd5e1;
+	--color-secondary-dark: #64748b;
 
 	// Colors - Semantic
-	--color-success: #10b981;
-	--color-success-bg: #ecfdf5;
-	--color-warning: #f59e0b;
-	--color-warning-bg: #fffbeb;
-	--color-danger: #ef4444;
-	--color-danger-bg: #fef2f2;
-	--color-info: #6c5ce7;
-	--color-info-bg: #f0eeff;
+	--color-success: #34d399;
+	--color-success-bg: rgba(52, 211, 153, 0.12);
+	--color-warning: #fbbf24;
+	--color-warning-bg: rgba(251, 191, 36, 0.12);
+	--color-danger: #f87171;
+	--color-danger-bg: rgba(248, 113, 113, 0.12);
+	--color-danger-bg-hover: rgba(248, 113, 113, 0.18);
+	--color-info: #8b5cf6;
+	--color-info-bg: rgba(139, 92, 246, 0.12);
 
-	// Colors - Neutral (Toss-style)
-	--color-white: #ffffff;
-	--color-bg: #f5f6f8;
-	--color-bg-elevated: #ffffff;
-	--color-bg-card: #ffffff;
-	--color-border: #f0f0f0;
-	--color-divider: #f2f3f5;
-	--color-text: #191f28;
-	--color-text-secondary: #8b95a1;
-	--color-text-muted: #b0b8c1;
-	--color-text-disabled: #d1d6db;
+	// Colors - Dark Neutral (Purple-tinted)
+	--color-white: #1a1625;
+	--color-bg: #110e1a;
+	--color-bg-elevated: #1e1a2e;
+	--color-bg-card: #1e1a2e;
+	--color-surface: #252036;
+	--color-border: rgba(139, 92, 246, 0.15);
+	--color-divider: rgba(139, 92, 246, 0.1);
+	--color-text: #f1f0f5;
+	--color-text-secondary: #a09bb5;
+	--color-text-muted: #6b6580;
+	--color-text-disabled: #4a4460;
+
+	// Dark mode extras
+	--color-on-primary: #f1f0f5;
+	--color-glow-primary: rgba(139, 92, 246, 0.25);
+	--color-backdrop: rgba(0, 0, 0, 0.7);
 
 	// Typography
 	--font-family:
@@ -75,12 +82,12 @@
 	--radius-2xl: 24px;
 	--radius-full: 9999px;
 
-	// Shadows
-	--shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
-	--shadow-md: 0 2px 12px rgba(0, 0, 0, 0.06);
-	--shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
-	--shadow-xl: 0 12px 40px rgba(0, 0, 0, 0.12);
-	--shadow-card: 0 1px 4px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(0, 0, 0, 0.02);
+	// Shadows (Purple glow)
+	--shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(139, 92, 246, 0.05);
+	--shadow-md: 0 2px 12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(139, 92, 246, 0.08);
+	--shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 20px rgba(139, 92, 246, 0.1);
+	--shadow-xl: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 30px rgba(139, 92, 246, 0.15);
+	--shadow-card: 0 1px 4px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(139, 92, 246, 0.08);
 
 	// Layout
 	--header-height: 56px;

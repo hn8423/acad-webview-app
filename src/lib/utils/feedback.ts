@@ -1,9 +1,9 @@
 export const SCORE_LEVELS = [
-	{ max: 4, group: 'Beginner', shortLabel: 'Beg', color: '#f59e0b' },
-	{ max: 8, group: 'Intermediate', shortLabel: 'Int', color: '#10b981' },
-	{ max: 12, group: 'Advanced', shortLabel: 'Adv', color: '#6c5ce7' },
-	{ max: 16, group: 'Expert', shortLabel: 'Exp', color: '#ef4444' },
-	{ max: 20, group: 'Master', shortLabel: 'Mas', color: '#8b5cf6' }
+	{ max: 4, group: 'Beginner', shortLabel: 'Beg', color: '#fbbf24' },
+	{ max: 8, group: 'Intermediate', shortLabel: 'Int', color: '#34d399' },
+	{ max: 12, group: 'Advanced', shortLabel: 'Adv', color: '#8b5cf6' },
+	{ max: 16, group: 'Expert', shortLabel: 'Exp', color: '#f87171' },
+	{ max: 20, group: 'Master', shortLabel: 'Mas', color: '#c084fc' }
 ] as const;
 
 export const SUB_LEVELS = ['Pre', 'Low', 'Mid', 'High'] as const;

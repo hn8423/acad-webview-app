@@ -125,7 +125,7 @@
 			width: 100%;
 			height: 100%;
 			background: var(--color-primary-gradient);
-			color: var(--color-white);
+			color: var(--color-on-primary);
 			display: flex;
 			align-items: center;
 			justify-content: center;

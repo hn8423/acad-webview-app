@@ -77,7 +77,7 @@
 
 			.bubble--mine & {
 				background-color: var(--color-primary);
-				color: white;
+				color: var(--color-on-primary);
 				border-bottom-right-radius: 4px;
 			}
 

@@ -635,7 +635,7 @@
 			transition: background-color var(--transition-fast);
 
 			&:active {
-				background-color: var(--color-danger-bg, #fef2f2);
+				background-color: var(--color-danger-bg);
 			}
 		}
 

@@ -83,7 +83,7 @@
 		right: 0;
 		height: var(--bottom-nav-height);
 		background-color: var(--color-white);
-		box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.04);
+		border-top: 1px solid var(--color-border);
 		display: flex;
 		align-items: center;
 		justify-content: space-around;

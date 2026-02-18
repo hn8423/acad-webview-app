@@ -21,11 +21,11 @@
 	const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
 
 	const EVENT_TYPE_COLORS: Record<CalendarEvent['event_type'], string> = {
-		LESSON: '#6c5ce7',
-		PARTY: '#f59e0b',
-		HOLIDAY: '#ef4444',
-		PERFORMANCE: '#10b981',
-		OTHER: '#6b7280'
+		LESSON: '#8b5cf6',
+		PARTY: '#fbbf24',
+		HOLIDAY: '#f87171',
+		PERFORMANCE: '#34d399',
+		OTHER: '#94a3b8'
 	};
 
 	const EVENT_TYPE_LABELS: Record<CalendarEvent['event_type'], string> = {
@@ -150,7 +150,7 @@
 	}
 
 	function getEventColor(event: CalendarEvent): string {
-		return event.color || EVENT_TYPE_COLORS[event.event_type] || '#6b7280';
+		return event.color || EVENT_TYPE_COLORS[event.event_type] || '#94a3b8';
 	}
 
 	function goToPreviousMonth() {
@@ -411,12 +411,12 @@
 			background: var(--color-primary);
 
 			.calendar-cell__date {
-				color: var(--color-white);
+				color: var(--color-on-primary);
 				font-weight: var(--font-weight-bold);
 			}
 
 			.event-dot {
-				background-color: var(--color-white) !important;
+				background-color: var(--color-on-primary) !important;
 			}
 		}
 

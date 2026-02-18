@@ -294,7 +294,7 @@
 				background: var(--color-primary);
 
 				.reservation-calendar__date {
-					color: var(--color-white);
+					color: var(--color-on-primary);
 					font-weight: var(--font-weight-bold);
 				}
 			}
@@ -319,7 +319,7 @@
 			line-height: 1;
 
 			&--selected {
-				color: var(--color-white);
+				color: var(--color-on-primary);
 			}
 		}
 	}

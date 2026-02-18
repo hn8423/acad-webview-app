@@ -62,7 +62,7 @@
 
 		&--primary {
 			background: var(--color-primary-gradient);
-			color: var(--color-white);
+			color: var(--color-on-primary);
 
 			&:hover:not(:disabled) {
 				background: var(--color-primary-gradient-hover);
@@ -92,7 +92,7 @@
 			color: var(--color-danger);
 
 			&:hover:not(:disabled) {
-				background-color: #fde8e8;
+				background-color: var(--color-danger-bg-hover);
 			}
 		}
 
