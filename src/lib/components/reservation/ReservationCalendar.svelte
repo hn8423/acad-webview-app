@@ -309,6 +309,7 @@
 		&__date {
 			font-size: var(--font-size-sm);
 			line-height: 1;
+			color: var(--color-text);
 		}
 
 		&__count {
