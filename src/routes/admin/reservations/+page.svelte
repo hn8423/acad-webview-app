@@ -68,6 +68,10 @@
 	// Slot CRUD handlers
 
 	function openCreateModal() {
+		if (academyStore.isAdmin) {
+			toastStore.error('관리자는 강의를 열 수 없습니다');
+			return;
+		}
 		createForm = {
 			slot_date: selectedDate,
 			start_time: '10:00',
