@@ -105,6 +105,7 @@
 		display: flex;
 		align-items: center;
 		cursor: pointer;
+		color: inherit;
 	}
 
 	.header__icon-btn {
