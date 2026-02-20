@@ -28,7 +28,7 @@
 				if (res.status && res.data) {
 					title = res.data.title;
 					content = res.data.content;
-					isPinned = res.data.is_pinned;
+					isPinned = res.data.is_pinned === 1;
 				}
 			} catch {
 				error = '공지를 불러오지 못했습니다.';
@@ -53,7 +53,7 @@
 
 		loading = true;
 		try {
-			const data = { title, content, is_pinned: isPinned };
+			const data = { title, content, is_pinned: isPinned ? 1 : 0 };
 
 			if (isNew) {
 				await createNotice(academyId, data);

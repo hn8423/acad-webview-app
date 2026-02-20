@@ -5,10 +5,10 @@
 	import BackHeader from '$lib/components/layout/BackHeader.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import { formatDateTime, formatFileSize } from '$lib/utils/format';
-	import type { NoticeDetail } from '$lib/types/academy';
+	import type { Notice } from '$lib/types/academy';
 	import { onMount } from 'svelte';
 
-	let notice = $state<NoticeDetail | null>(null);
+	let notice = $state<Notice | null>(null);
 	let loading = $state(true);
 
 	onMount(async () => {
@@ -45,8 +45,6 @@
 						<span>{notice.author_name}</span>
 						<span class="article__meta-dot">&middot;</span>
 						<span>{formatDateTime(notice.created_at)}</span>
-						<span class="article__meta-dot">&middot;</span>
-						<span>조회 {notice.view_count}</span>
 					</div>
 				</header>
 

@@ -1,52 +1,69 @@
 <script lang="ts">
 	import { academyStore } from '$lib/stores/academy.svelte';
+	import {
+		getAccessibleFeatures,
+		getFeatureIcon,
+		getSingleFeatureRoute,
+		isIconUrl
+	} from '$lib/config/admin-features';
+	import type { NavItem } from '$lib/types/academy';
 	import Card from '$lib/components/ui/Card.svelte';
 	import { goto } from '$app/navigation';
+
+	let navItems = $derived(
+		academyStore
+			.getEnabledNavItems('ADMIN')
+			.filter((item) => getAccessibleFeatures(item, academyStore.memberRole).length > 0)
+	);
+
+	function handleCardClick(navItem: NavItem) {
+		const singleRoute = getSingleFeatureRoute(navItem, academyStore.memberRole);
+		if (singleRoute) {
+			goto(singleRoute);
+		} else {
+			goto(`/admin/nav/${navItem.nav_id}`);
+		}
+	}
+
+	function getCardIcon(navItem: NavItem): string {
+		const features = getAccessibleFeatures(navItem, academyStore.memberRole);
+		if (features.length === 0) return '';
+		return getFeatureIcon(features[0].feature_key);
+	}
 </script>
 
 <div class="admin-dashboard">
 	<h1 class="admin-dashboard__title">대시보드</h1>
 
 	<div class="admin-dashboard__grid">
-		<Card onclick={() => goto('/admin/notices')}>
-			<div class="dashboard-card">
-				<div class="dashboard-card__icon">
-					<svg
-						width="24"
-						height="24"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="var(--color-primary)"
-						stroke-width="2"
-					>
-						<path
-							d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"
-						/>
-					</svg>
+		{#each navItems as navItem (navItem.nav_id)}
+			<Card onclick={() => handleCardClick(navItem)}>
+				<div class="dashboard-card">
+					<div class="dashboard-card__icon">
+						{#if navItem.nav_icon && isIconUrl(navItem.nav_icon)}
+							<span
+								class="dashboard-card__mask-icon"
+								style:--icon-url="url('{navItem.nav_icon}')"
+							></span>
+						{:else}
+							<svg
+								width="24"
+								height="24"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="var(--color-primary)"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							>
+								<path d={getCardIcon(navItem)} />
+							</svg>
+						{/if}
+					</div>
+					<span class="dashboard-card__label">{navItem.nav_label}</span>
 				</div>
-				<span class="dashboard-card__label">공지사항 관리</span>
-			</div>
-		</Card>
-
-		<Card onclick={() => goto('/admin/students')}>
-			<div class="dashboard-card">
-				<div class="dashboard-card__icon">
-					<svg
-						width="24"
-						height="24"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="var(--color-primary)"
-						stroke-width="2"
-					>
-						<path
-							d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-						/>
-					</svg>
-				</div>
-				<span class="dashboard-card__label">수강생 관리</span>
-			</div>
-		</Card>
+			</Card>
+		{/each}
 	</div>
 </div>
 
@@ -87,6 +104,21 @@
 			height: 48px;
 			background: var(--color-primary-bg);
 			border-radius: var(--radius-full);
+		}
+
+		&__mask-icon {
+			display: inline-block;
+			width: 24px;
+			height: 24px;
+			background-color: var(--color-primary);
+			-webkit-mask-image: var(--icon-url);
+			mask-image: var(--icon-url);
+			-webkit-mask-size: contain;
+			mask-size: contain;
+			-webkit-mask-repeat: no-repeat;
+			mask-repeat: no-repeat;
+			-webkit-mask-position: center;
+			mask-position: center;
 		}
 
 		&__label {

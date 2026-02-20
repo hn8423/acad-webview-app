@@ -5,13 +5,12 @@
 	import { getMemberDetail } from '$lib/api/member';
 	import BackHeader from '$lib/components/layout/BackHeader.svelte';
 	import Card from '$lib/components/ui/Card.svelte';
-	import Badge from '$lib/components/ui/Badge.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import { formatPhone, formatDate } from '$lib/utils/format';
-	import type { MemberListItem } from '$lib/types/member';
+	import type { MemberDetail } from '$lib/types/member';
 	import { onMount } from 'svelte';
 
-	let member = $state<MemberListItem | null>(null);
+	let member = $state<MemberDetail | null>(null);
 	let loading = $state(true);
 
 	onMount(async () => {
@@ -63,9 +62,6 @@
 					>
 						<span class="menu-item__label">수강권 관리</span>
 						<div class="menu-item__right">
-							{#if member.active_passes > 0}
-								<Badge variant="success">{member.active_passes}개 활성</Badge>
-							{/if}
 							<svg
 								width="20"
 								height="20"
@@ -93,9 +89,33 @@
 					>
 						<span class="menu-item__label">음료권 관리</span>
 						<div class="menu-item__right">
-							{#if member.remaining_drinks > 0}
-								<Badge variant="info">{member.remaining_drinks}잔</Badge>
-							{/if}
+							<svg
+								width="20"
+								height="20"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+							>
+								<path d="M9 18l6-6-6-6" />
+							</svg>
+						</div>
+					</div>
+					<div class="menu-list__divider"></div>
+					<div
+						class="menu-item"
+						role="button"
+						tabindex="0"
+						onclick={() => goto(`/admin/students/${page.params.id}/feedback`)}
+						onkeydown={(e) => {
+							if (e.key === 'Enter' || e.key === ' ') {
+								e.preventDefault();
+								goto(`/admin/students/${page.params.id}/feedback`);
+							}
+						}}
+					>
+						<span class="menu-item__label">피드백</span>
+						<div class="menu-item__right">
 							<svg
 								width="20"
 								height="20"

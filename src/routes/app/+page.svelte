@@ -1,10 +1,15 @@
 <script lang="ts">
 	import { academyStore } from '$lib/stores/academy.svelte';
+	import { toastStore } from '$lib/stores/toast.svelte';
 	import { getMyPasses, getMyDrinkTickets } from '$lib/api/member';
 	import { getRecentNotices } from '$lib/api/academy';
+	import { createHolding } from '$lib/api/holding';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
+	import CalendarSection from '$lib/components/ui/CalendarSection.svelte';
+	import HoldingRequestModal from '$lib/components/holding/HoldingRequestModal.svelte';
 	import { formatDate } from '$lib/utils/format';
+	import { getPassStatusVariant, getPassStatusLabel } from '$lib/utils/pass';
 	import type { MemberPass, DrinkTicket } from '$lib/types/member';
 	import type { Notice } from '$lib/types/academy';
 	import { onMount } from 'svelte';
@@ -14,6 +19,12 @@
 	let drinkTickets = $state<DrinkTicket[]>([]);
 	let recentNotices = $state<Notice[]>([]);
 	let loading = $state(true);
+
+	let showHoldingModal = $state(false);
+	let holdingTargetPass = $state<MemberPass | null>(null);
+	let holdingSubmitting = $state(false);
+	let holdingError = $state('');
+	let holdingRequestedPassIds = $state(new Set<number>());
 
 	onMount(async () => {
 		const academyId = academyStore.academyId;
@@ -44,32 +55,40 @@
 
 	let totalDrinks = $derived(drinkTickets.reduce((sum, t) => sum + t.remaining_count, 0));
 
-	function getPassStatusVariant(status: string) {
-		switch (status) {
-			case 'ACTIVE':
-				return 'success' as const;
-			case 'HOLDING':
-				return 'warning' as const;
-			case 'EXPIRED':
-			case 'COMPLETED':
-				return 'neutral' as const;
-			default:
-				return 'neutral' as const;
-		}
+	function openHoldingModal(pass: MemberPass) {
+		holdingTargetPass = pass;
+		holdingError = '';
+		showHoldingModal = true;
 	}
 
-	function getPassStatusLabel(status: string): string {
-		switch (status) {
-			case 'ACTIVE':
-				return '이용중';
-			case 'HOLDING':
-				return '홀딩';
-			case 'EXPIRED':
-				return '만료';
-			case 'COMPLETED':
-				return '완료';
-			default:
-				return status;
+	async function handleHoldingSubmit(data: {
+		holding_start: string;
+		holding_end: string;
+		reason?: string;
+	}) {
+		const academyId = academyStore.academyId;
+		if (!academyId || !holdingTargetPass) return;
+
+		holdingSubmitting = true;
+		holdingError = '';
+		try {
+			const res = await createHolding(academyId, holdingTargetPass.id, {
+				holding_start: data.holding_start,
+				holding_end: data.holding_end,
+				reason: data.reason
+			});
+			if (res.status) {
+				toastStore.success('홀딩 신청이 완료되었습니다.');
+				holdingRequestedPassIds = new Set([...holdingRequestedPassIds, holdingTargetPass.id]);
+				showHoldingModal = false;
+				holdingTargetPass = null;
+			} else {
+				holdingError = res.message || '홀딩 신청에 실패했습니다.';
+			}
+		} catch (err) {
+			holdingError = err instanceof Error ? err.message : '홀딩 신청에 실패했습니다.';
+		} finally {
+			holdingSubmitting = false;
 		}
 	}
 </script>
@@ -141,6 +160,16 @@
 									<div class="pass-card__date">
 										{formatDate(pass.start_date)} ~ {formatDate(pass.end_date)}
 									</div>
+								{#if holdingRequestedPassIds.has(pass.id)}
+									<span class="pass-card__holding-status">홀딩 신청중</span>
+								{:else if pass.status === 'ACTIVE'}
+									<button
+										class="pass-card__holding-btn"
+										onclick={() => openHoldingModal(pass)}
+									>
+										홀딩 신청
+									</button>
+								{/if}
 								</div>
 							</div>
 							{#if passes.indexOf(pass) < passes.length - 1}
@@ -151,6 +180,13 @@
 				{/if}
 			</div>
 		</section>
+
+		<!-- 캘린더 조회 -->
+		{#if academyStore.academyId}
+			<section class="main-page__section">
+				<CalendarSection academyId={academyStore.academyId} />
+			</section>
+		{/if}
 
 		<!-- 공지사항 -->
 		<section class="main-page__section">
@@ -182,6 +218,18 @@
 		</section>
 	{/if}
 </div>
+
+<HoldingRequestModal
+	isOpen={showHoldingModal}
+	passName={holdingTargetPass?.pass_name ?? ''}
+	onclose={() => {
+		showHoldingModal = false;
+		holdingError = '';
+	}}
+	onsubmit={handleHoldingSubmit}
+	submitting={holdingSubmitting}
+	error={holdingError}
+/>
 
 <style lang="scss">
 	.main-page {
@@ -316,6 +364,39 @@
 		&__date {
 			font-size: var(--font-size-xs);
 			color: var(--color-text-muted);
+		}
+
+		&__holding-btn {
+			margin-top: var(--space-sm);
+			padding: 6px 12px;
+			font-size: var(--font-size-sm);
+			font-weight: var(--font-weight-medium);
+			color: var(--color-primary);
+			background: var(--color-primary-bg);
+			border: none;
+			border-radius: var(--radius-sm);
+			cursor: pointer;
+			transition: all var(--transition-fast);
+			align-self: flex-start;
+
+			&:hover {
+				background: var(--color-primary-light);
+			}
+
+			&:active {
+				opacity: 0.7;
+			}
+		}
+
+		&__holding-status {
+			margin-top: var(--space-sm);
+			padding: 6px 12px;
+			font-size: var(--font-size-sm);
+			font-weight: var(--font-weight-medium);
+			color: var(--color-warning);
+			background: var(--color-warning-bg);
+			border-radius: var(--radius-sm);
+			align-self: flex-start;
 		}
 	}
 

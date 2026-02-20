@@ -31,7 +31,7 @@
 		if (!academyId) return;
 
 		try {
-			const res = await getMemberDrinkTickets(academyId, memberId);
+			const res = await getMemberDrinkTickets(academyId);
 			if (res.status && res.data) {
 				tickets = res.data;
 			}

@@ -40,6 +40,23 @@
 		{/if}
 
 		<div class="profile-menu">
+			<button type="button" class="profile-menu__item" onclick={() => goto('/app/notice')}>
+				<span class="profile-menu__label">공지사항</span>
+				<svg
+					class="profile-menu__chevron"
+					width="20"
+					height="20"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="var(--color-text-muted)"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				>
+					<polyline points="9 18 15 12 9 6" />
+				</svg>
+			</button>
+			<div class="profile-menu__divider"></div>
 			<button type="button" class="profile-menu__item" onclick={handleSwitchAcademy}>
 				<span class="profile-menu__label">학원 변경</span>
 				<svg
@@ -108,7 +125,7 @@
 			width: 100%;
 			height: 100%;
 			background: var(--color-primary-gradient);
-			color: var(--color-white);
+			color: var(--color-on-primary);
 			display: flex;
 			align-items: center;
 			justify-content: center;
@@ -158,6 +175,12 @@
 
 		&__chevron {
 			flex-shrink: 0;
+		}
+
+		&__divider {
+			height: 1px;
+			background-color: var(--color-divider);
+			margin: 0 var(--space-lg);
 		}
 	}
 

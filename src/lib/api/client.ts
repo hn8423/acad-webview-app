@@ -41,8 +41,9 @@ async function refreshAccessToken(): Promise<boolean> {
 		if (!res.ok) return false;
 
 		const json = await res.json();
-		if (json.status && json.data) {
-			setTokens(json.data.access_token, json.data.refresh_token);
+		const inner = json.response?.data;
+		if (inner?.result_status === 'success' && inner.result_data) {
+			setTokens(inner.result_data.access_token, inner.result_data.refresh_token);
 			return true;
 		}
 		return false;
@@ -115,7 +116,7 @@ export async function apiRequest<T>(endpoint: string, options: RequestOptions = 
 			});
 		} else {
 			clearTokens();
-			if (typeof window !== 'undefined') {
+			if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth/')) {
 				window.location.href = '/auth/login';
 			}
 			throw new ApiError(401, '인증이 만료되었습니다. 다시 로그인해주세요.');

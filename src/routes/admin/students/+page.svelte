@@ -40,7 +40,7 @@
 					members = res.data.list;
 				}
 				nextCursor = res.data.next_cursor;
-				hasMore = res.data.has_more;
+				hasMore = res.data.next_cursor !== null;
 			}
 		} catch {
 			// handle error
@@ -102,9 +102,6 @@
 					<div class="student-row__stats">
 						{#if member.active_passes > 0}
 							<Badge variant="success">수강권 {member.active_passes}</Badge>
-						{/if}
-						{#if member.remaining_drinks > 0}
-							<Badge variant="info">음료 {member.remaining_drinks}</Badge>
 						{/if}
 					</div>
 				</div>

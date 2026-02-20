@@ -4,16 +4,18 @@ export interface ApiResponse<T> {
 	data: T;
 }
 
-export interface PaginatedData<T> {
-	list: T[];
-	meta: {
-		total: number;
-		page: number;
-		limit: number;
-	};
+export interface PaginationMeta {
+	total: number;
+	page: number;
+	limit: number;
 }
 
-export interface CursorPaginatedData<T> {
+export interface PaginatedList<T> {
+	list: T[];
+	meta: PaginationMeta;
+}
+
+export interface CursorPaginatedList<T> {
 	list: T[];
 	next_cursor: number | null;
 	has_more: boolean;

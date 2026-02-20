@@ -77,7 +77,7 @@
 </div>
 
 {#if showToast}
-	<Toast message={toastMessage} type="error" onclose={() => (showToast = false)} />
+	<Toast message={toastMessage} type="error" />
 {/if}
 
 <style lang="scss">

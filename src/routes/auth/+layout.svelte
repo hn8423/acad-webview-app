@@ -14,6 +14,6 @@
 		justify-content: center;
 		min-height: 100dvh;
 		padding: var(--space-lg);
-		background: linear-gradient(180deg, var(--color-primary-bg) 0%, var(--color-bg) 40%);
+		background: linear-gradient(180deg, rgba(139, 92, 246, 0.15) 0%, var(--color-bg) 50%);
 	}
 </style>

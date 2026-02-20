@@ -4,11 +4,18 @@
 	interface Props {
 		isOpen: boolean;
 		title?: string;
+		position?: 'bottom' | 'center';
 		onclose: () => void;
 		children: Snippet;
 	}
 
-	let { isOpen = $bindable(false), title = '', onclose, children }: Props = $props();
+	let {
+		isOpen = $bindable(false),
+		title = '',
+		position = 'bottom',
+		onclose,
+		children
+	}: Props = $props();
 
 	function handleBackdropClick(e: MouseEvent) {
 		if (e.target === e.currentTarget) {
@@ -29,16 +36,19 @@
 	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 	<div
 		class="modal-backdrop"
+		class:modal-backdrop--center={position === 'center'}
 		onclick={handleBackdropClick}
 		onkeydown={handleKeydown}
 		role="dialog"
 		aria-modal="true"
 		tabindex="-1"
 	>
-		<div class="modal">
-			<div class="modal__handle">
-				<span class="modal__handle-bar"></span>
-			</div>
+		<div class="modal" class:modal--center={position === 'center'}>
+			{#if position === 'bottom'}
+				<div class="modal__handle">
+					<span class="modal__handle-bar"></span>
+				</div>
+			{/if}
 			{#if title}
 				<div class="modal__header">
 					<h2 class="modal__title">{title}</h2>
@@ -68,13 +78,18 @@
 	.modal-backdrop {
 		position: fixed;
 		inset: 0;
-		background-color: rgba(0, 0, 0, 0.5);
+		background-color: var(--color-backdrop);
 		backdrop-filter: blur(4px);
 		display: flex;
 		align-items: flex-end;
 		justify-content: center;
 		z-index: var(--z-modal-backdrop);
 		padding: 0;
+
+		&--center {
+			align-items: center;
+			padding: var(--space-lg);
+		}
 	}
 
 	.modal {
@@ -87,6 +102,11 @@
 		z-index: var(--z-modal);
 		box-shadow: var(--shadow-xl);
 		animation: slide-up 300ms cubic-bezier(0.32, 0.72, 0, 1);
+
+		&--center {
+			border-radius: var(--radius-xl);
+			animation: scale-fade-in 250ms cubic-bezier(0.32, 0.72, 0, 1);
+		}
 
 		&__handle {
 			display: flex;
@@ -103,17 +123,21 @@
 
 		&__header {
 			display: flex;
+			flex-wrap: nowrap;
 			align-items: center;
 			justify-content: space-between;
 			padding: var(--space-md) var(--space-lg);
 		}
 
 		&__title {
+			flex: 1;
+			min-width: 0;
 			font-size: var(--font-size-lg);
 			font-weight: var(--font-weight-bold);
 		}
 
 		&__close {
+			flex-shrink: 0;
 			width: 44px;
 			height: 44px;
 			display: flex;
@@ -140,6 +164,17 @@
 		}
 		to {
 			transform: translateY(0);
+		}
+	}
+
+	@keyframes scale-fade-in {
+		from {
+			transform: scale(0.95);
+			opacity: 0;
+		}
+		to {
+			transform: scale(1);
+			opacity: 1;
 		}
 	}
 </style>

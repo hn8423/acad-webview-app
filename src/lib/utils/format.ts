@@ -51,3 +51,84 @@ export function getRelativeTime(dateStr: string): string {
 
 	return formatDate(dateStr);
 }
+
+export function formatTime(timeStr: string): string {
+	const parts = timeStr.split(':');
+	if (parts.length < 2) return timeStr;
+
+	const [hours, minutes] = parts;
+	const h = parseInt(hours, 10);
+	if (isNaN(h)) return timeStr;
+
+	const period = h >= 12 ? '오후' : '오전';
+	const displayHour = h > 12 ? h - 12 : h === 0 ? 12 : h;
+	return `${period} ${displayHour}:${minutes}`;
+}
+
+export function formatTimeRange(startTime: string, endTime: string): string {
+	return `${formatTime(startTime)} - ${formatTime(endTime)}`;
+}
+
+export function getDayOfWeek(dateStr: string): string {
+	const days = ['일', '월', '화', '수', '목', '금', '토'];
+	const [year, month, day] = dateStr.split('-').map(Number);
+	const date = new Date(year, month - 1, day);
+	return days[date.getDay()];
+}
+
+export function getDaysInMonth(year: number, month: number): number {
+	return new Date(year, month, 0).getDate();
+}
+
+export function getFirstDayOfMonth(year: number, month: number): number {
+	return new Date(year, month - 1, 1).getDay();
+}
+
+export function formatMonth(year: number, month: number): string {
+	return `${year}년 ${String(month).padStart(2, '0')}월`;
+}
+
+export function getTodayString(): string {
+	const today = new Date();
+	const y = today.getFullYear();
+	const m = String(today.getMonth() + 1).padStart(2, '0');
+	const d = String(today.getDate()).padStart(2, '0');
+	return `${y}-${m}-${d}`;
+}
+
+export function formatChatTime(dateStr: string): string {
+	const date = new Date(dateStr);
+	const hours = date.getHours();
+	const minutes = String(date.getMinutes()).padStart(2, '0');
+	const period = hours >= 12 ? '오후' : '오전';
+	const displayHour = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
+	return `${period} ${displayHour}:${minutes}`;
+}
+
+export function formatChatDateSeparator(dateStr: string): string {
+	const date = new Date(dateStr);
+	const year = date.getFullYear();
+	const month = date.getMonth() + 1;
+	const day = date.getDate();
+	const days = ['일', '월', '화', '수', '목', '금', '토'];
+	const dayOfWeek = days[date.getDay()];
+	return `${year}년 ${month}월 ${day}일 ${dayOfWeek}요일`;
+}
+
+export function isSameDay(dateStr1: string, dateStr2: string): boolean {
+	const d1 = new Date(dateStr1);
+	const d2 = new Date(dateStr2);
+	return (
+		d1.getFullYear() === d2.getFullYear() &&
+		d1.getMonth() === d2.getMonth() &&
+		d1.getDate() === d2.getDate()
+	);
+}
+
+export function toLocalDateString(dateStr: string): string {
+	const date = new Date(dateStr);
+	const y = date.getFullYear();
+	const m = String(date.getMonth() + 1).padStart(2, '0');
+	const d = String(date.getDate()).padStart(2, '0');
+	return `${y}-${m}-${d}`;
+}

@@ -11,9 +11,7 @@ export interface Academy {
 	academy_phone: string;
 	academy_logo_img: string;
 	business_type: BusinessType;
-	operating_hours_start: string;
-	operating_hours_end: string;
-	status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
+	status: string;
 }
 
 export interface NavFeature {
@@ -25,34 +23,29 @@ export interface NavFeature {
 
 export interface NavItem {
 	nav_id: number;
-	nav_position: number;
 	nav_label: string;
 	nav_icon: string;
+	nav_position: number;
 	is_enabled: boolean;
 	features: NavFeature[];
 }
 
 export interface AppConfig {
-	app_type: 'USER' | 'ADMIN';
+	app_type: string;
 	nav_list: NavItem[];
 }
 
 export interface Notice {
 	id: number;
 	title: string;
-	is_pinned: boolean;
-	view_count: number;
+	content: string;
+	is_pinned: number;
 	author_name: string;
+	files: NoticeFile[];
 	created_at: string;
 }
 
-export interface NoticeDetail extends Notice {
-	content: string;
-	files: NoticeFile[];
-}
-
 export interface NoticeFile {
-	id: number;
 	file_url: string;
 	file_name: string;
 	file_type: string;

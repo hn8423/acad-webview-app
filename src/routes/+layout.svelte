@@ -1,10 +1,9 @@
 <script lang="ts">
 	import favicon from '$lib/assets/favicon.svg';
 	import '$lib/styles/global.scss';
-	import { authStore } from '$lib/stores/auth.svelte';
-	import { academyStore } from '$lib/stores/academy.svelte';
+	import '$lib/stores/auth.svelte';
+	import '$lib/stores/academy.svelte';
 	import ToastContainer from '$lib/components/ui/ToastContainer.svelte';
-	import { onMount } from 'svelte';
 
 	let { children } = $props();
 
@@ -16,7 +15,7 @@
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
-	<meta name="theme-color" content="#6C5CE7" />
+	<meta name="theme-color" content="#110e1a" />
 </svelte:head>
 
 {@render children()}

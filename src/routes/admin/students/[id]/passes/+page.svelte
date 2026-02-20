@@ -2,7 +2,14 @@
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { academyStore } from '$lib/stores/academy.svelte';
-	import { getMemberPasses, createMemberPass, getPassTypes, getInstructors } from '$lib/api/member';
+	import { toastStore } from '$lib/stores/toast.svelte';
+	import {
+		getMemberPasses,
+		createMemberPass,
+		updateMemberPass,
+		getPassTypes,
+		getInstructors
+	} from '$lib/api/member';
 	import BackHeader from '$lib/components/layout/BackHeader.svelte';
 	import Card from '$lib/components/ui/Card.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
@@ -11,6 +18,7 @@
 	import Modal from '$lib/components/ui/Modal.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import { formatDate } from '$lib/utils/format';
+	import { getPassStatusVariant, getPassStatusLabel } from '$lib/utils/pass';
 	import type { MemberPass, PassType, Instructor } from '$lib/types/member';
 	import { onMount } from 'svelte';
 
@@ -18,22 +26,36 @@
 	let passTypes = $state<PassType[]>([]);
 	let instructors = $state<Instructor[]>([]);
 	let loading = $state(true);
-	let showCreateModal = $state(false);
-	let creating = $state(false);
-	let error = $state('');
 
-	// Form
+	// Form modal
+	let showFormModal = $state(false);
+	let submitting = $state(false);
+	let error = $state('');
+	let editTarget = $state<MemberPass | null>(null);
+
+	// Create form fields
 	let selectedPassTypeId = $state('');
 	let selectedInstructorId = $state('');
+
+	// Shared form fields
 	let startDate = $state('');
 	let totalLessons = $state('');
 
-	const memberId = $derived(Number(page.params.id));
+	// Edit-only form fields
+	let endDate = $state('');
+	let remainingLessons = $state('');
+	let selectedStatus = $state<MemberPass['status']>('ACTIVE');
 
-	onMount(async () => {
+	const memberId = $derived(Number(page.params.id));
+	let formTitle = $derived(editTarget ? '수강권 수정' : '수강권 부여');
+
+	onMount(() => fetchData());
+
+	async function fetchData() {
 		const academyId = academyStore.academyId;
 		if (!academyId) return;
 
+		loading = true;
 		try {
 			const [passRes, typesRes, instrRes] = await Promise.allSettled([
 				getMemberPasses(academyId, memberId),
@@ -45,90 +67,119 @@
 				passes = passRes.value.data;
 			}
 			if (typesRes.status === 'fulfilled' && typesRes.value.status) {
-				passTypes = typesRes.value.data;
+				const data = typesRes.value.data;
+				passTypes = Array.isArray(data) ? data : (data.pass_types ?? []);
 			}
 			if (instrRes.status === 'fulfilled' && instrRes.value.status) {
-				instructors = instrRes.value.data;
+				const data = instrRes.value.data;
+				instructors = Array.isArray(data) ? data : (data.instructors ?? []);
 			}
 		} catch {
-			// handle error
+			// handled by client.ts
 		} finally {
 			loading = false;
 		}
-	});
+	}
+
+	async function fetchPasses() {
+		const academyId = academyStore.academyId;
+		if (!academyId) return;
+
+		try {
+			const res = await getMemberPasses(academyId, memberId);
+			if (res.status) {
+				passes = res.data;
+			}
+		} catch {
+			// handled by client.ts
+		}
+	}
 
 	function openCreateModal() {
+		editTarget = null;
 		selectedPassTypeId = '';
 		selectedInstructorId = '';
 		startDate = new Date().toISOString().split('T')[0];
 		totalLessons = '';
 		error = '';
-		showCreateModal = true;
+		showFormModal = true;
 	}
 
-	function handlePassTypeChange(e: Event) {
-		const target = e.target as HTMLSelectElement;
-		selectedPassTypeId = target.value;
-		const pt = passTypes.find((t) => t.id === Number(target.value));
+	function openEditModal(pass: MemberPass) {
+		editTarget = pass;
+		startDate = pass.start_date ? pass.start_date.split('T')[0] : '';
+		endDate = pass.end_date ? pass.end_date.split('T')[0] : '';
+		totalLessons = String(pass.total_lessons);
+		remainingLessons = String(pass.remaining_lessons);
+		selectedStatus = pass.status;
+		error = '';
+		showFormModal = true;
+	}
+
+	function handlePassTypeChange() {
+		const pt = passTypes.find((t) => String(t.id) === String(selectedPassTypeId));
 		if (pt) {
 			totalLessons = String(pt.total_lessons);
 		}
 	}
 
-	async function handleCreate() {
+	async function handleSubmit() {
 		error = '';
-		if (!selectedPassTypeId || !selectedInstructorId || !startDate || !totalLessons) {
-			error = '모든 항목을 입력해주세요.';
-			return;
-		}
-
 		const academyId = academyStore.academyId;
 		if (!academyId) return;
 
-		creating = true;
-		try {
-			const res = await createMemberPass(academyId, memberId, {
-				pass_type_id: Number(selectedPassTypeId),
-				instructor_id: Number(selectedInstructorId),
-				start_date: startDate,
-				total_lessons: Number(totalLessons)
-			});
-			if (res.status && res.data) {
-				passes = [...passes, res.data];
-				showCreateModal = false;
+		if (editTarget) {
+			if (!startDate || !endDate || !totalLessons || !remainingLessons) {
+				error = '모든 항목을 입력해주세요.';
+				return;
 			}
-		} catch (err) {
-			error = err instanceof Error ? err.message : '수강권 부여에 실패했습니다.';
-		} finally {
-			creating = false;
+
+			submitting = true;
+			try {
+				const res = await updateMemberPass(academyId, memberId, editTarget.id, {
+					start_date: startDate,
+					end_date: endDate,
+					total_lessons: Number(totalLessons),
+					remaining_lessons: Number(remainingLessons),
+					status: selectedStatus
+				});
+				if (res.status) {
+					toastStore.success('수강권이 수정되었습니다.');
+					showFormModal = false;
+					await fetchPasses();
+				}
+			} catch (err) {
+				error = err instanceof Error ? err.message : '수강권 수정에 실패했습니다.';
+			} finally {
+				submitting = false;
+			}
+		} else {
+			if (!selectedPassTypeId || !selectedInstructorId || !startDate || !totalLessons) {
+				error = '모든 항목을 입력해주세요.';
+				return;
+			}
+
+			submitting = true;
+			try {
+				const res = await createMemberPass(academyId, memberId, {
+					pass_type_id: Number(selectedPassTypeId),
+					instructor_id: Number(selectedInstructorId),
+					start_date: startDate,
+					total_lessons: Number(totalLessons)
+				});
+				if (res.status) {
+					toastStore.success('수강권이 부여되었습니다.');
+					showFormModal = false;
+					await fetchPasses();
+				}
+			} catch (err) {
+				error = err instanceof Error ? err.message : '수강권 부여에 실패했습니다.';
+			} finally {
+				submitting = false;
+			}
 		}
 	}
 
-	function getStatusVariant(status: string) {
-		switch (status) {
-			case 'ACTIVE':
-				return 'success' as const;
-			case 'HOLDING':
-				return 'warning' as const;
-			default:
-				return 'neutral' as const;
-		}
-	}
-
-	function getStatusLabel(status: string): string {
-		switch (status) {
-			case 'ACTIVE':
-				return '이용중';
-			case 'HOLDING':
-				return '홀딩';
-			case 'EXPIRED':
-				return '만료';
-			case 'COMPLETED':
-				return '완료';
-			default:
-				return status;
-		}
-	}
 </script>
 
 <div class="passes-page">
@@ -136,6 +187,9 @@
 
 	<div class="passes-page__content">
 		<div class="passes-page__header">
+			<button class="passes-page__link" onclick={() => goto('/admin/pass-types')}>
+				수강권 종류 관리
+			</button>
 			<Button size="sm" onclick={openCreateModal}>수강권 부여</Button>
 		</div>
 
@@ -147,12 +201,12 @@
 			<p class="passes-page__empty">등록된 수강권이 없습니다.</p>
 		{:else}
 			<div class="pass-list">
-				{#each passes as pass}
+				{#each passes as pass (pass.id)}
 					<Card>
 						<div class="pass-item">
 							<div class="pass-item__header">
 								<span class="pass-item__name">{pass.pass_name}</span>
-								<Badge variant={getStatusVariant(pass.status)}>{getStatusLabel(pass.status)}</Badge>
+								<Badge variant={getPassStatusVariant(pass.status)}>{getPassStatusLabel(pass.status)}</Badge>
 							</div>
 							<div class="pass-item__progress">
 								<div class="pass-item__progress-bar">
@@ -173,6 +227,9 @@
 									>{formatDate(pass.start_date)} ~ {formatDate(pass.end_date)}</span
 								>
 							</div>
+							<div class="pass-item__actions">
+								<button class="action-btn" onclick={() => openEditModal(pass)}>수정</button>
+							</div>
 						</div>
 					</Card>
 				{/each}
@@ -181,49 +238,72 @@
 	</div>
 </div>
 
-<Modal isOpen={showCreateModal} title="수강권 부여" onclose={() => (showCreateModal = false)}>
+<Modal isOpen={showFormModal} title={formTitle} onclose={() => (showFormModal = false)}>
 	<form
 		class="create-form"
 		onsubmit={(e) => {
 			e.preventDefault();
-			handleCreate();
+			handleSubmit();
 		}}
 	>
-		<div class="create-form__field">
-			<label class="create-form__label" for="pass-type">수강권 종류</label>
-			<select
-				id="pass-type"
-				class="create-form__select"
-				value={selectedPassTypeId}
-				onchange={handlePassTypeChange}
-			>
-				<option value="">선택하세요</option>
-				{#each passTypes as pt}
-					<option value={pt.id}>{pt.pass_name} ({pt.pass_category})</option>
-				{/each}
-			</select>
-		</div>
+		{#if !editTarget}
+			<div class="create-form__field">
+				<label class="create-form__label" for="pass-type">수강권 종류</label>
+				<select
+					id="pass-type"
+					class="create-form__select"
+					bind:value={selectedPassTypeId}
+					onchange={handlePassTypeChange}
+				>
+					<option value="">선택하세요</option>
+					{#each passTypes as pt}
+						<option value={pt.id}>{pt.pass_name} ({pt.pass_category})</option>
+					{/each}
+				</select>
+			</div>
 
-		<div class="create-form__field">
-			<label class="create-form__label" for="instructor">담당 강사</label>
-			<select id="instructor" class="create-form__select" bind:value={selectedInstructorId}>
-				<option value="">선택하세요</option>
-				{#each instructors as instr}
-					<option value={instr.instructor_id}>{instr.user_name} ({instr.specialties})</option>
-				{/each}
-			</select>
-		</div>
+			<div class="create-form__field">
+				<label class="create-form__label" for="instructor">담당 강사</label>
+				<select id="instructor" class="create-form__select" bind:value={selectedInstructorId}>
+					<option value="">선택하세요</option>
+					{#each instructors as instr}
+						<option value={instr.instructor_id ?? instr.id}>{instr.user_name} ({instr.specialties})</option>
+					{/each}
+				</select>
+			</div>
+		{/if}
 
 		<Input type="date" label="시작일" bind:value={startDate} />
+
+		{#if editTarget}
+			<Input type="date" label="종료일" bind:value={endDate} />
+		{/if}
+
 		<Input type="number" label="총 수업횟수" bind:value={totalLessons} />
+
+		{#if editTarget}
+			<Input type="number" label="잔여 수업횟수" bind:value={remainingLessons} />
+
+			<div class="create-form__field">
+				<label class="create-form__label" for="pass-status">상태</label>
+				<select id="pass-status" class="create-form__select" bind:value={selectedStatus}>
+					<option value="ACTIVE">이용중</option>
+					<option value="HOLDING">홀딩</option>
+					<option value="EXPIRED">만료</option>
+					<option value="USED_UP">소진</option>
+				</select>
+			</div>
+		{/if}
 
 		{#if error}
 			<p class="create-form__error">{error}</p>
 		{/if}
 
 		<div class="create-form__actions">
-			<Button type="submit" fullWidth loading={creating}>부여하기</Button>
-			<Button variant="secondary" fullWidth onclick={() => (showCreateModal = false)}>취소</Button>
+			<Button type="submit" fullWidth loading={submitting}>
+				{editTarget ? '수정하기' : '부여하기'}
+			</Button>
+			<Button variant="secondary" fullWidth onclick={() => (showFormModal = false)}>취소</Button>
 		</div>
 	</form>
 </Modal>
@@ -236,8 +316,20 @@
 
 		&__header {
 			display: flex;
-			justify-content: flex-end;
+			align-items: center;
+			justify-content: space-between;
 			margin-bottom: var(--space-md);
+		}
+
+		&__link {
+			font-size: var(--font-size-sm);
+			color: var(--color-primary);
+			text-decoration: underline;
+			transition: opacity var(--transition-fast);
+
+			&:active {
+				opacity: 0.6;
+			}
 		}
 
 		&__loading {
@@ -309,6 +401,26 @@
 		&__date {
 			font-size: var(--font-size-xs);
 			color: var(--color-text-muted);
+		}
+
+		&__actions {
+			display: flex;
+			justify-content: flex-end;
+			margin-top: var(--space-sm);
+			padding-top: var(--space-sm);
+			border-top: 1px solid var(--color-divider);
+		}
+	}
+
+	.action-btn {
+		font-size: var(--font-size-sm);
+		color: var(--color-primary);
+		padding: 4px 8px;
+		border-radius: var(--radius-sm);
+		transition: all var(--transition-fast);
+
+		&:hover {
+			background: var(--color-primary-bg);
 		}
 	}
 

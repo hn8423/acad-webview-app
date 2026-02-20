@@ -4,11 +4,12 @@
 	import { goto } from '$app/navigation';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { academyStore } from '$lib/stores/academy.svelte';
-	import { onMount } from 'svelte';
+	import { notificationStore } from '$lib/stores/notification.svelte';
 
 	let { children } = $props();
 
-	onMount(() => {
+	$effect(() => {
+		if (!authStore.isInitialized || !academyStore.isInitialized) return;
 		if (!authStore.isAuthenticated) {
 			goto('/auth/login', { replaceState: true });
 			return;
@@ -18,17 +19,28 @@
 		}
 	});
 
+	$effect(() => {
+		if (academyStore.academyId) {
+			notificationStore.startPolling();
+		}
+		return () => notificationStore.stopPolling();
+	});
+
 	function handleMenuClick() {
 		goto('/app/profile');
 	}
 
 	function handleNotificationClick() {
-		// TODO: 알림 페이지로 이동
+		goto('/app/notifications');
 	}
 </script>
 
 <div class="app-layout">
-	<Header onMenuClick={handleMenuClick} onNotificationClick={handleNotificationClick} />
+	<Header
+		onMenuClick={handleMenuClick}
+		onNotificationClick={handleNotificationClick}
+		unreadCount={notificationStore.unreadCount}
+	/>
 	<main class="app-layout__content">
 		{@render children()}
 	</main>

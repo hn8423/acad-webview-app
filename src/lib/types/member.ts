@@ -1,9 +1,10 @@
 export interface Member {
-	member_id: number;
+	id: number;
 	academy_id: number;
-	member_role: 'STUDENT' | 'INSTRUCTOR' | 'ADMIN';
+	role: 'STUDENT' | 'INSTRUCTOR' | 'ADMIN';
 	member_nickname: string;
-	status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
+	user_name: string;
+	user_phone: string;
 	joined_at: string;
 }
 
@@ -12,9 +13,19 @@ export interface MemberListItem {
 	user_name: string;
 	user_phone: string;
 	member_role: 'STUDENT' | 'INSTRUCTOR' | 'ADMIN';
-	status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
+	status: string;
 	active_passes: number;
 	remaining_drinks: number;
+	joined_at: string;
+}
+
+export interface MemberDetail {
+	member_id: number;
+	user_name: string;
+	user_phone: string;
+	member_nickname: string;
+	member_role: 'STUDENT' | 'INSTRUCTOR' | 'ADMIN';
+	status: string;
 	joined_at: string;
 }
 
@@ -27,33 +38,47 @@ export interface PassType {
 	duration_days: number;
 	total_lessons: number;
 	price: number;
-	allow_duplicate_booking: boolean;
+	allow_duplicate_booking: number;
 }
 
 export interface MemberPass {
 	id: number;
 	pass_name: string;
 	pass_category: string;
+	instructor_id?: number;
 	instructor_name: string;
 	start_date: string;
 	end_date: string;
 	total_lessons: number;
 	remaining_lessons: number;
-	status: 'ACTIVE' | 'EXPIRED' | 'HOLDING' | 'COMPLETED';
+	status: 'ACTIVE' | 'EXPIRED' | 'HOLDING' | 'USED_UP';
 }
 
 export interface CreatePassRequest {
 	pass_type_id: number;
 	instructor_id: number;
 	start_date: string;
-	total_lessons: number;
+	total_lessons?: number;
+}
+
+export interface UpdatePassRequest {
+	start_date?: string;
+	end_date?: string;
+	total_lessons?: number;
+	remaining_lessons?: number;
+	status?: 'ACTIVE' | 'EXPIRED' | 'HOLDING' | 'USED_UP';
 }
 
 export interface DrinkTicket {
 	id: number;
+	academy_id: number;
+	member_id: number;
 	total_count: number;
 	remaining_count: number;
 	expiry_date: string;
+	is_deleted: number;
+	created_at: string;
+	updated_at: string;
 }
 
 export interface CreateDrinkTicketRequest {
@@ -62,10 +87,58 @@ export interface CreateDrinkTicketRequest {
 }
 
 export interface Instructor {
-	instructor_id: number;
+	id?: number;
+	instructor_id?: number;
 	member_id: number;
 	user_name: string;
+	profile_img: string;
 	specialties: string;
 	introduction: string;
-	profile_img: string;
+	is_admin: number;
+}
+
+export interface CreateInstructorRequest {
+	member_id: number;
+	specialties?: string;
+	introduction?: string;
+	is_admin?: number;
+}
+
+export interface UpdateInstructorRequest {
+	specialties?: string;
+	introduction?: string;
+	is_admin?: number;
+}
+
+export interface InstructorStats {
+	instructor_name: string;
+	year: number;
+	month: number;
+	total_lessons: number;
+	completed_lessons: number;
+	cancelled_lessons: number;
+	no_show_count: number;
+	total_students: number;
+}
+
+export interface CreatePassTypeRequest {
+	pass_name: string;
+	pass_category: 'ROTATION' | 'FULL' | 'ENSEMBLE' | 'PT' | 'GROUP';
+	ticket_value?: number;
+	max_capacity?: number;
+	duration_days?: number;
+	total_lessons?: number;
+	price?: number;
+	allow_duplicate_booking?: number;
+}
+
+export interface UpdatePassTypeRequest {
+	pass_name?: string;
+	pass_category?: 'ROTATION' | 'FULL' | 'ENSEMBLE' | 'PT' | 'GROUP';
+	ticket_value?: number;
+	max_capacity?: number;
+	duration_days?: number;
+	total_lessons?: number;
+	price?: number;
+	allow_duplicate_booking?: number;
 }

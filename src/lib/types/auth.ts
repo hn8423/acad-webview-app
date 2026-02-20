@@ -44,11 +44,13 @@ export interface VerifyCodeRequest {
 	code: string;
 }
 
+export type MemberRole = 'STUDENT' | 'INSTRUCTOR' | 'ADMIN';
+
 export interface UserAcademy {
 	academy_id: number;
 	academy_name: string;
 	academy_logo_img: string;
-	member_role: 'STUDENT' | 'INSTRUCTOR' | 'ADMIN';
+	member_role: MemberRole;
 	member_id: number;
 	joined_at: string;
 }

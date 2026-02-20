@@ -1,6 +1,14 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
+	import { authStore } from '$lib/stores/auth.svelte';
 	import { academyStore } from '$lib/stores/academy.svelte';
+	import {
+		getAccessibleFeatures,
+		getFeatureRoute,
+		getFeatureIcon,
+		isIconUrl
+	} from '$lib/config/admin-features';
 
 	interface Props {
 		isOpen: boolean;
@@ -9,31 +17,11 @@
 
 	let { isOpen = $bindable(false), onclose }: Props = $props();
 
-	const MENU_ROUTE_MAP: Record<string, string> = {
-		1: '/admin/notices',
-		2: '/admin/instructors',
-		3: '/admin/students',
-		4: '/admin/feedback',
-		5: '/admin/ensembles'
-	};
-
-	const MENU_ICON_MAP: Record<string, string> = {
-		1: 'M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z',
-		2: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
-		3: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
-		4: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
-		5: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z'
-	};
-
-	let navItems = $derived(academyStore.getEnabledNavItems('ADMIN'));
-
-	function getMenuPath(position: number): string {
-		return MENU_ROUTE_MAP[position] ?? '/admin';
-	}
-
-	function getIconPath(position: number): string {
-		return MENU_ICON_MAP[position] ?? MENU_ICON_MAP[1];
-	}
+	let navItems = $derived(
+		academyStore
+			.getEnabledNavItems('ADMIN')
+			.filter((item) => getAccessibleFeatures(item, academyStore.memberRole).length > 0)
+	);
 
 	function isActive(path: string): boolean {
 		return (page.url.pathname as string).startsWith(path);
@@ -43,6 +31,13 @@
 		if (e.target === e.currentTarget) {
 			onclose();
 		}
+	}
+
+	async function handleLogout() {
+		await authStore.logout();
+		academyStore.clear();
+		onclose();
+		goto('/auth/login', { replaceState: true });
 	}
 </script>
 
@@ -90,37 +85,93 @@
 			<span>대시보드</span>
 		</a>
 
-		{#each navItems as item}
-			{@const path = getMenuPath(item.nav_position)}
-			<a
-				href={path}
-				class="sidebar__item"
-				class:sidebar__item--active={isActive(path)}
-				onclick={onclose}
-			>
-				<svg
-					width="20"
-					height="20"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					stroke-linecap="round"
-					stroke-linejoin="round"
+		{#each navItems as item (item.nav_id)}
+			{@const accessible = getAccessibleFeatures(item, academyStore.memberRole)}
+			{#if accessible.length === 1}
+				{@const feature = accessible[0]}
+				{@const path = getFeatureRoute(feature.feature_key) ?? '/admin'}
+				<a
+					href={path}
+					class="sidebar__item"
+					class:sidebar__item--active={isActive(path)}
+					onclick={onclose}
 				>
-					<path d={getIconPath(item.nav_position)} />
-				</svg>
-				<span>{item.nav_label}</span>
-			</a>
+					{#if item.nav_icon && isIconUrl(item.nav_icon)}
+						<span
+							class="sidebar__mask-icon"
+							style:--icon-url="url('{item.nav_icon}')"
+						></span>
+					{:else}
+						<svg
+							width="20"
+							height="20"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path d={getFeatureIcon(feature.feature_key)} />
+						</svg>
+					{/if}
+					<span>{item.nav_label}</span>
+				</a>
+			{:else if accessible.length > 1}
+				<div class="sidebar__section-label">{item.nav_label}</div>
+				{#each accessible as feature (feature.feature_id)}
+					{@const path = getFeatureRoute(feature.feature_key) ?? '/admin'}
+					<a
+						href={path}
+						class="sidebar__sub-item"
+						class:sidebar__sub-item--active={isActive(path)}
+						onclick={onclose}
+					>
+						<svg
+							width="18"
+							height="18"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path d={getFeatureIcon(feature.feature_key)} />
+						</svg>
+						<span>{feature.feature_name}</span>
+					</a>
+				{/each}
+			{/if}
 		{/each}
 	</nav>
+
+	<div class="sidebar__footer">
+		<button type="button" class="sidebar__logout" onclick={handleLogout}>
+			<svg
+				width="20"
+				height="20"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+			>
+				<path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+				<polyline points="16 17 21 12 16 7" />
+				<line x1="21" y1="12" x2="9" y2="12" />
+			</svg>
+			<span>로그아웃</span>
+		</button>
+	</div>
 </aside>
 
 <style lang="scss">
 	.sidebar-backdrop {
 		position: fixed;
 		inset: 0;
-		background-color: rgba(0, 0, 0, 0.4);
+		background-color: var(--color-backdrop);
 		backdrop-filter: blur(4px);
 		z-index: calc(var(--z-sidebar) - 1);
 	}
@@ -176,6 +227,36 @@
 			overflow-y: auto;
 		}
 
+		&__footer {
+			padding: var(--space-md) var(--space-md);
+			border-top: 1px solid var(--color-border);
+		}
+
+		&__logout {
+			display: flex;
+			align-items: center;
+			gap: var(--space-md);
+			width: 100%;
+			padding: 12px var(--space-lg);
+			border-radius: var(--radius-md);
+			background: none;
+			border: none;
+			cursor: pointer;
+			font-size: var(--font-size-base);
+			color: var(--color-danger);
+			transition:
+				background-color var(--transition-fast),
+				opacity var(--transition-fast);
+
+			&:hover {
+				background-color: var(--color-bg);
+			}
+
+			&:active {
+				opacity: 0.6;
+			}
+		}
+
 		&__item {
 			display: flex;
 			align-items: center;
@@ -200,6 +281,55 @@
 				font-weight: var(--font-weight-semibold);
 				border-left: 3px solid var(--color-primary);
 			}
+		}
+
+		&__section-label {
+			padding: var(--space-md) var(--space-lg) var(--space-xs);
+			font-size: var(--font-size-xs);
+			font-weight: var(--font-weight-semibold);
+			color: var(--color-text-muted);
+			text-transform: uppercase;
+			letter-spacing: 0.05em;
+		}
+
+		&__sub-item {
+			display: flex;
+			align-items: center;
+			gap: var(--space-sm);
+			padding: 10px var(--space-lg) 10px var(--space-2xl);
+			border-radius: var(--radius-md);
+			color: var(--color-text-secondary);
+			text-decoration: none;
+			font-size: var(--font-size-sm);
+			transition:
+				background-color var(--transition-fast),
+				color var(--transition-fast);
+
+			&:hover {
+				background-color: var(--color-bg);
+				text-decoration: none;
+			}
+
+			&--active {
+				background-color: var(--color-primary-bg);
+				color: var(--color-primary);
+				font-weight: var(--font-weight-semibold);
+			}
+		}
+
+		&__mask-icon {
+			display: inline-block;
+			width: 20px;
+			height: 20px;
+			background-color: currentColor;
+			-webkit-mask-image: var(--icon-url);
+			mask-image: var(--icon-url);
+			-webkit-mask-size: contain;
+			mask-size: contain;
+			-webkit-mask-repeat: no-repeat;
+			mask-repeat: no-repeat;
+			-webkit-mask-position: center;
+			mask-position: center;
 		}
 	}
 </style>
