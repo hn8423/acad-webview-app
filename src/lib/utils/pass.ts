@@ -27,3 +27,7 @@ export function getPassStatusLabel(status: string): string {
 			return status;
 	}
 }
+
+export function getTicketValue(ticketValue?: number): number {
+	return ticketValue && ticketValue > 0 ? ticketValue : 1;
+}

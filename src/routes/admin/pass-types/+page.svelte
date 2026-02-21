@@ -208,6 +208,9 @@
 						</div>
 						<div class="pass-type-item__details">
 							총 {pt.total_lessons}회 | {pt.duration_days}일 | {formatNumber(pt.price)}원
+							{#if pt.ticket_value > 1}
+								| <span class="pass-type-item__ticket-highlight">{pt.ticket_value}회 차감</span>
+							{/if}
 						</div>
 						<div class="pass-type-item__actions">
 							<button class="action-btn" onclick={() => openEditModal(pt)}>수정</button>
@@ -256,7 +259,7 @@
 		<Input type="number" label="가격 (원)" bind:value={price} placeholder="200000" />
 
 		<div class="pass-type-form__row">
-			<Input type="number" label="티켓 가치" bind:value={ticketValue} placeholder="1.0" />
+			<Input type="number" label="1회 차감 횟수" bind:value={ticketValue} placeholder="1" />
 			<Input type="number" label="최대 인원" bind:value={maxCapacity} placeholder="1" />
 		</div>
 
@@ -344,6 +347,11 @@
 			font-size: var(--font-size-sm);
 			color: var(--color-text-secondary);
 			margin-bottom: var(--space-sm);
+		}
+
+		&__ticket-highlight {
+			color: var(--color-warning);
+			font-weight: var(--font-weight-medium);
 		}
 
 		&__actions {

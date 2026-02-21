@@ -18,6 +18,8 @@ export interface MyReservation {
 	start_time: string;
 	end_time: string;
 	status: ReservationStatus;
+	ticket_value?: number;
+	pass_name?: string;
 	created_at: string;
 }
 
@@ -37,6 +39,8 @@ export interface SlotReservation {
 	reservation_id: number;
 	member_name: string;
 	status: ReservationStatus;
+	ticket_value?: number;
+	pass_name?: string;
 }
 
 export interface LessonSlot {
