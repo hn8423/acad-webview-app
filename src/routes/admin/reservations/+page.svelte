@@ -32,7 +32,7 @@
 	let createForm = $state<CreateSlotRequest>({
 		slot_date: getTodayString(),
 		start_time: '10:00',
-		end_time: '10:50',
+		end_time: '11:00',
 		max_capacity: 1
 	});
 
@@ -75,7 +75,7 @@
 		createForm = {
 			slot_date: selectedDate,
 			start_time: '10:00',
-			end_time: '10:50',
+			end_time: '11:00',
 			max_capacity: 1
 		};
 		showCreateModal = true;
