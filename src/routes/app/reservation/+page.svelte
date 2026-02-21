@@ -167,9 +167,10 @@
 			const res = await getAvailableSlots(academyId, date);
 			if (res.status && res.data) {
 				const count = res.data.length;
-				slotCountMap = count > 0
-					? { ...slotCountMap, [date]: count }
-					: Object.fromEntries(Object.entries(slotCountMap).filter(([k]) => k !== date));
+				slotCountMap =
+					count > 0
+						? { ...slotCountMap, [date]: count }
+						: Object.fromEntries(Object.entries(slotCountMap).filter(([k]) => k !== date));
 			}
 		} catch {
 			// handled by client.ts
@@ -179,9 +180,7 @@
 	function handleSlotClick(slot: AvailableSlot) {
 		if (activePasses.length === 0) {
 			const message =
-				memberPasses.length === 0
-					? '등록된 수강권이 없습니다.'
-					: '이용 가능한 수강권이 없습니다.';
+				memberPasses.length === 0 ? '등록된 수강권이 없습니다.' : '이용 가능한 수강권이 없습니다.';
 			toastStore.error(message);
 			return;
 		}
@@ -442,9 +441,7 @@
 				</select>
 			</div>
 
-			<Button fullWidth loading={submitting} onclick={handleConfirmBooking}>
-				예약하기
-			</Button>
+			<Button fullWidth loading={submitting} onclick={handleConfirmBooking}>예약하기</Button>
 		</div>
 	{/if}
 </BottomSheet>

@@ -192,7 +192,10 @@
 				STEP {step}/{stepLabels.length} · {stepLabels[step - 1]}
 			</span>
 			<div class="step-indicator__bar">
-				<div class="step-indicator__progress" style="width: {(step / stepLabels.length) * 100}%"></div>
+				<div
+					class="step-indicator__progress"
+					style="width: {(step / stepLabels.length) * 100}%"
+				></div>
 			</div>
 		</div>
 
@@ -274,7 +277,11 @@
 
 						<h3 class="step-section__subtitle">학생 음악 정보 (선택)</h3>
 						<Input label="장르" bind:value={genre} placeholder="예: 팝, 재즈, 클래식" />
-						<Input label="좋아하는 아티스트" bind:value={favoriteArtist} placeholder="예: Dream Theater, BTS" />
+						<Input
+							label="좋아하는 아티스트"
+							bind:value={favoriteArtist}
+							placeholder="예: Dream Theater, BTS"
+						/>
 						<Input
 							type="number"
 							label="경력 (년)"

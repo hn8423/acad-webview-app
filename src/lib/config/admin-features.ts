@@ -23,8 +23,7 @@ export const FEATURE_ROUTE_MAP: Record<string, string> = {
 export const FEATURE_ICON_MAP: Record<string, string> = {
 	NOTICE_MANAGING:
 		'M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z',
-	INSTRUCTOR_MANAGING:
-		'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
+	INSTRUCTOR_MANAGING: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
 	STUDENT_MANAGING:
 		'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
 	WEEKLY_FEEDBACK_SHEET_MANAGING:
@@ -51,10 +50,7 @@ export function getFeatureIcon(featureKey: string): string {
 /**
  * NavItem에서 활성화 + 라우트 매핑 + 역할 권한이 있는 feature 배열 반환.
  */
-export function getAccessibleFeatures(
-	navItem: NavItem,
-	role: MemberRole | null
-): NavFeature[] {
+export function getAccessibleFeatures(navItem: NavItem, role: MemberRole | null): NavFeature[] {
 	return navItem.features.filter((feature) => {
 		if (!feature.is_enabled) return false;
 		const route = FEATURE_ROUTE_MAP[feature.feature_key];
@@ -66,10 +62,7 @@ export function getAccessibleFeatures(
 /**
  * 단일 feature nav의 직접 라우트 반환. 복수 feature면 null.
  */
-export function getSingleFeatureRoute(
-	navItem: NavItem,
-	role: MemberRole | null
-): string | null {
+export function getSingleFeatureRoute(navItem: NavItem, role: MemberRole | null): string | null {
 	const features = getAccessibleFeatures(navItem, role);
 	if (features.length !== 1) return null;
 	return FEATURE_ROUTE_MAP[features[0].feature_key] ?? null;

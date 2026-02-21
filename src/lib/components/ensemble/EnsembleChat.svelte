@@ -25,9 +25,7 @@
 	let connected = $state(false);
 	let chat: EnsembleChatService | null = null;
 
-	let lastMessageId = $derived(
-		messages.length > 0 ? Math.max(...messages.map((m) => m.id)) : 0
-	);
+	let lastMessageId = $derived(messages.length > 0 ? Math.max(...messages.map((m) => m.id)) : 0);
 
 	async function initializeChat(signal: { cancelled: boolean }) {
 		const academyId = academyStore.academyId;

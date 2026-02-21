@@ -147,7 +147,10 @@
 				STEP {step}/{stepLabels.length} · {stepLabels[step - 1]}
 			</span>
 			<div class="step-indicator__bar">
-				<div class="step-indicator__progress" style="width: {(step / stepLabels.length) * 100}%"></div>
+				<div
+					class="step-indicator__progress"
+					style="width: {(step / stepLabels.length) * 100}%"
+				></div>
 			</div>
 		</div>
 

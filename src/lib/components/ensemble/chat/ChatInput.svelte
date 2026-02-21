@@ -74,7 +74,9 @@
 			color: var(--color-text);
 			background-color: var(--color-bg-card);
 			outline: none;
-			transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+			transition:
+				border-color var(--transition-fast),
+				box-shadow var(--transition-fast);
 
 			&::placeholder {
 				color: var(--color-text-muted);

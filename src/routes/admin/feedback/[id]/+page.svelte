@@ -543,7 +543,6 @@
 			color: var(--color-text);
 			line-height: var(--line-height-base);
 		}
-
 	}
 
 	.skill-list {

@@ -5,11 +5,14 @@
 	import BackHeader from '$lib/components/layout/BackHeader.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import { formatDateTime, formatFileSize } from '$lib/utils/format';
+	import { processNoticeContent } from '$lib/utils/link';
 	import type { Notice } from '$lib/types/academy';
 	import { onMount } from 'svelte';
 
 	let notice = $state<Notice | null>(null);
 	let loading = $state(true);
+
+	let processedContent = $derived(notice ? processNoticeContent(notice.content) : '');
 
 	onMount(async () => {
 		const academyId = academyStore.academyId;
@@ -49,7 +52,7 @@
 				</header>
 
 				<div class="article__body">
-					{@html notice.content}
+					{@html processedContent}
 				</div>
 
 				{#if notice.files.length > 0}
@@ -142,6 +145,18 @@
 			:global(img) {
 				max-width: 100%;
 				border-radius: var(--radius-md);
+			}
+
+			:global(a) {
+				color: var(--color-primary);
+				text-decoration: underline;
+				text-underline-offset: 2px;
+				word-break: break-all;
+				transition: opacity var(--transition-fast);
+
+				&:active {
+					opacity: 0.6;
+				}
 			}
 		}
 

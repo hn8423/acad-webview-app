@@ -225,7 +225,6 @@
 			color: var(--color-primary);
 			text-decoration: underline;
 		}
-
 	}
 
 	.skill-list {

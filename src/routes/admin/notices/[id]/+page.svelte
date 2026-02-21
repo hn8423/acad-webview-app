@@ -7,6 +7,8 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
+	import LinkInsertModal from '$lib/components/notice/LinkInsertModal.svelte';
+	import { buildLinkTag } from '$lib/utils/link';
 	import { onMount } from 'svelte';
 
 	let isNew = $derived(page.params.id === 'new');
@@ -16,6 +18,9 @@
 	let loading = $state(false);
 	let pageLoading = $state(true);
 	let error = $state('');
+	let showLinkModal = $state(false);
+	let selectedText = $state('');
+	let textareaEl: HTMLTextAreaElement | undefined = $state();
 
 	onMount(async () => {
 		if (!isNew) {
@@ -36,6 +41,39 @@
 		}
 		pageLoading = false;
 	});
+
+	function openLinkModal() {
+		if (textareaEl) {
+			const start = textareaEl.selectionStart;
+			const end = textareaEl.selectionEnd;
+			selectedText = content.slice(start, end);
+		} else {
+			selectedText = '';
+		}
+		showLinkModal = true;
+	}
+
+	function handleLinkInsert(url: string, displayText: string) {
+		const linkHtml = buildLinkTag(url, displayText);
+
+		if (textareaEl) {
+			const start = textareaEl.selectionStart;
+			const end = textareaEl.selectionEnd;
+			const before = content.slice(0, start);
+			const after = content.slice(end);
+			content = before + linkHtml + after;
+
+			requestAnimationFrame(() => {
+				if (textareaEl) {
+					textareaEl.focus();
+					const newPos = start + linkHtml.length;
+					textareaEl.setSelectionRange(newPos, newPos);
+				}
+			});
+		} else {
+			content = content + linkHtml;
+		}
+	}
 
 	async function handleSubmit() {
 		error = '';
@@ -88,12 +126,37 @@
 				<Input label="제목" placeholder="공지 제목을 입력하세요" bind:value={title} />
 
 				<div class="form__field">
-					<label class="form__label" for="notice-content">내용</label>
+					<div class="form__field-header">
+						<label class="form__label" for="notice-content">내용</label>
+						<button
+							type="button"
+							class="form__toolbar-btn"
+							onclick={openLinkModal}
+							aria-label="링크 삽입"
+							title="링크 삽입"
+						>
+							<svg
+								width="18"
+								height="18"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							>
+								<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+								<path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+							</svg>
+							<span>링크</span>
+						</button>
+					</div>
 					<textarea
 						id="notice-content"
 						class="form__textarea"
 						placeholder="공지 내용을 입력하세요"
 						bind:value={content}
+						bind:this={textareaEl}
 					></textarea>
 				</div>
 
@@ -115,6 +178,13 @@
 		{/if}
 	</div>
 </div>
+
+<LinkInsertModal
+	isOpen={showLinkModal}
+	initialText={selectedText}
+	onclose={() => (showLinkModal = false)}
+	oninsert={handleLinkInsert}
+/>
 
 <style lang="scss">
 	.notice-form {
@@ -140,10 +210,34 @@
 			gap: var(--space-xs);
 		}
 
+		&__field-header {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+		}
+
 		&__label {
 			font-size: var(--font-size-sm);
 			font-weight: var(--font-weight-medium);
 			color: var(--color-text-secondary);
+		}
+
+		&__toolbar-btn {
+			display: inline-flex;
+			align-items: center;
+			gap: var(--space-xs);
+			padding: 6px 12px;
+			font-size: var(--font-size-sm);
+			color: var(--color-primary);
+			background-color: var(--color-primary-bg);
+			border: none;
+			border-radius: var(--radius-full);
+			cursor: pointer;
+			transition: background-color var(--transition-fast);
+
+			&:active {
+				transform: scale(0.97);
+			}
 		}
 
 		&__textarea {
