@@ -108,6 +108,8 @@
 				feedback = res.data;
 				toastStore.success('피드백이 수정되었습니다.');
 				showEditWeeklyModal = false;
+			} else {
+				editError = res.message || '피드백 수정에 실패했습니다.';
 			}
 		} catch (err) {
 			editError = err instanceof Error ? err.message : '수정에 실패했습니다.';
@@ -167,6 +169,8 @@
 				feedback = res.data;
 				toastStore.success('피드백이 수정되었습니다.');
 				showEditMonthlyModal = false;
+			} else {
+				editError = res.message || '피드백 수정에 실패했습니다.';
 			}
 		} catch (err) {
 			editError = err instanceof Error ? err.message : '수정에 실패했습니다.';
