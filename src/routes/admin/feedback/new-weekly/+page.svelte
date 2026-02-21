@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import { academyStore } from '$lib/stores/academy.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import { getMembers, getMemberPasses } from '$lib/api/member';
@@ -38,7 +39,13 @@
 	const stepLabels = ['학생 선택', '피드백 작성'];
 	const activePasses = $derived(passes.filter((p) => p.status === 'ACTIVE'));
 
-	onMount(() => fetchMembers());
+	onMount(() => {
+		const memberNameParam = page.url.searchParams.get('member_name');
+		if (memberNameParam) {
+			search = memberNameParam;
+		}
+		fetchMembers();
+	});
 
 	async function fetchMembers() {
 		const academyId = academyStore.academyId;
