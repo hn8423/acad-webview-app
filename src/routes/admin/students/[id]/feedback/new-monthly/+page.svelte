@@ -10,6 +10,7 @@
 	import Input from '$lib/components/ui/Input.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import ScoreInput from '$lib/components/feedback/ScoreInput.svelte';
+	import MediaUpload from '$lib/components/ui/MediaUpload.svelte';
 	import type { FeedbackCategory } from '$lib/types/feedback';
 	import type { MemberPass } from '$lib/types/member';
 	import { onMount } from 'svelte';
@@ -272,7 +273,7 @@
 							></textarea>
 						</div>
 
-						<Input label="영상 URL" bind:value={videoUrl} placeholder="https:// (선택 사항)" />
+						<MediaUpload label="미디어 첨부 (선택)" bind:value={videoUrl} />
 
 						{#if error}
 							<p class="create-form__error">{error}</p>

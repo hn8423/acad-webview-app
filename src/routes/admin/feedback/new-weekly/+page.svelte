@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import { academyStore } from '$lib/stores/academy.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import { getMembers, getMemberPasses } from '$lib/api/member';
@@ -9,6 +10,7 @@
 	import Input from '$lib/components/ui/Input.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
+	import MediaUpload from '$lib/components/ui/MediaUpload.svelte';
 	import { formatPhone } from '$lib/utils/format';
 	import type { MemberListItem, MemberPass } from '$lib/types/member';
 	import { onMount } from 'svelte';
@@ -38,7 +40,13 @@
 	const stepLabels = ['학생 선택', '피드백 작성'];
 	const activePasses = $derived(passes.filter((p) => p.status === 'ACTIVE'));
 
-	onMount(() => fetchMembers());
+	onMount(() => {
+		const memberNameParam = page.url.searchParams.get('member_name');
+		if (memberNameParam) {
+			search = memberNameParam;
+		}
+		fetchMembers();
+	});
 
 	async function fetchMembers() {
 		const academyId = academyStore.academyId;
@@ -278,7 +286,7 @@
 							></textarea>
 						</div>
 
-						<Input label="영상 URL" bind:value={videoUrl} placeholder="https:// (선택 사항)" />
+						<MediaUpload label="미디어 첨부 (선택)" bind:value={videoUrl} />
 
 						{#if error}
 							<p class="create-form__error">{error}</p>
