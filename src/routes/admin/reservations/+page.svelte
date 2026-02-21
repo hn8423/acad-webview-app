@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { academyStore } from '$lib/stores/academy.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import {
@@ -44,6 +45,10 @@
 	// Delete slot modal
 	let showDeleteModal = $state(false);
 	let deleteTarget = $state<LessonSlot | null>(null);
+
+	// Feedback prompt modal
+	let showFeedbackPrompt = $state(false);
+	let completedMemberName = $state('');
 
 	async function fetchSlots(date: string) {
 		const academyId = academyStore.academyId;
@@ -155,7 +160,11 @@
 
 	// Reservation status handlers
 
-	async function handleReservationStatus(reservationId: number, status: ReservationStatus) {
+	async function handleReservationStatus(
+		reservationId: number,
+		status: ReservationStatus,
+		memberName?: string
+	) {
 		const academyId = academyStore.academyId;
 		if (!academyId || status === 'PENDING') return;
 		actionLoading = true;
@@ -166,6 +175,11 @@
 			if (res.status) {
 				toastStore.success(`예약이 ${getStatusLabel(status)} 처리되었습니다`);
 				await fetchSlots(selectedDate);
+
+				if (status === 'COMPLETED' && memberName) {
+					completedMemberName = memberName;
+					showFeedbackPrompt = true;
+				}
 			}
 		} catch (error) {
 			toastStore.error('예약 상태 변경에 실패했습니다');
@@ -279,7 +293,7 @@
 											<button
 												class="action-btn action-btn--complete"
 												disabled={actionLoading}
-												onclick={() => handleReservationStatus(rv.reservation_id, 'COMPLETED')}
+												onclick={() => handleReservationStatus(rv.reservation_id, 'COMPLETED', rv.member_name)}
 											>
 												완료
 											</button>
@@ -418,6 +432,25 @@
 			삭제
 		</Button>
 		<Button variant="secondary" fullWidth onclick={() => (showDeleteModal = false)}>취소</Button>
+	</div>
+</Modal>
+
+<!-- Feedback Prompt Modal -->
+<Modal isOpen={showFeedbackPrompt} title="피드백 작성" position="center" onclose={() => (showFeedbackPrompt = false)}>
+	<p class="modal-message">
+		수업이 완료되었습니다. {completedMemberName} 학생의 위클리 피드백을 작성하시겠습니까?
+	</p>
+	<div class="modal-form__actions">
+		<Button
+			fullWidth
+			onclick={() => {
+				showFeedbackPrompt = false;
+				goto(`/admin/feedback/new-weekly?member_name=${encodeURIComponent(completedMemberName)}`);
+			}}
+		>
+			피드백 작성
+		</Button>
+		<Button variant="secondary" fullWidth onclick={() => (showFeedbackPrompt = false)}>나중에</Button>
 	</div>
 </Modal>
 
