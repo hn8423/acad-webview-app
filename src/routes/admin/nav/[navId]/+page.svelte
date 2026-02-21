@@ -16,9 +16,7 @@
 		academyStore.getEnabledNavItems('ADMIN').find((item) => item.nav_id === navId) ?? null
 	);
 
-	let features = $derived(
-		navItem ? getAccessibleFeatures(navItem, academyStore.memberRole) : []
-	);
+	let features = $derived(navItem ? getAccessibleFeatures(navItem, academyStore.memberRole) : []);
 
 	$effect(() => {
 		if (academyStore.isInitialized && !navItem) {

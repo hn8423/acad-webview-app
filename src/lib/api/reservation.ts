@@ -36,9 +36,7 @@ export function getMyReservations(academyId: number, status?: ReservationStatus)
 }
 
 export function cancelReservation(academyId: number, reservationId: number) {
-	return del<ApiResponse<void>>(
-		`/academic/academies/${academyId}/reservations/${reservationId}`
-	);
+	return del<ApiResponse<void>>(`/academic/academies/${academyId}/reservations/${reservationId}`);
 }
 
 // Admin: Lesson Slot CRUD
@@ -52,10 +50,7 @@ export function getLessonSlots(academyId: number, date: string, instructorId?: n
 }
 
 export function createLessonSlot(academyId: number, data: CreateSlotRequest) {
-	return post<ApiResponse<LessonSlot>>(
-		`/academic/academies/${academyId}/lesson-slots`,
-		data
-	);
+	return post<ApiResponse<LessonSlot>>(`/academic/academies/${academyId}/lesson-slots`, data);
 }
 
 export function updateLessonSlot(academyId: number, slotId: number, data: UpdateSlotRequest) {
@@ -66,9 +61,7 @@ export function updateLessonSlot(academyId: number, slotId: number, data: Update
 }
 
 export function deleteLessonSlot(academyId: number, slotId: number) {
-	return del<ApiResponse<void>>(
-		`/academic/academies/${academyId}/lesson-slots/${slotId}`
-	);
+	return del<ApiResponse<void>>(`/academic/academies/${academyId}/lesson-slots/${slotId}`);
 }
 
 // Admin: Reservation Status Management

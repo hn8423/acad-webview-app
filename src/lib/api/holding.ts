@@ -18,11 +18,7 @@ export function getHoldings(academyId: number, status?: 'PENDING' | 'APPROVED' |
 	);
 }
 
-export function updateHolding(
-	academyId: number,
-	holdingId: number,
-	data: UpdateHoldingRequest
-) {
+export function updateHolding(academyId: number, holdingId: number, data: UpdateHoldingRequest) {
 	return patch<ApiResponse<Holding>>(
 		`/academic/academies/${academyId}/holdings/${holdingId}`,
 		data

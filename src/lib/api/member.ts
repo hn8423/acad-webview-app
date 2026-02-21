@@ -36,9 +36,7 @@ export function getMembers(academyId: number, cursor?: number, limit = 20, searc
 }
 
 export function getMemberDetail(academyId: number, memberId: number) {
-	return get<ApiResponse<MemberDetail>>(
-		`/academic/academies/${academyId}/members/${memberId}`
-	);
+	return get<ApiResponse<MemberDetail>>(`/academic/academies/${academyId}/members/${memberId}`);
 }
 
 export function getMyMembership(academyId: number) {
@@ -95,11 +93,7 @@ export function createPassType(academyId: number, data: CreatePassTypeRequest) {
 	return post<ApiResponse<PassType>>(`/academic/academies/${academyId}/pass-types`, data);
 }
 
-export function updatePassType(
-	academyId: number,
-	passTypeId: number,
-	data: UpdatePassTypeRequest
-) {
+export function updatePassType(academyId: number, passTypeId: number, data: UpdatePassTypeRequest) {
 	return patch<ApiResponse<PassType>>(
 		`/academic/academies/${academyId}/pass-types/${passTypeId}`,
 		data
@@ -112,9 +106,7 @@ export function deletePassType(academyId: number, passTypeId: number) {
 
 // Member Passes
 export function getMyPasses(academyId: number) {
-	return get<ApiResponse<MemberPass[]>>(
-		`/academic/academies/${academyId}/members/me/passes`
-	);
+	return get<ApiResponse<MemberPass[]>>(`/academic/academies/${academyId}/members/me/passes`);
 }
 
 export function getMemberPasses(academyId: number, memberId: number) {

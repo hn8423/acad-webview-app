@@ -31,16 +31,11 @@ export function markAsRead(academyId: number, notificationId: number) {
 }
 
 export function markAllAsRead(academyId: number) {
-	return patch<ApiResponse<null>>(
-		`/academic/academies/${academyId}/notifications/read-all`,
-		{}
-	);
+	return patch<ApiResponse<null>>(`/academic/academies/${academyId}/notifications/read-all`, {});
 }
 
 export function deleteNotification(academyId: number, notificationId: number) {
-	return del<ApiResponse<null>>(
-		`/academic/academies/${academyId}/notifications/${notificationId}`
-	);
+	return del<ApiResponse<null>>(`/academic/academies/${academyId}/notifications/${notificationId}`);
 }
 
 export function sendNotification(academyId: number, data: SendNotificationRequest) {
