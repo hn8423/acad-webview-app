@@ -18,7 +18,7 @@
 	import Modal from '$lib/components/ui/Modal.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import { formatDate } from '$lib/utils/format';
-	import { getPassStatusVariant, getPassStatusLabel } from '$lib/utils/pass';
+	import { getPassStatusVariant, getPassStatusLabel, getTicketValue } from '$lib/utils/pass';
 	import type { MemberPass, PassType, Instructor } from '$lib/types/member';
 	import { onMount } from 'svelte';
 
@@ -123,6 +123,12 @@
 		}
 	}
 
+	let selectedPassTypeTicketValue = $derived.by(() => {
+		if (!selectedPassTypeId) return 1;
+		const pt = passTypes.find((t) => String(t.id) === String(selectedPassTypeId));
+		return pt?.ticket_value ?? 1;
+	});
+
 	async function handleSubmit() {
 		error = '';
 		const academyId = academyStore.academyId;
@@ -204,7 +210,12 @@
 					<Card>
 						<div class="pass-item">
 							<div class="pass-item__header">
-								<span class="pass-item__name">{pass.pass_name}</span>
+								<span class="pass-item__name">
+									{pass.pass_name}
+									{#if getTicketValue(pass.ticket_value) > 1}
+										<span class="pass-item__ticket-badge">{getTicketValue(pass.ticket_value)}회 차감</span>
+									{/if}
+								</span>
 								<Badge variant={getPassStatusVariant(pass.status)}
 									>{getPassStatusLabel(pass.status)}</Badge
 								>
@@ -258,10 +269,18 @@
 				>
 					<option value="">선택하세요</option>
 					{#each passTypes as pt}
-						<option value={pt.id}>{pt.pass_name} ({pt.pass_category})</option>
+						<option value={pt.id}>
+							{pt.pass_name} ({pt.pass_category}){pt.ticket_value > 1 ? ` [${pt.ticket_value}회 차감]` : ''}
+						</option>
 					{/each}
 				</select>
 			</div>
+
+			{#if selectedPassTypeTicketValue > 1}
+				<p class="create-form__info">
+					이 수강권은 예약 시 {selectedPassTypeTicketValue}회씩 차감됩니다.
+				</p>
+			{/if}
 
 			<div class="create-form__field">
 				<label class="create-form__label" for="instructor">담당 강사</label>
@@ -363,8 +382,20 @@
 		}
 
 		&__name {
+			display: flex;
+			align-items: center;
+			gap: var(--space-xs);
 			font-weight: var(--font-weight-semibold);
 			color: var(--color-text);
+		}
+
+		&__ticket-badge {
+			padding: 2px 6px;
+			font-size: var(--font-size-xs);
+			font-weight: var(--font-weight-medium);
+			color: var(--color-warning);
+			background: var(--color-warning-bg);
+			border-radius: var(--radius-full);
 		}
 
 		&__progress {
@@ -463,6 +494,14 @@
 			&:focus {
 				box-shadow: 0 0 0 2px var(--color-primary-light);
 			}
+		}
+
+		&__info {
+			font-size: var(--font-size-sm);
+			color: var(--color-warning);
+			padding: var(--space-sm) var(--space-md);
+			background: var(--color-warning-bg);
+			border-radius: var(--radius-sm);
 		}
 
 		&__error {

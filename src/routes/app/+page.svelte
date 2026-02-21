@@ -9,7 +9,7 @@
 	import CalendarSection from '$lib/components/ui/CalendarSection.svelte';
 	import HoldingRequestModal from '$lib/components/holding/HoldingRequestModal.svelte';
 	import { formatDate } from '$lib/utils/format';
-	import { getPassStatusVariant, getPassStatusLabel } from '$lib/utils/pass';
+	import { getPassStatusVariant, getPassStatusLabel, getTicketValue } from '$lib/utils/pass';
 	import type { MemberPass, DrinkTicket } from '$lib/types/member';
 	import type { Notice } from '$lib/types/academy';
 	import { onMount } from 'svelte';
@@ -137,7 +137,12 @@
 						{#each passes as pass}
 							<div class="pass-card">
 								<div class="pass-card__header">
-									<span class="pass-card__name">{pass.pass_name}</span>
+									<span class="pass-card__name">
+									{pass.pass_name}
+									{#if getTicketValue(pass.ticket_value) > 1}
+										<span class="pass-card__ticket-badge">{getTicketValue(pass.ticket_value)}회 차감</span>
+									{/if}
+								</span>
 									<Badge variant={getPassStatusVariant(pass.status)}>
 										{getPassStatusLabel(pass.status)}
 									</Badge>
@@ -335,8 +340,20 @@
 		}
 
 		&__name {
+			display: flex;
+			align-items: center;
+			gap: var(--space-xs);
 			font-weight: var(--font-weight-semibold);
 			letter-spacing: var(--letter-spacing-tight);
+		}
+
+		&__ticket-badge {
+			padding: 2px 6px;
+			font-size: var(--font-size-xs);
+			font-weight: var(--font-weight-medium);
+			color: var(--color-warning);
+			background: var(--color-warning-bg);
+			border-radius: var(--radius-full);
 		}
 
 		&__instructor {

@@ -22,6 +22,7 @@
 		getTodayString,
 		getDaysInMonth
 	} from '$lib/utils/format';
+	import { getTicketValue } from '$lib/utils/pass';
 	import type { AvailableSlot, MyReservation, ReservationStatus } from '$lib/types/reservation';
 	import type { MemberPass } from '$lib/types/member';
 	import { onMount } from 'svelte';
@@ -57,6 +58,8 @@
 	let activePasses = $derived(
 		memberPasses.filter((p) => p.status === 'ACTIVE' && p.remaining_lessons > 0)
 	);
+
+	let selectedPass = $derived(activePasses.find((p) => p.id === selectedPassId) ?? null);
 
 	onMount(() => {
 		const now = new Date();
@@ -384,6 +387,14 @@
 									<span class="reservation-card__instructor">
 										{reservation.instructor_name} 선생님
 									</span>
+									{#if reservation.pass_name}
+										<span class="reservation-card__pass">
+											{reservation.pass_name}
+											{#if getTicketValue(reservation.ticket_value) > 1}
+												<span class="reservation-card__ticket">({getTicketValue(reservation.ticket_value)}회 차감)</span>
+											{/if}
+										</span>
+									{/if}
 								</div>
 							</div>
 						</Card>
@@ -435,13 +446,21 @@
 				>
 					{#each activePasses as pass}
 						<option value={pass.id}>
-							{pass.pass_name} (잔여 {pass.remaining_lessons}회)
+							{pass.pass_name} (잔여 {pass.remaining_lessons}회){getTicketValue(pass.ticket_value) > 1 ? ` [${getTicketValue(pass.ticket_value)}회 차감]` : ''}
 						</option>
 					{/each}
 				</select>
 			</div>
 
-			<Button fullWidth loading={submitting} onclick={handleConfirmBooking}>예약하기</Button>
+			{#if selectedPass && getTicketValue(selectedPass.ticket_value) > 1}
+				<div class="booking-sheet__ticket-notice">
+					이 수강권은 1회 수업당 {getTicketValue(selectedPass.ticket_value)}회가 차감됩니다.
+				</div>
+			{/if}
+
+			<Button fullWidth loading={submitting} onclick={handleConfirmBooking}>
+				{selectedPass && getTicketValue(selectedPass.ticket_value) > 1 ? `예약하기 (${getTicketValue(selectedPass.ticket_value)}회 차감)` : '예약하기'}
+			</Button>
 		</div>
 	{/if}
 </BottomSheet>
@@ -478,7 +497,18 @@
 						{selectedReservation.instructor_name} 선생님
 					</span>
 				</div>
+				{#if selectedReservation.pass_name}
+					<div class="cancel-sheet__row">
+						<span class="cancel-sheet__label">수강권</span>
+						<span class="cancel-sheet__value">{selectedReservation.pass_name}</span>
+					</div>
+				{/if}
 			</div>
+			{#if getTicketValue(selectedReservation.ticket_value) > 1}
+				<p class="cancel-sheet__refund-notice">
+					취소 시 {getTicketValue(selectedReservation.ticket_value)}회가 환불됩니다.
+				</p>
+			{/if}
 			<div class="cancel-sheet__buttons">
 				<Button
 					variant="secondary"
@@ -657,6 +687,16 @@
 			font-size: var(--font-size-sm);
 			color: var(--color-text-secondary);
 		}
+
+		&__pass {
+			font-size: var(--font-size-sm);
+			color: var(--color-text-secondary);
+		}
+
+		&__ticket {
+			color: var(--color-warning);
+			font-weight: var(--font-weight-medium);
+		}
 	}
 
 	.booking-sheet {
@@ -699,6 +739,15 @@
 		&__field-label {
 			font-size: var(--font-size-sm);
 			color: var(--color-text-secondary);
+		}
+
+		&__ticket-notice {
+			font-size: var(--font-size-sm);
+			color: var(--color-warning);
+			font-weight: var(--font-weight-medium);
+			padding: var(--space-sm) var(--space-md);
+			background: var(--color-warning-bg);
+			border-radius: var(--radius-sm);
 		}
 
 		&__select {
@@ -757,6 +806,13 @@
 			font-size: var(--font-size-sm);
 			font-weight: var(--font-weight-medium);
 			color: var(--color-text);
+		}
+
+		&__refund-notice {
+			font-size: var(--font-size-sm);
+			color: var(--color-warning);
+			text-align: center;
+			font-weight: var(--font-weight-medium);
 		}
 
 		&__buttons {
