@@ -3,6 +3,8 @@
 	import { goto } from '$app/navigation';
 	import { academyStore } from '$lib/stores/academy.svelte';
 	import { getNoticeDetail, createNotice, updateNotice } from '$lib/api/academy';
+	import { sendNotification } from '$lib/api/notification';
+	import { toastStore } from '$lib/stores/toast.svelte';
 	import BackHeader from '$lib/components/layout/BackHeader.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
@@ -57,6 +59,15 @@
 
 			if (isNew) {
 				await createNotice(academyId, data);
+				try {
+					await sendNotification(academyId, {
+						title,
+						content: content.length > 100 ? content.slice(0, 100) + '...' : content,
+						notification_type: 'GENERAL'
+					});
+				} catch {
+					toastStore.error('공지는 등록되었으나 알림 발송에 실패했습니다.');
+				}
 			} else {
 				await updateNotice(academyId, Number(page.params.id), data);
 			}
