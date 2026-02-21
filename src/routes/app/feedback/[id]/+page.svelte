@@ -6,6 +6,7 @@
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import ScoreDisplay from '$lib/components/feedback/ScoreDisplay.svelte';
+	import MediaDisplay from '$lib/components/ui/MediaDisplay.svelte';
 	import { formatDate } from '$lib/utils/format';
 	import type {
 		FeedbackDetail,
@@ -90,8 +91,8 @@
 
 				{#if weekly.video_url}
 					<div class="detail-card">
-						<h3 class="detail-card__title">영상</h3>
-						<a href={weekly.video_url} target="_blank" class="detail-card__link"> 영상 보기 </a>
+						<h3 class="detail-card__title">미디어</h3>
+						<MediaDisplay url={weekly.video_url} />
 					</div>
 				{/if}
 			{:else if !isWeekly && monthly}
@@ -145,8 +146,8 @@
 
 				{#if monthly.video_url}
 					<div class="detail-card">
-						<h3 class="detail-card__title">영상</h3>
-						<a href={monthly.video_url} target="_blank" class="detail-card__link"> 영상 보기 </a>
+						<h3 class="detail-card__title">미디어</h3>
+						<MediaDisplay url={monthly.video_url} />
 					</div>
 				{/if}
 			{/if}
@@ -220,11 +221,6 @@
 			white-space: pre-wrap;
 		}
 
-		&__link {
-			font-size: var(--font-size-sm);
-			color: var(--color-primary);
-			text-decoration: underline;
-		}
 	}
 
 	.skill-list {
