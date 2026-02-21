@@ -15,6 +15,7 @@
 		LessonSlot,
 		SlotStatus,
 		SlotReservation,
+		SlotType,
 		ReservationStatus,
 		CreateSlotRequest,
 		UpdateSlotRequest
@@ -36,7 +37,8 @@
 		slot_date: getTodayString(),
 		start_time: '10:00',
 		end_time: '11:00',
-		max_capacity: 1
+		max_capacity: 1,
+		slot_type: 'REGULAR'
 	});
 
 	// Edit slot modal
@@ -94,9 +96,28 @@
 			slot_date: selectedDate,
 			start_time: '10:00',
 			end_time: '11:00',
-			max_capacity: 1
+			max_capacity: 1,
+			slot_type: 'REGULAR'
 		};
 		showCreateModal = true;
+	}
+
+	function handleSlotTypeChange(type: SlotType) {
+		createForm = {
+			...createForm,
+			slot_type: type,
+			max_capacity: type === 'ENSEMBLE' ? 5 : 1
+		};
+	}
+
+	function getSlotLabel(slot: { slot_type: SlotType; instructor_name: string | null }): string {
+		if (slot.slot_type === 'ENSEMBLE') return '합주 수업';
+		return slot.instructor_name ?? '강사 미지정';
+	}
+
+	function canEditSlot(slot: LessonSlot): boolean {
+		if (slot.slot_type === 'ENSEMBLE') return academyStore.isAdmin;
+		return !academyStore.isAdmin;
 	}
 
 	async function handleCreateSlot() {
@@ -287,10 +308,15 @@
 				<div class="slot-card">
 					<div class="slot-card__header">
 						<div class="slot-card__info">
-							<span class="slot-card__time">
-								{formatTimeRange(slot.start_time, slot.end_time)}
-							</span>
-							<span class="slot-card__instructor">{slot.instructor_name}</span>
+							<div class="slot-card__time-row">
+								<span class="slot-card__time">
+									{formatTimeRange(slot.start_time, slot.end_time)}
+								</span>
+								{#if slot.slot_type === 'ENSEMBLE'}
+									<Badge variant="info">합주</Badge>
+								{/if}
+							</div>
+							<span class="slot-card__instructor">{getSlotLabel(slot)}</span>
 						</div>
 						<div class="slot-card__meta">
 							<span class="slot-card__capacity">
@@ -365,15 +391,14 @@
 						<p class="slot-card__no-reservations">예약 없음</p>
 					{/if}
 
-					<div class="slot-card__footer">
-						<button class="slot-action-btn" onclick={() => openEditModal(slot)}>수정</button>
-						<button
-							class="slot-action-btn slot-action-btn--danger"
-							onclick={() => openDeleteModal(slot)}
-						>
-							삭제
-						</button>
-					</div>
+					{#if canEditSlot(slot)}
+						<div class="slot-card__footer">
+							<button class="slot-action-btn" onclick={() => openEditModal(slot)}>수정</button>
+							<button class="slot-action-btn slot-action-btn--danger" onclick={() => openDeleteModal(slot)}>
+								삭제
+							</button>
+						</div>
+					{/if}
 				</div>
 			{/each}
 		</div>
@@ -388,6 +413,27 @@
 	onclose={() => (showCreateModal = false)}
 >
 	<div class="modal-form">
+		<div class="modal-form__field">
+			<span class="modal-form__label">수업 유형</span>
+			<div class="slot-type-toggle">
+				<button
+					type="button"
+					class="slot-type-toggle__btn"
+					class:slot-type-toggle__btn--active={createForm.slot_type !== 'ENSEMBLE'}
+					onclick={() => handleSlotTypeChange('REGULAR')}
+				>
+					일반 수업
+				</button>
+				<button
+					type="button"
+					class="slot-type-toggle__btn"
+					class:slot-type-toggle__btn--active={createForm.slot_type === 'ENSEMBLE'}
+					onclick={() => handleSlotTypeChange('ENSEMBLE')}
+				>
+					합주 수업
+				</button>
+			</div>
+		</div>
 		<div class="modal-form__field">
 			<span class="modal-form__label">날짜</span>
 			<span class="modal-form__value">{createForm.slot_date}</span>
@@ -459,8 +505,7 @@
 >
 	<p class="modal-message">
 		{#if deleteTarget}
-			{formatTimeRange(deleteTarget.start_time, deleteTarget.end_time)} ({deleteTarget.instructor_name})
-			슬롯을 삭제하시겠습니까?
+			{formatTimeRange(deleteTarget.start_time, deleteTarget.end_time)} ({getSlotLabel(deleteTarget)}) 슬롯을 삭제하시겠습니까?
 		{/if}
 	</p>
 	{#if deleteTarget && deleteTarget.current_count > 0}
@@ -617,6 +662,12 @@
 			display: flex;
 			flex-direction: column;
 			gap: var(--space-xs);
+		}
+
+		&__time-row {
+			display: flex;
+			align-items: center;
+			gap: var(--space-sm);
 		}
 
 		&__time {
@@ -807,6 +858,33 @@
 			flex-direction: column;
 			gap: var(--space-sm);
 			margin-top: var(--space-sm);
+		}
+	}
+
+	.slot-type-toggle {
+		display: flex;
+		gap: var(--space-xs);
+		background: var(--color-bg);
+		border-radius: var(--radius-md);
+		padding: var(--space-2xs);
+
+		&__btn {
+			flex: 1;
+			padding: 10px 0;
+			border-radius: var(--radius-sm);
+			font-size: var(--font-size-sm);
+			font-weight: var(--font-weight-medium);
+			color: var(--color-text-secondary);
+			background: none;
+			transition:
+				background-color var(--transition-fast),
+				color var(--transition-fast);
+
+			&--active {
+				background: var(--color-white);
+				color: var(--color-text);
+				box-shadow: var(--shadow-sm);
+			}
 		}
 	}
 

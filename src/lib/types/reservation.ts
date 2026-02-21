@@ -2,9 +2,12 @@ export type ReservationStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLET
 
 export type SlotStatus = 'OPEN' | 'CLOSED' | 'CANCELLED';
 
+export type SlotType = 'REGULAR' | 'ENSEMBLE';
+
 export interface AvailableSlot {
 	slot_id: number;
-	instructor_name: string;
+	slot_type: SlotType;
+	instructor_name: string | null;
 	slot_date: string;
 	start_time: string;
 	end_time: string;
@@ -13,7 +16,8 @@ export interface AvailableSlot {
 
 export interface MyReservation {
 	reservation_id: number;
-	instructor_name: string;
+	slot_type: SlotType;
+	instructor_name: string | null;
 	slot_date: string;
 	start_time: string;
 	end_time: string;
@@ -45,7 +49,8 @@ export interface SlotReservation {
 
 export interface LessonSlot {
 	id: number;
-	instructor_name: string;
+	slot_type: SlotType;
+	instructor_name: string | null;
 	slot_date: string;
 	start_time: string;
 	end_time: string;
@@ -60,6 +65,7 @@ export interface CreateSlotRequest {
 	start_time: string;
 	end_time: string;
 	max_capacity?: number;
+	slot_type?: SlotType;
 }
 
 export interface UpdateSlotRequest {

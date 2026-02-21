@@ -8,6 +8,7 @@ import type {
 	LessonSlot,
 	MyReservation,
 	ReservationStatus,
+	SlotType,
 	UpdateReservationStatusRequest,
 	UpdateSlotRequest
 } from '$lib/types/reservation';
@@ -41,9 +42,15 @@ export function cancelReservation(academyId: number, reservationId: number) {
 
 // Admin: Lesson Slot CRUD
 
-export function getLessonSlots(academyId: number, date: string, instructorId?: number) {
+export function getLessonSlots(
+	academyId: number,
+	date: string,
+	instructorId?: number,
+	slotType?: SlotType
+) {
 	const params = new URLSearchParams({ date });
 	if (instructorId) params.set('instructor_id', String(instructorId));
+	if (slotType) params.set('slot_type', slotType);
 	return get<ApiResponse<LessonSlot[]>>(
 		`/academic/academies/${academyId}/lesson-slots?${params.toString()}`
 	);

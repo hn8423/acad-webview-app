@@ -23,7 +23,12 @@
 		getDaysInMonth
 	} from '$lib/utils/format';
 	import { getTicketValue } from '$lib/utils/pass';
-	import type { AvailableSlot, MyReservation, ReservationStatus } from '$lib/types/reservation';
+	import type {
+		AvailableSlot,
+		MyReservation,
+		ReservationStatus,
+		SlotType
+	} from '$lib/types/reservation';
 	import type { MemberPass } from '$lib/types/member';
 	import { onMount } from 'svelte';
 
@@ -279,6 +284,11 @@
 				return status;
 		}
 	}
+
+	function getInstructorLabel(slot: { slot_type: SlotType; instructor_name: string | null }): string {
+		if (slot.slot_type === 'ENSEMBLE') return '합주 수업';
+		return slot.instructor_name ? `${slot.instructor_name} 선생님` : '강사 미지정';
+	}
 </script>
 
 <div class="reservation-page">
@@ -334,7 +344,7 @@
 										{formatTimeRange(slot.start_time, slot.end_time)}
 									</span>
 									<span class="slot-card__instructor">
-										{slot.instructor_name} 선생님
+										{getInstructorLabel(slot)}
 									</span>
 								</div>
 								<Badge variant={slot.remaining_capacity <= 1 ? 'danger' : 'success'}>
@@ -385,7 +395,7 @@
 										{formatTimeRange(reservation.start_time, reservation.end_time)}
 									</span>
 									<span class="reservation-card__instructor">
-										{reservation.instructor_name} 선생님
+										{getInstructorLabel(reservation)}
 									</span>
 									{#if reservation.pass_name}
 										<span class="reservation-card__pass">
@@ -431,8 +441,8 @@
 					</span>
 				</div>
 				<div class="booking-sheet__row">
-					<span class="booking-sheet__label">강사</span>
-					<span class="booking-sheet__value">{selectedSlot.instructor_name} 선생님</span>
+					<span class="booking-sheet__label">{selectedSlot.slot_type === 'ENSEMBLE' ? '유형' : '강사'}</span>
+					<span class="booking-sheet__value">{getInstructorLabel(selectedSlot)}</span>
 				</div>
 			</div>
 
@@ -492,10 +502,8 @@
 					</span>
 				</div>
 				<div class="cancel-sheet__row">
-					<span class="cancel-sheet__label">강사</span>
-					<span class="cancel-sheet__value">
-						{selectedReservation.instructor_name} 선생님
-					</span>
+					<span class="cancel-sheet__label">{selectedReservation.slot_type === 'ENSEMBLE' ? '유형' : '강사'}</span>
+					<span class="cancel-sheet__value">{getInstructorLabel(selectedReservation)}</span>
 				</div>
 				{#if selectedReservation.pass_name}
 					<div class="cancel-sheet__row">
