@@ -6,11 +6,6 @@
 	import ToastContainer from '$lib/components/ui/ToastContainer.svelte';
 
 	let { children } = $props();
-
-	onMount(() => {
-		authStore.initialize();
-		academyStore.initialize();
-	});
 </script>
 
 <svelte:head>
