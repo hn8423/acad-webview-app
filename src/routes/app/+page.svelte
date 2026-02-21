@@ -160,16 +160,13 @@
 									<div class="pass-card__date">
 										{formatDate(pass.start_date)} ~ {formatDate(pass.end_date)}
 									</div>
-								{#if holdingRequestedPassIds.has(pass.id)}
-									<span class="pass-card__holding-status">홀딩 신청중</span>
-								{:else if pass.status === 'ACTIVE'}
-									<button
-										class="pass-card__holding-btn"
-										onclick={() => openHoldingModal(pass)}
-									>
-										홀딩 신청
-									</button>
-								{/if}
+									{#if holdingRequestedPassIds.has(pass.id)}
+										<span class="pass-card__holding-status">홀딩 신청중</span>
+									{:else if pass.status === 'ACTIVE'}
+										<button class="pass-card__holding-btn" onclick={() => openHoldingModal(pass)}>
+											홀딩 신청
+										</button>
+									{/if}
 								</div>
 							</div>
 							{#if passes.indexOf(pass) < passes.length - 1}

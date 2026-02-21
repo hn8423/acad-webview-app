@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { academyStore } from '$lib/stores/academy.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import {
@@ -32,7 +33,7 @@
 	let createForm = $state<CreateSlotRequest>({
 		slot_date: getTodayString(),
 		start_time: '10:00',
-		end_time: '10:50',
+		end_time: '11:00',
 		max_capacity: 1
 	});
 
@@ -44,6 +45,10 @@
 	// Delete slot modal
 	let showDeleteModal = $state(false);
 	let deleteTarget = $state<LessonSlot | null>(null);
+
+	// Feedback prompt modal
+	let showFeedbackPrompt = $state(false);
+	let completedMemberName = $state('');
 
 	async function fetchSlots(date: string) {
 		const academyId = academyStore.academyId;
@@ -75,7 +80,7 @@
 		createForm = {
 			slot_date: selectedDate,
 			start_time: '10:00',
-			end_time: '10:50',
+			end_time: '11:00',
 			max_capacity: 1
 		};
 		showCreateModal = true;
@@ -155,7 +160,11 @@
 
 	// Reservation status handlers
 
-	async function handleReservationStatus(reservationId: number, status: ReservationStatus) {
+	async function handleReservationStatus(
+		reservationId: number,
+		status: ReservationStatus,
+		memberName?: string
+	) {
 		const academyId = academyStore.academyId;
 		if (!academyId || status === 'PENDING') return;
 		actionLoading = true;
@@ -166,6 +175,11 @@
 			if (res.status) {
 				toastStore.success(`예약이 ${getStatusLabel(status)} 처리되었습니다`);
 				await fetchSlots(selectedDate);
+
+				if (status === 'COMPLETED' && memberName) {
+					completedMemberName = memberName;
+					showFeedbackPrompt = true;
+				}
 			}
 		} catch (error) {
 			toastStore.error('예약 상태 변경에 실패했습니다');
@@ -192,14 +206,13 @@
 	function getReservationBadgeVariant(
 		status: ReservationStatus
 	): 'success' | 'warning' | 'danger' | 'info' | 'neutral' {
-		const map: Record<ReservationStatus, 'success' | 'warning' | 'danger' | 'info' | 'neutral'> =
-			{
-				PENDING: 'warning',
-				CONFIRMED: 'info',
-				COMPLETED: 'success',
-				NO_SHOW: 'danger',
-				CANCELLED: 'neutral'
-			};
+		const map: Record<ReservationStatus, 'success' | 'warning' | 'danger' | 'info' | 'neutral'> = {
+			PENDING: 'warning',
+			CONFIRMED: 'info',
+			COMPLETED: 'success',
+			NO_SHOW: 'danger',
+			CANCELLED: 'neutral'
+		};
 		return map[status];
 	}
 
@@ -221,10 +234,7 @@
 		<Button size="sm" onclick={openCreateModal}>+ 슬롯 추가</Button>
 	</div>
 
-	<DateCalendar
-		{selectedDate}
-		onselect={(date) => (selectedDate = date)}
-	/>
+	<DateCalendar {selectedDate} onselect={(date) => (selectedDate = date)} />
 
 	{#if loading}
 		<div class="reservations__loading"><Spinner /></div>
@@ -283,7 +293,7 @@
 											<button
 												class="action-btn action-btn--complete"
 												disabled={actionLoading}
-												onclick={() => handleReservationStatus(rv.reservation_id, 'COMPLETED')}
+												onclick={() => handleReservationStatus(rv.reservation_id, 'COMPLETED', rv.member_name)}
 											>
 												완료
 											</button>
@@ -312,7 +322,10 @@
 
 					<div class="slot-card__footer">
 						<button class="slot-action-btn" onclick={() => openEditModal(slot)}>수정</button>
-						<button class="slot-action-btn slot-action-btn--danger" onclick={() => openDeleteModal(slot)}>
+						<button
+							class="slot-action-btn slot-action-btn--danger"
+							onclick={() => openDeleteModal(slot)}
+						>
 							삭제
 						</button>
 					</div>
@@ -323,7 +336,12 @@
 </div>
 
 <!-- Create Slot Modal -->
-<Modal isOpen={showCreateModal} title="수업 슬롯 추가" position="center" onclose={() => (showCreateModal = false)}>
+<Modal
+	isOpen={showCreateModal}
+	title="수업 슬롯 추가"
+	position="center"
+	onclose={() => (showCreateModal = false)}
+>
 	<div class="modal-form">
 		<div class="modal-form__field">
 			<span class="modal-form__label">날짜</span>
@@ -341,12 +359,7 @@
 		</div>
 		<label class="modal-form__field">
 			<span class="modal-form__label">최대 인원</span>
-			<input
-				type="number"
-				class="modal-form__input"
-				min="1"
-				bind:value={createForm.max_capacity}
-			/>
+			<input type="number" class="modal-form__input" min="1" bind:value={createForm.max_capacity} />
 		</label>
 		<div class="modal-form__actions">
 			<Button fullWidth loading={actionLoading} onclick={handleCreateSlot}>생성</Button>
@@ -356,7 +369,12 @@
 </Modal>
 
 <!-- Edit Slot Modal -->
-<Modal isOpen={showEditModal} title="슬롯 수정" position="center" onclose={() => (showEditModal = false)}>
+<Modal
+	isOpen={showEditModal}
+	title="슬롯 수정"
+	position="center"
+	onclose={() => (showEditModal = false)}
+>
 	<div class="modal-form">
 		<div class="modal-form__row">
 			<label class="modal-form__field">
@@ -370,12 +388,7 @@
 		</div>
 		<label class="modal-form__field">
 			<span class="modal-form__label">최대 인원</span>
-			<input
-				type="number"
-				class="modal-form__input"
-				min="1"
-				bind:value={editForm.max_capacity}
-			/>
+			<input type="number" class="modal-form__input" min="1" bind:value={editForm.max_capacity} />
 		</label>
 		<label class="modal-form__field">
 			<span class="modal-form__label">상태</span>
@@ -393,10 +406,16 @@
 </Modal>
 
 <!-- Delete Slot Confirmation Modal -->
-<Modal isOpen={showDeleteModal} title="슬롯 삭제" position="center" onclose={() => (showDeleteModal = false)}>
+<Modal
+	isOpen={showDeleteModal}
+	title="슬롯 삭제"
+	position="center"
+	onclose={() => (showDeleteModal = false)}
+>
 	<p class="modal-message">
 		{#if deleteTarget}
-			{formatTimeRange(deleteTarget.start_time, deleteTarget.end_time)} ({deleteTarget.instructor_name}) 슬롯을 삭제하시겠습니까?
+			{formatTimeRange(deleteTarget.start_time, deleteTarget.end_time)} ({deleteTarget.instructor_name})
+			슬롯을 삭제하시겠습니까?
 		{/if}
 	</p>
 	{#if deleteTarget && deleteTarget.current_count > 0}
@@ -413,6 +432,25 @@
 			삭제
 		</Button>
 		<Button variant="secondary" fullWidth onclick={() => (showDeleteModal = false)}>취소</Button>
+	</div>
+</Modal>
+
+<!-- Feedback Prompt Modal -->
+<Modal isOpen={showFeedbackPrompt} title="피드백 작성" position="center" onclose={() => (showFeedbackPrompt = false)}>
+	<p class="modal-message">
+		수업이 완료되었습니다. {completedMemberName} 학생의 위클리 피드백을 작성하시겠습니까?
+	</p>
+	<div class="modal-form__actions">
+		<Button
+			fullWidth
+			onclick={() => {
+				showFeedbackPrompt = false;
+				goto(`/admin/feedback/new-weekly?member_name=${encodeURIComponent(completedMemberName)}`);
+			}}
+		>
+			피드백 작성
+		</Button>
+		<Button variant="secondary" fullWidth onclick={() => (showFeedbackPrompt = false)}>나중에</Button>
 	</div>
 </Modal>
 

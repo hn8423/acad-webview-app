@@ -27,11 +27,7 @@ export function adminCreateHolding(academyId: number, data: AdminCreateHoldingRe
 	return post<ApiResponse<Holding>>(`/academic/academies/${academyId}/holdings`, data);
 }
 
-export function updateHolding(
-	academyId: number,
-	holdingId: number,
-	data: UpdateHoldingRequest
-) {
+export function updateHolding(academyId: number, holdingId: number, data: UpdateHoldingRequest) {
 	return patch<ApiResponse<Holding>>(
 		`/academic/academies/${academyId}/holdings/${holdingId}`,
 		data

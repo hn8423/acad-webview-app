@@ -7,9 +7,7 @@ export function getAcademies(search?: string, page = 1, limit = 10) {
 	if (search) params.set('search', search);
 	params.set('page', String(page));
 	params.set('limit', String(limit));
-	return get<ApiResponse<PaginatedList<Academy>>>(
-		`/academic/academies?${params.toString()}`
-	);
+	return get<ApiResponse<PaginatedList<Academy>>>(`/academic/academies?${params.toString()}`);
 }
 
 export function getAcademy(academyId: number) {
@@ -60,9 +58,7 @@ export function getNoticeDetail(academyId: number, noticeId: number) {
 }
 
 export function getRecentNotices(academyId: number) {
-	return get<ApiResponse<Notice[]>>(
-		`/academic/academies/${academyId}/notices/recent`
-	);
+	return get<ApiResponse<Notice[]>>(`/academic/academies/${academyId}/notices/recent`);
 }
 
 export function createNotice(
@@ -87,10 +83,7 @@ export function updateNotice(
 		files?: NoticeFile[];
 	}
 ) {
-	return patch<ApiResponse<Notice>>(
-		`/academic/academies/${academyId}/notices/${noticeId}`,
-		data
-	);
+	return patch<ApiResponse<Notice>>(`/academic/academies/${academyId}/notices/${noticeId}`, data);
 }
 
 export function deleteNotice(academyId: number, noticeId: number) {

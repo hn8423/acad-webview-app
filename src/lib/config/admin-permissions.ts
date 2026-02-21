@@ -7,6 +7,8 @@ import type { MemberRole } from '$lib/types/auth';
 const ROUTE_ROLES: Record<string, readonly MemberRole[]> = {
 	'/admin/notices': ['ADMIN'],
 	'/admin/instructors': ['ADMIN'],
+	'/admin/students/*/passes': ['ADMIN'],
+	'/admin/students/*/drinks': ['ADMIN'],
 	'/admin/students': ['ADMIN', 'INSTRUCTOR'],
 	'/admin/feedback': ['ADMIN', 'INSTRUCTOR'],
 	'/admin/ensembles': ['ADMIN', 'INSTRUCTOR'],
@@ -14,14 +16,33 @@ const ROUTE_ROLES: Record<string, readonly MemberRole[]> = {
 	'/admin/pass-types': ['ADMIN'],
 	'/admin/holdings': ['ADMIN'],
 	'/admin/nav': ['ADMIN', 'INSTRUCTOR'],
-	'/admin/notifications': ['ADMIN', 'INSTRUCTOR']
+	'/admin/notifications': ['ADMIN', 'INSTRUCTOR'],
+	'/admin/scheduled-alarms': ['ADMIN']
 };
+
+function matchRoute(route: string, pattern: string): boolean {
+	if (!pattern.includes('*')) return route.startsWith(pattern);
+
+	const routeSegments = route.split('/');
+	const patternSegments = pattern.split('/');
+	if (routeSegments.length < patternSegments.length) return false;
+
+	return patternSegments.every((seg, i) => seg === '*' || seg === routeSegments[i]);
+}
 
 export function isRouteAllowed(route: string, role: MemberRole | null): boolean {
 	if (!role) return false;
 	if (route === '/admin' || route === '/admin/') return true;
 
-	const entry = Object.entries(ROUTE_ROLES).find(([path]) => route.startsWith(path));
-	if (!entry) return false;
-	return entry[1].includes(role);
+	const matches = Object.entries(ROUTE_ROLES).filter(([path]) => matchRoute(route, path));
+	if (matches.length === 0) return false;
+
+	const mostSpecific = matches.sort((a, b) => {
+		const segDiff = b[0].split('/').length - a[0].split('/').length;
+		if (segDiff !== 0) return segDiff;
+		const aWildcards = (a[0].match(/\*/g) ?? []).length;
+		const bWildcards = (b[0].match(/\*/g) ?? []).length;
+		return aWildcards - bWildcards;
+	})[0];
+	return mostSpecific[1].includes(role);
 }

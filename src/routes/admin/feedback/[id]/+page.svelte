@@ -13,8 +13,9 @@
 	import BackHeader from '$lib/components/layout/BackHeader.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
-	import Input from '$lib/components/ui/Input.svelte';
 	import Modal from '$lib/components/ui/Modal.svelte';
+	import MediaUpload from '$lib/components/ui/MediaUpload.svelte';
+	import MediaDisplay from '$lib/components/ui/MediaDisplay.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import ScoreDisplay from '$lib/components/feedback/ScoreDisplay.svelte';
 	import ScoreInput from '$lib/components/feedback/ScoreInput.svelte';
@@ -108,6 +109,8 @@
 				feedback = res.data;
 				toastStore.success('피드백이 수정되었습니다.');
 				showEditWeeklyModal = false;
+			} else {
+				editError = res.message || '피드백 수정에 실패했습니다.';
 			}
 		} catch (err) {
 			editError = err instanceof Error ? err.message : '수정에 실패했습니다.';
@@ -167,6 +170,8 @@
 				feedback = res.data;
 				toastStore.success('피드백이 수정되었습니다.');
 				showEditMonthlyModal = false;
+			} else {
+				editError = res.message || '피드백 수정에 실패했습니다.';
 			}
 		} catch (err) {
 			editError = err instanceof Error ? err.message : '수정에 실패했습니다.';
@@ -244,8 +249,8 @@
 
 				{#if weekly.video_url}
 					<div class="detail-card">
-						<h3 class="detail-card__title">영상</h3>
-						<a href={weekly.video_url} target="_blank" class="detail-card__link"> 영상 보기 </a>
+						<h3 class="detail-card__title">미디어</h3>
+						<MediaDisplay url={weekly.video_url} />
 					</div>
 				{/if}
 			{:else if !isWeekly && monthly}
@@ -317,8 +322,8 @@
 
 				{#if monthly.video_url}
 					<div class="detail-card">
-						<h3 class="detail-card__title">영상</h3>
-						<a href={monthly.video_url} target="_blank" class="detail-card__link"> 영상 보기 </a>
+						<h3 class="detail-card__title">미디어</h3>
+						<MediaDisplay url={monthly.video_url} />
 					</div>
 				{/if}
 			{/if}
@@ -386,7 +391,7 @@
 			></textarea>
 		</div>
 
-		<Input label="영상 URL" bind:value={editVideoUrl} />
+		<MediaUpload label="미디어 첨부" bind:value={editVideoUrl} />
 
 		{#if editError}
 			<p class="edit-form__error">{editError}</p>
@@ -440,7 +445,7 @@
 			></textarea>
 		</div>
 
-		<Input label="영상 URL" bind:value={editMonthlyVideoUrl} />
+		<MediaUpload label="미디어 첨부" bind:value={editMonthlyVideoUrl} />
 
 		{#if editError}
 			<p class="edit-form__error">{editError}</p>
@@ -532,18 +537,11 @@
 			white-space: pre-wrap;
 		}
 
-		&__link {
-			font-size: var(--font-size-sm);
-			color: var(--color-primary);
-			text-decoration: underline;
-		}
-
 		&__info-grid {
 			font-size: var(--font-size-sm);
 			color: var(--color-text);
 			line-height: var(--line-height-base);
 		}
-
 	}
 
 	.skill-list {

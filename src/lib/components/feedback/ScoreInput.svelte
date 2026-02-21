@@ -77,6 +77,7 @@
 	<div class="score-input__levels" role="radiogroup" aria-label="{categoryName} 레벨 선택">
 		{#each SCORE_LEVELS as level, i}
 			<button
+				type="button"
 				class="score-input__chip"
 				class:score-input__chip--active={indices.levelIndex === i}
 				style="--chip-color: {level.color}"
@@ -95,6 +96,7 @@
 	<div class="score-input__subs" role="radiogroup" aria-label="{categoryName} 세부 레벨 선택">
 		{#each SUB_LEVELS as sub, i}
 			<button
+				type="button"
 				class="score-input__chip score-input__chip--sub"
 				class:score-input__chip--active={indices.subIndex === i}
 				style="--chip-color: {levelInfo.color}"

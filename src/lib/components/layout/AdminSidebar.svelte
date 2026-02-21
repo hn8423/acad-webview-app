@@ -97,10 +97,7 @@
 					onclick={onclose}
 				>
 					{#if item.nav_icon && isIconUrl(item.nav_icon)}
-						<span
-							class="sidebar__mask-icon"
-							style:--icon-url="url('{item.nav_icon}')"
-						></span>
+						<span class="sidebar__mask-icon" style:--icon-url="url('{item.nav_icon}')"></span>
 					{:else}
 						<svg
 							width="20"

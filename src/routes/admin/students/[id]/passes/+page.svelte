@@ -179,7 +179,6 @@
 			}
 		}
 	}
-
 </script>
 
 <div class="passes-page">
@@ -206,7 +205,9 @@
 						<div class="pass-item">
 							<div class="pass-item__header">
 								<span class="pass-item__name">{pass.pass_name}</span>
-								<Badge variant={getPassStatusVariant(pass.status)}>{getPassStatusLabel(pass.status)}</Badge>
+								<Badge variant={getPassStatusVariant(pass.status)}
+									>{getPassStatusLabel(pass.status)}</Badge
+								>
 							</div>
 							<div class="pass-item__progress">
 								<div class="pass-item__progress-bar">
@@ -267,7 +268,9 @@
 				<select id="instructor" class="create-form__select" bind:value={selectedInstructorId}>
 					<option value="">선택하세요</option>
 					{#each instructors as instr}
-						<option value={instr.instructor_id ?? instr.id}>{instr.user_name} ({instr.specialties})</option>
+						<option value={instr.instructor_id ?? instr.id}
+							>{instr.user_name} ({instr.specialties})</option
+						>
 					{/each}
 				</select>
 			</div>

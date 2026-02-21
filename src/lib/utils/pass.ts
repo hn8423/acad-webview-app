@@ -1,6 +1,4 @@
-export function getPassStatusVariant(
-	status: string
-): 'success' | 'warning' | 'info' | 'neutral' {
+export function getPassStatusVariant(status: string): 'success' | 'warning' | 'info' | 'neutral' {
 	switch (status) {
 		case 'ACTIVE':
 			return 'success';
