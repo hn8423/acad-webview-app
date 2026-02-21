@@ -3,15 +3,16 @@
 	import { onMount } from 'svelte';
 	import { academyStore } from '$lib/stores/academy.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
-	import { getHoldings, updateHolding } from '$lib/api/holding';
+	import { getHoldings, updateHolding, adminCreateHolding } from '$lib/api/holding';
 	import BackHeader from '$lib/components/layout/BackHeader.svelte';
+	import AdminHoldingCreateModal from '$lib/components/holding/AdminHoldingCreateModal.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Modal from '$lib/components/ui/Modal.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import { formatDate } from '$lib/utils/format';
 	import { getHoldingStatusVariant, getHoldingStatusLabel } from '$lib/utils/holding';
-	import type { Holding } from '$lib/types/holding';
+	import type { Holding, AdminCreateHoldingRequest } from '$lib/types/holding';
 
 	type StatusFilter = 'PENDING' | 'APPROVED' | 'REJECTED' | undefined;
 
@@ -29,6 +30,11 @@
 	let showApproveModal = $state(false);
 	let showRejectModal = $state(false);
 	let submitting = $state(false);
+
+	// Create modal state
+	let showCreateModal = $state(false);
+	let createSubmitting = $state(false);
+	let createError = $state('');
 
 	onMount(() => fetchHoldings());
 
@@ -88,6 +94,29 @@
 		}
 	}
 
+	async function handleCreate(data: AdminCreateHoldingRequest) {
+		if (createSubmitting) return;
+		const academyId = academyStore.academyId;
+		if (!academyId) return;
+
+		createSubmitting = true;
+		createError = '';
+		try {
+			const res = await adminCreateHolding(academyId, data);
+			if (res.status) {
+				toastStore.success('홀딩이 설정되었습니다.');
+				showCreateModal = false;
+				await fetchHoldings();
+			} else {
+				createError = res.message || '홀딩 설정에 실패했습니다.';
+			}
+		} catch (err) {
+			createError = err instanceof Error ? err.message : '홀딩 설정에 실패했습니다.';
+		} finally {
+			createSubmitting = false;
+		}
+	}
+
 	async function handleReject() {
 		if (submitting) return;
 		const academyId = academyStore.academyId;
@@ -116,6 +145,10 @@
 	<BackHeader title="홀딩 관리" onback={() => goto('/admin')} />
 
 	<div class="holdings-page__content">
+		<div class="holdings-page__header">
+			<Button size="sm" onclick={() => { createError = ''; showCreateModal = true; }}>홀딩 설정</Button>
+		</div>
+
 		<div class="holdings-page__filter">
 			{#each STATUS_TABS as tab}
 				<button
@@ -133,7 +166,7 @@
 				<Spinner />
 			</div>
 		{:else if holdings.length === 0}
-			<p class="holdings-page__empty">홀딩 신청 내역이 없습니다.</p>
+			<p class="holdings-page__empty">홀딩 내역이 없습니다.</p>
 		{:else}
 			<div class="holding-list">
 				{#each holdings as holding, i (holding.id)}
@@ -207,10 +240,28 @@
 	</div>
 </Modal>
 
+<!-- 홀딩 설정 모달 -->
+<AdminHoldingCreateModal
+	isOpen={showCreateModal}
+	onclose={() => {
+		showCreateModal = false;
+		createError = '';
+	}}
+	onsubmit={handleCreate}
+	submitting={createSubmitting}
+	error={createError}
+/>
+
 <style lang="scss">
 	.holdings-page {
 		&__content {
 			padding: calc(var(--header-height) + var(--space-md)) var(--space-md) var(--space-md);
+		}
+
+		&__header {
+			display: flex;
+			justify-content: flex-end;
+			margin-bottom: var(--space-md);
 		}
 
 		&__filter {
