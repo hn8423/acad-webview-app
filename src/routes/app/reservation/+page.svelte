@@ -64,7 +64,16 @@
 		memberPasses.filter((p) => p.status === 'ACTIVE' && p.remaining_lessons > 0)
 	);
 
-	let selectedPass = $derived(activePasses.find((p) => p.id === selectedPassId) ?? null);
+	function getPassesForSlot(slot: AvailableSlot | null): MemberPass[] {
+		if (!slot) return activePasses;
+		if (slot.slot_type === 'ENSEMBLE') return activePasses;
+		if (!slot.instructor_name) return activePasses;
+		const matched = activePasses.filter((p) => p.instructor_name === slot.instructor_name);
+		return matched.length > 0 ? matched : activePasses;
+	}
+
+	let filteredPasses = $derived(getPassesForSlot(selectedSlot));
+	let selectedPass = $derived(filteredPasses.find((p) => p.id === selectedPassId) ?? null);
 
 	onMount(() => {
 		const now = new Date();
@@ -186,14 +195,19 @@
 	}
 
 	function handleSlotClick(slot: AvailableSlot) {
-		if (activePasses.length === 0) {
+		const passesForSlot = getPassesForSlot(slot);
+		if (passesForSlot.length === 0) {
 			const message =
-				memberPasses.length === 0 ? '등록된 수강권이 없습니다.' : '이용 가능한 수강권이 없습니다.';
+				memberPasses.length === 0
+					? '등록된 수강권이 없습니다.'
+					: slot.slot_type === 'REGULAR' && slot.instructor_name
+						? `${slot.instructor_name} 선생님의 이용 가능한 수강권이 없습니다.`
+						: '이용 가능한 수강권이 없습니다.';
 			toastStore.error(message);
 			return;
 		}
 		selectedSlot = slot;
-		selectedPassId = activePasses[0].id;
+		selectedPassId = passesForSlot[0].id;
 		bookingSheetOpen = true;
 	}
 
@@ -346,6 +360,9 @@
 									<span class="slot-card__instructor">
 										{getInstructorLabel(slot)}
 									</span>
+									{#if slot.slot_type === 'ENSEMBLE'}
+										<span class="slot-card__tag">모든 수강권 가능</span>
+									{/if}
 								</div>
 								<Badge variant={slot.remaining_capacity <= 1 ? 'danger' : 'success'}>
 									잔여 {slot.remaining_capacity}석
@@ -454,13 +471,23 @@
 					bind:value={selectedPassId}
 					aria-label="사용할 수강권 선택"
 				>
-					{#each activePasses as pass}
+					{#each filteredPasses as pass}
 						<option value={pass.id}>
 							{pass.pass_name} (잔여 {pass.remaining_lessons}회){getTicketValue(pass.ticket_value) > 1 ? ` [${getTicketValue(pass.ticket_value)}회 차감]` : ''}
 						</option>
 					{/each}
 				</select>
 			</div>
+
+			{#if selectedSlot?.slot_type === 'ENSEMBLE'}
+				<p class="booking-sheet__pass-notice booking-sheet__pass-notice--info">
+					합주 수업은 모든 수강권으로 예약할 수 있습니다.
+				</p>
+			{:else if selectedSlot?.instructor_name && filteredPasses.length < activePasses.length}
+				<p class="booking-sheet__pass-notice">
+					{selectedSlot.instructor_name} 선생님 담당 수강권만 표시됩니다.
+				</p>
+			{/if}
 
 			{#if selectedPass && getTicketValue(selectedPass.ticket_value) > 1}
 				<div class="booking-sheet__ticket-notice">
@@ -622,6 +649,11 @@
 			font-size: var(--font-size-sm);
 			color: var(--color-text-secondary);
 		}
+
+		&__tag {
+			font-size: var(--font-size-xs);
+			color: var(--color-info);
+		}
 	}
 
 	.my-content {
@@ -747,6 +779,19 @@
 		&__field-label {
 			font-size: var(--font-size-sm);
 			color: var(--color-text-secondary);
+		}
+
+		&__pass-notice {
+			font-size: var(--font-size-sm);
+			color: var(--color-text-secondary);
+			padding: var(--space-sm) var(--space-md);
+			background: var(--color-bg);
+			border-radius: var(--radius-sm);
+
+			&--info {
+				color: var(--color-info);
+				background: var(--color-info-bg);
+			}
 		}
 
 		&__ticket-notice {
