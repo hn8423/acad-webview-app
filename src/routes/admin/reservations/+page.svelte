@@ -10,7 +10,7 @@
 		updateReservationStatus
 	} from '$lib/api/reservation';
 	import { formatTimeRange, getTodayString } from '$lib/utils/format';
-	import { getTicketValue } from '$lib/utils/pass';
+	import { getTicketValue, getCapacityWeight, isActiveReservationStatus } from '$lib/utils/pass';
 	import type {
 		LessonSlot,
 		SlotStatus,
@@ -56,7 +56,9 @@
 		reservationId: number;
 		memberName: string;
 		passName: string;
+		passCategory?: string;
 		ticketValue: number;
+		capacityWeight: number;
 		currentStatus: ReservationStatus;
 		newStatus: 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW';
 	} | null>(null);
@@ -199,6 +201,12 @@
 
 	// Reservation status handlers
 
+	function computeWeightedCount(reservations: SlotReservation[]): number {
+		return reservations
+			.filter((rv) => isActiveReservationStatus(rv.status))
+			.reduce((sum, rv) => sum + getCapacityWeight(rv.pass_category), 0);
+	}
+
 	function openStatusConfirm(
 		rv: SlotReservation,
 		newStatus: 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW'
@@ -207,7 +215,9 @@
 			reservationId: rv.reservation_id,
 			memberName: rv.member_name,
 			passName: rv.pass_name ?? '',
+			passCategory: rv.pass_category,
 			ticketValue: getTicketValue(rv.ticket_value),
+			capacityWeight: getCapacityWeight(rv.pass_category),
 			currentStatus: rv.status,
 			newStatus
 		};
@@ -325,7 +335,7 @@
 						</div>
 						<div class="slot-card__meta">
 							<span class="slot-card__capacity">
-								예약 {slot.current_count}/{slot.max_capacity}
+								예약 {computeWeightedCount(slot.reservations)}/{slot.max_capacity}
 							</span>
 							<Badge variant={getSlotBadgeVariant(slot.status)}>
 								{getStatusLabel(slot.status)}
@@ -341,6 +351,10 @@
 										<span class="reservation-row__name">{rv.member_name}</span>
 										{#if rv.pass_name}
 											<span class="reservation-row__pass">{rv.pass_name}</span>
+										{/if}
+										{#if rv.pass_category === 'ROTATION'}
+											<Badge variant="info">로테이션</Badge>
+											<span class="reservation-row__weight">0.5인원</span>
 										{/if}
 										{#if getTicketValue(rv.ticket_value) > 1}
 											<Badge variant="warning">{getTicketValue(rv.ticket_value)}회 차감</Badge>
@@ -513,7 +527,7 @@
 			{formatTimeRange(deleteTarget.start_time, deleteTarget.end_time)} ({getSlotLabel(deleteTarget)}) 슬롯을 삭제하시겠습니까?
 		{/if}
 	</p>
-	{#if deleteTarget && deleteTarget.current_count > 0}
+	{#if deleteTarget && computeWeightedCount(deleteTarget.reservations) > 0}
 		<p class="modal-warning">활성 예약이 있는 슬롯은 삭제할 수 없습니다.</p>
 	{/if}
 	<div class="modal-form__actions">
@@ -521,7 +535,7 @@
 			variant="danger"
 			fullWidth
 			loading={actionLoading}
-			disabled={deleteTarget !== null && deleteTarget.current_count > 0}
+			disabled={deleteTarget !== null && computeWeightedCount(deleteTarget.reservations) > 0}
 			onclick={handleDeleteSlot}
 		>
 			삭제
@@ -549,6 +563,15 @@
 			{#if statusConfirmTarget.passName}
 				<div class="status-confirm__detail">
 					수강권: {statusConfirmTarget.passName}
+				</div>
+			{/if}
+			{#if statusConfirmTarget.capacityWeight !== 1}
+				<div class="status-confirm__capacity-info">
+					{#if statusConfirmTarget.newStatus === 'CONFIRMED'}
+						{statusConfirmTarget.capacityWeight}인원이 차감됩니다. (로테이션)
+					{:else if statusConfirmTarget.newStatus === 'CANCELLED'}
+						{statusConfirmTarget.capacityWeight}인원이 환원됩니다. (로테이션)
+					{/if}
 				</div>
 			{/if}
 			{#if statusConfirmTarget.ticketValue > 1}
@@ -745,6 +768,12 @@
 			color: var(--color-text-muted);
 		}
 
+		&__weight {
+			font-size: var(--font-size-xs);
+			color: var(--color-info);
+			font-weight: var(--font-weight-medium);
+		}
+
 		&__actions {
 			display: flex;
 			gap: var(--space-xs);
@@ -938,6 +967,15 @@
 			font-weight: var(--font-weight-medium);
 			padding: var(--space-sm) var(--space-md);
 			background: var(--color-warning-bg);
+			border-radius: var(--radius-sm);
+		}
+
+		&__capacity-info {
+			font-size: var(--font-size-sm);
+			color: var(--color-info);
+			font-weight: var(--font-weight-medium);
+			padding: var(--space-sm) var(--space-md);
+			background: var(--color-info-bg);
 			border-radius: var(--radius-sm);
 		}
 

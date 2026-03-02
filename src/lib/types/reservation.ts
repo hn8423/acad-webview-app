@@ -24,6 +24,7 @@ export interface MyReservation {
 	status: ReservationStatus;
 	ticket_value?: number;
 	pass_name?: string;
+	pass_category?: string;
 	created_at: string;
 }
 
@@ -45,6 +46,7 @@ export interface SlotReservation {
 	status: ReservationStatus;
 	ticket_value?: number;
 	pass_name?: string;
+	pass_category?: string;
 }
 
 export interface LessonSlot {

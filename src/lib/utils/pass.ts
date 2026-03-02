@@ -31,3 +31,11 @@ export function getPassStatusLabel(status: string): string {
 export function getTicketValue(ticketValue?: number): number {
 	return ticketValue && ticketValue > 0 ? ticketValue : 1;
 }
+
+export function getCapacityWeight(passCategory?: string): number {
+	return passCategory === 'ROTATION' ? 0.5 : 1;
+}
+
+export function isActiveReservationStatus(status: string): boolean {
+	return status === 'PENDING' || status === 'CONFIRMED';
+}
