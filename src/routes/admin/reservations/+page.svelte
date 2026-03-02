@@ -103,10 +103,15 @@
 	}
 
 	function handleSlotTypeChange(type: SlotType) {
+		const hours = type === 'ENSEMBLE' ? 2 : 1;
+		const [h, m] = createForm.start_time.split(':').map(Number);
+		const endH = String(Math.min(h + hours, 23)).padStart(2, '0');
+		const endTime = `${endH}:${String(m).padStart(2, '0')}`;
 		createForm = {
 			...createForm,
 			slot_type: type,
-			max_capacity: type === 'ENSEMBLE' ? 5 : 1
+			max_capacity: type === 'ENSEMBLE' ? 5 : 1,
+			end_time: endTime
 		};
 	}
 
