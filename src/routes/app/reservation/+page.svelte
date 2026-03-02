@@ -22,7 +22,7 @@
 		getTodayString,
 		getDaysInMonth
 	} from '$lib/utils/format';
-	import { getTicketValue } from '$lib/utils/pass';
+	import { getTicketValue, getCapacityWeight } from '$lib/utils/pass';
 	import type {
 		AvailableSlot,
 		MyReservation,
@@ -74,6 +74,7 @@
 
 	let filteredPasses = $derived(getPassesForSlot(selectedSlot));
 	let selectedPass = $derived(filteredPasses.find((p) => p.id === selectedPassId) ?? null);
+	let isRotationPass = $derived(selectedPass?.pass_category === 'ROTATION');
 
 	onMount(() => {
 		const now = new Date();
@@ -417,6 +418,9 @@
 									{#if reservation.pass_name}
 										<span class="reservation-card__pass">
 											{reservation.pass_name}
+											{#if reservation.pass_category === 'ROTATION'}
+												<span class="reservation-card__capacity-badge">0.5인원</span>
+											{/if}
 											{#if getTicketValue(reservation.ticket_value) > 1}
 												<span class="reservation-card__ticket">({getTicketValue(reservation.ticket_value)}회 차감)</span>
 											{/if}
@@ -473,7 +477,7 @@
 				>
 					{#each filteredPasses as pass}
 						<option value={pass.id}>
-							{pass.pass_name} (잔여 {pass.remaining_lessons}회){getTicketValue(pass.ticket_value) > 1 ? ` [${getTicketValue(pass.ticket_value)}회 차감]` : ''}
+							{pass.pass_name} (잔여 {pass.remaining_lessons}회){pass.pass_category === 'ROTATION' ? ' [0.5인원]' : ''}{getTicketValue(pass.ticket_value) > 1 ? ` [${getTicketValue(pass.ticket_value)}회 차감]` : ''}
 						</option>
 					{/each}
 				</select>
@@ -489,6 +493,12 @@
 				</p>
 			{/if}
 
+			{#if isRotationPass}
+				<div class="booking-sheet__capacity-notice">
+					로테이션 수강권은 0.5인원으로 차감됩니다.
+				</div>
+			{/if}
+
 			{#if selectedPass && getTicketValue(selectedPass.ticket_value) > 1}
 				<div class="booking-sheet__ticket-notice">
 					이 수강권은 1회 수업당 {getTicketValue(selectedPass.ticket_value)}회가 차감됩니다.
@@ -496,7 +506,13 @@
 			{/if}
 
 			<Button fullWidth loading={submitting} onclick={handleConfirmBooking}>
-				{selectedPass && getTicketValue(selectedPass.ticket_value) > 1 ? `예약하기 (${getTicketValue(selectedPass.ticket_value)}회 차감)` : '예약하기'}
+				{#if isRotationPass}
+					예약하기 (0.5인원 차감)
+				{:else if selectedPass && getTicketValue(selectedPass.ticket_value) > 1}
+					예약하기 ({getTicketValue(selectedPass.ticket_value)}회 차감)
+				{:else}
+					예약하기
+				{/if}
 			</Button>
 		</div>
 	{/if}
@@ -539,6 +555,11 @@
 					</div>
 				{/if}
 			</div>
+			{#if selectedReservation.pass_category === 'ROTATION'}
+				<p class="cancel-sheet__refund-notice">
+					취소 시 0.5인원이 환불됩니다.
+				</p>
+			{/if}
 			{#if getTicketValue(selectedReservation.ticket_value) > 1}
 				<p class="cancel-sheet__refund-notice">
 					취소 시 {getTicketValue(selectedReservation.ticket_value)}회가 환불됩니다.
@@ -737,6 +758,16 @@
 			color: var(--color-warning);
 			font-weight: var(--font-weight-medium);
 		}
+
+		&__capacity-badge {
+			display: inline-block;
+			padding: 2px 6px;
+			font-size: var(--font-size-xs);
+			font-weight: var(--font-weight-medium);
+			color: var(--color-info);
+			background: var(--color-info-bg);
+			border-radius: var(--radius-full);
+		}
 	}
 
 	.booking-sheet {
@@ -800,6 +831,15 @@
 			font-weight: var(--font-weight-medium);
 			padding: var(--space-sm) var(--space-md);
 			background: var(--color-warning-bg);
+			border-radius: var(--radius-sm);
+		}
+
+		&__capacity-notice {
+			font-size: var(--font-size-sm);
+			color: var(--color-info);
+			font-weight: var(--font-weight-medium);
+			padding: var(--space-sm) var(--space-md);
+			background: var(--color-info-bg);
 			border-radius: var(--radius-sm);
 		}
 

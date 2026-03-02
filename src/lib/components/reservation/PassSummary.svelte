@@ -61,6 +61,9 @@
 			<div class="pass-summary-card__header">
 				<span class="pass-summary-card__name">
 					{pass.pass_name}
+					{#if pass.pass_category === 'ROTATION'}
+						<span class="pass-summary-card__capacity-badge">0.5인원</span>
+					{/if}
 					{#if getTicketValue(pass.ticket_value) > 1}
 						<span class="pass-summary-card__ticket-badge">{getTicketValue(pass.ticket_value)}회 차감</span>
 					{/if}
@@ -241,6 +244,15 @@
 			font-weight: var(--font-weight-medium);
 			color: var(--color-warning);
 			background: var(--color-warning-bg);
+			border-radius: var(--radius-full);
+		}
+
+		&__capacity-badge {
+			padding: 2px 6px;
+			font-size: var(--font-size-xs);
+			font-weight: var(--font-weight-medium);
+			color: var(--color-info);
+			background: var(--color-info-bg);
 			border-radius: var(--radius-full);
 		}
 
