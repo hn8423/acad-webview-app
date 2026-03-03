@@ -16,7 +16,6 @@ import type {
 
 const BASE = (academyId: number) => `/academic/academies/${academyId}/feedback`;
 
-// Levels (public)
 export function getFeedbackLevels() {
 	return get<ApiResponse<FeedbackLevel[]>>('/academic/feedback/levels', true);
 }
