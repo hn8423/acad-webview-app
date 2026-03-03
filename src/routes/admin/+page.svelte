@@ -41,9 +41,7 @@
 				<div class="dashboard-card">
 					<div class="dashboard-card__icon">
 						{#if navItem.nav_icon && isIconUrl(navItem.nav_icon)}
-							<span
-								class="dashboard-card__mask-icon"
-								style:--icon-url="url('{navItem.nav_icon}')"
+							<span class="dashboard-card__mask-icon" style:--icon-url="url('{navItem.nav_icon}')"
 							></span>
 						{:else}
 							<svg

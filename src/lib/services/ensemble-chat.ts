@@ -74,9 +74,7 @@ export function createEnsembleChat(groupId: number, academyId: number) {
 		});
 
 		socket.io.on('reconnect_failed', () => {
-			errorListeners.forEach((cb) =>
-				cb('서버 연결에 실패했습니다. 페이지를 새로고침해주세요.')
-			);
+			errorListeners.forEach((cb) => cb('서버 연결에 실패했습니다. 페이지를 새로고침해주세요.'));
 		});
 	}
 

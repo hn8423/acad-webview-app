@@ -60,10 +60,7 @@ export function acceptMember(
 	memberId: number,
 	data: AcceptMemberRequest
 ) {
-	return post<ApiResponse<null>>(
-		`${base(academyId)}/${groupId}/members/${memberId}/accept`,
-		data
-	);
+	return post<ApiResponse<null>>(`${base(academyId)}/${groupId}/members/${memberId}/accept`, data);
 }
 
 export function rejectMember(academyId: number, groupId: number, memberId: number) {
@@ -75,9 +72,7 @@ export function leaveEnsemble(academyId: number, groupId: number) {
 }
 
 export function getComments(academyId: number, groupId: number) {
-	return get<ApiResponse<EnsembleComment[]>>(
-		`${base(academyId)}/${groupId}/comments`
-	);
+	return get<ApiResponse<EnsembleComment[]>>(`${base(academyId)}/${groupId}/comments`);
 }
 
 export function createComment(academyId: number, groupId: number, data: CreateCommentRequest) {

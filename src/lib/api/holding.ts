@@ -1,6 +1,11 @@
 import { get, post, patch } from './client';
 import type { ApiResponse } from '$lib/types/api';
-import type { Holding, CreateHoldingRequest, UpdateHoldingRequest } from '$lib/types/holding';
+import type {
+	Holding,
+	CreateHoldingRequest,
+	UpdateHoldingRequest,
+	AdminCreateHoldingRequest
+} from '$lib/types/holding';
 
 export function createHolding(academyId: number, passId: number, data: CreateHoldingRequest) {
 	return post<ApiResponse<Holding>>(
@@ -18,11 +23,11 @@ export function getHoldings(academyId: number, status?: 'PENDING' | 'APPROVED' |
 	);
 }
 
-export function updateHolding(
-	academyId: number,
-	holdingId: number,
-	data: UpdateHoldingRequest
-) {
+export function adminCreateHolding(academyId: number, data: AdminCreateHoldingRequest) {
+	return post<ApiResponse<Holding>>(`/academic/academies/${academyId}/holdings`, data);
+}
+
+export function updateHolding(academyId: number, holdingId: number, data: UpdateHoldingRequest) {
 	return patch<ApiResponse<Holding>>(
 		`/academic/academies/${academyId}/holdings/${holdingId}`,
 		data

@@ -13,7 +13,14 @@
 		error?: string;
 	}
 
-	let { isOpen = $bindable(false), passName, onclose, onsubmit, submitting = false, error = '' }: Props = $props();
+	let {
+		isOpen = $bindable(false),
+		passName,
+		onclose,
+		onsubmit,
+		submitting = false,
+		error = ''
+	}: Props = $props();
 
 	let holdingStart = $state('');
 	let holdingEnd = $state('');

@@ -1,6 +1,4 @@
-export function getPassStatusVariant(
-	status: string
-): 'success' | 'warning' | 'info' | 'neutral' {
+export function getPassStatusVariant(status: string): 'success' | 'warning' | 'info' | 'neutral' {
 	switch (status) {
 		case 'ACTIVE':
 			return 'success';
@@ -28,4 +26,16 @@ export function getPassStatusLabel(status: string): string {
 		default:
 			return status;
 	}
+}
+
+export function getTicketValue(ticketValue?: number): number {
+	return ticketValue && ticketValue > 0 ? ticketValue : 1;
+}
+
+export function getCapacityWeight(passCategory?: string): number {
+	return passCategory === 'ROTATION' ? 0.5 : 1;
+}
+
+export function isActiveReservationStatus(status: string): boolean {
+	return status === 'PENDING' || status === 'CONFIRMED';
 }

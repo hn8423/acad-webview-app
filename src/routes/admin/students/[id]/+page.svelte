@@ -48,60 +48,62 @@
 
 			<div class="student-detail__menu">
 				<div class="menu-list">
-					<div
-						class="menu-item"
-						role="button"
-						tabindex="0"
-						onclick={() => goto(`/admin/students/${page.params.id}/passes`)}
-						onkeydown={(e) => {
-							if (e.key === 'Enter' || e.key === ' ') {
-								e.preventDefault();
-								goto(`/admin/students/${page.params.id}/passes`);
-							}
-						}}
-					>
-						<span class="menu-item__label">수강권 관리</span>
-						<div class="menu-item__right">
-							<svg
-								width="20"
-								height="20"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-							>
-								<path d="M9 18l6-6-6-6" />
-							</svg>
+					{#if academyStore.isAdmin}
+						<div
+							class="menu-item"
+							role="button"
+							tabindex="0"
+							onclick={() => goto(`/admin/students/${page.params.id}/passes`)}
+							onkeydown={(e) => {
+								if (e.key === 'Enter' || e.key === ' ') {
+									e.preventDefault();
+									goto(`/admin/students/${page.params.id}/passes`);
+								}
+							}}
+						>
+							<span class="menu-item__label">수강권 관리</span>
+							<div class="menu-item__right">
+								<svg
+									width="20"
+									height="20"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+								>
+									<path d="M9 18l6-6-6-6" />
+								</svg>
+							</div>
 						</div>
-					</div>
-					<div class="menu-list__divider"></div>
-					<div
-						class="menu-item"
-						role="button"
-						tabindex="0"
-						onclick={() => goto(`/admin/students/${page.params.id}/drinks`)}
-						onkeydown={(e) => {
-							if (e.key === 'Enter' || e.key === ' ') {
-								e.preventDefault();
-								goto(`/admin/students/${page.params.id}/drinks`);
-							}
-						}}
-					>
-						<span class="menu-item__label">음료권 관리</span>
-						<div class="menu-item__right">
-							<svg
-								width="20"
-								height="20"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-							>
-								<path d="M9 18l6-6-6-6" />
-							</svg>
+						<div class="menu-list__divider"></div>
+						<div
+							class="menu-item"
+							role="button"
+							tabindex="0"
+							onclick={() => goto(`/admin/students/${page.params.id}/drinks`)}
+							onkeydown={(e) => {
+								if (e.key === 'Enter' || e.key === ' ') {
+									e.preventDefault();
+									goto(`/admin/students/${page.params.id}/drinks`);
+								}
+							}}
+						>
+							<span class="menu-item__label">음료권 관리</span>
+							<div class="menu-item__right">
+								<svg
+									width="20"
+									height="20"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+								>
+									<path d="M9 18l6-6-6-6" />
+								</svg>
+							</div>
 						</div>
-					</div>
-					<div class="menu-list__divider"></div>
+						<div class="menu-list__divider"></div>
+					{/if}
 					<div
 						class="menu-item"
 						role="button"

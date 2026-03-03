@@ -22,7 +22,13 @@
 		getTodayString,
 		getDaysInMonth
 	} from '$lib/utils/format';
-	import type { AvailableSlot, MyReservation, ReservationStatus } from '$lib/types/reservation';
+	import { getTicketValue, getCapacityWeight } from '$lib/utils/pass';
+	import type {
+		AvailableSlot,
+		MyReservation,
+		ReservationStatus,
+		SlotType
+	} from '$lib/types/reservation';
 	import type { MemberPass } from '$lib/types/member';
 	import { onMount } from 'svelte';
 
@@ -57,6 +63,18 @@
 	let activePasses = $derived(
 		memberPasses.filter((p) => p.status === 'ACTIVE' && p.remaining_lessons > 0)
 	);
+
+	function getPassesForSlot(slot: AvailableSlot | null): MemberPass[] {
+		if (!slot) return activePasses;
+		if (slot.slot_type === 'ENSEMBLE') return activePasses;
+		if (!slot.instructor_name) return activePasses;
+		const matched = activePasses.filter((p) => p.instructor_name === slot.instructor_name);
+		return matched.length > 0 ? matched : activePasses;
+	}
+
+	let filteredPasses = $derived(getPassesForSlot(selectedSlot));
+	let selectedPass = $derived(filteredPasses.find((p) => p.id === selectedPassId) ?? null);
+	let isRotationPass = $derived(selectedPass?.pass_category === 'ROTATION');
 
 	onMount(() => {
 		const now = new Date();
@@ -167,9 +185,10 @@
 			const res = await getAvailableSlots(academyId, date);
 			if (res.status && res.data) {
 				const count = res.data.length;
-				slotCountMap = count > 0
-					? { ...slotCountMap, [date]: count }
-					: Object.fromEntries(Object.entries(slotCountMap).filter(([k]) => k !== date));
+				slotCountMap =
+					count > 0
+						? { ...slotCountMap, [date]: count }
+						: Object.fromEntries(Object.entries(slotCountMap).filter(([k]) => k !== date));
 			}
 		} catch {
 			// handled by client.ts
@@ -177,16 +196,19 @@
 	}
 
 	function handleSlotClick(slot: AvailableSlot) {
-		if (activePasses.length === 0) {
+		const passesForSlot = getPassesForSlot(slot);
+		if (passesForSlot.length === 0) {
 			const message =
 				memberPasses.length === 0
 					? '등록된 수강권이 없습니다.'
-					: '이용 가능한 수강권이 없습니다.';
+					: slot.slot_type === 'REGULAR' && slot.instructor_name
+						? `${slot.instructor_name} 선생님의 이용 가능한 수강권이 없습니다.`
+						: '이용 가능한 수강권이 없습니다.';
 			toastStore.error(message);
 			return;
 		}
 		selectedSlot = slot;
-		selectedPassId = activePasses[0].id;
+		selectedPassId = passesForSlot[0].id;
 		bookingSheetOpen = true;
 	}
 
@@ -277,6 +299,11 @@
 				return status;
 		}
 	}
+
+	function getInstructorLabel(slot: { slot_type: SlotType; instructor_name: string | null }): string {
+		if (slot.slot_type === 'ENSEMBLE') return '합주 수업';
+		return slot.instructor_name ? `${slot.instructor_name} 선생님` : '강사 미지정';
+	}
 </script>
 
 <div class="reservation-page">
@@ -332,8 +359,11 @@
 										{formatTimeRange(slot.start_time, slot.end_time)}
 									</span>
 									<span class="slot-card__instructor">
-										{slot.instructor_name} 선생님
+										{getInstructorLabel(slot)}
 									</span>
+									{#if slot.slot_type === 'ENSEMBLE'}
+										<span class="slot-card__tag">모든 수강권 가능</span>
+									{/if}
 								</div>
 								<Badge variant={slot.remaining_capacity <= 1 ? 'danger' : 'success'}>
 									잔여 {slot.remaining_capacity}석
@@ -383,8 +413,19 @@
 										{formatTimeRange(reservation.start_time, reservation.end_time)}
 									</span>
 									<span class="reservation-card__instructor">
-										{reservation.instructor_name} 선생님
+										{getInstructorLabel(reservation)}
 									</span>
+									{#if reservation.pass_name}
+										<span class="reservation-card__pass">
+											{reservation.pass_name}
+											{#if reservation.pass_category === 'ROTATION'}
+												<span class="reservation-card__capacity-badge">0.5인원</span>
+											{/if}
+											{#if getTicketValue(reservation.ticket_value) > 1}
+												<span class="reservation-card__ticket">({getTicketValue(reservation.ticket_value)}회 차감)</span>
+											{/if}
+										</span>
+									{/if}
 								</div>
 							</div>
 						</Card>
@@ -421,8 +462,8 @@
 					</span>
 				</div>
 				<div class="booking-sheet__row">
-					<span class="booking-sheet__label">강사</span>
-					<span class="booking-sheet__value">{selectedSlot.instructor_name} 선생님</span>
+					<span class="booking-sheet__label">{selectedSlot.slot_type === 'ENSEMBLE' ? '유형' : '강사'}</span>
+					<span class="booking-sheet__value">{getInstructorLabel(selectedSlot)}</span>
 				</div>
 			</div>
 
@@ -434,16 +475,44 @@
 					bind:value={selectedPassId}
 					aria-label="사용할 수강권 선택"
 				>
-					{#each activePasses as pass}
+					{#each filteredPasses as pass}
 						<option value={pass.id}>
-							{pass.pass_name} (잔여 {pass.remaining_lessons}회)
+							{pass.pass_name} (잔여 {pass.remaining_lessons}회){pass.pass_category === 'ROTATION' ? ' [0.5인원]' : ''}{getTicketValue(pass.ticket_value) > 1 ? ` [${getTicketValue(pass.ticket_value)}회 차감]` : ''}
 						</option>
 					{/each}
 				</select>
 			</div>
 
+			{#if selectedSlot?.slot_type === 'ENSEMBLE'}
+				<p class="booking-sheet__pass-notice booking-sheet__pass-notice--info">
+					합주 수업은 모든 수강권으로 예약할 수 있습니다.
+				</p>
+			{:else if selectedSlot?.instructor_name && filteredPasses.length < activePasses.length}
+				<p class="booking-sheet__pass-notice">
+					{selectedSlot.instructor_name} 선생님 담당 수강권만 표시됩니다.
+				</p>
+			{/if}
+
+			{#if isRotationPass}
+				<div class="booking-sheet__capacity-notice">
+					로테이션 수강권은 0.5인원으로 차감됩니다.
+				</div>
+			{/if}
+
+			{#if selectedPass && getTicketValue(selectedPass.ticket_value) > 1}
+				<div class="booking-sheet__ticket-notice">
+					이 수강권은 1회 수업당 {getTicketValue(selectedPass.ticket_value)}회가 차감됩니다.
+				</div>
+			{/if}
+
 			<Button fullWidth loading={submitting} onclick={handleConfirmBooking}>
-				예약하기
+				{#if isRotationPass}
+					예약하기 (0.5인원 차감)
+				{:else if selectedPass && getTicketValue(selectedPass.ticket_value) > 1}
+					예약하기 ({getTicketValue(selectedPass.ticket_value)}회 차감)
+				{:else}
+					예약하기
+				{/if}
 			</Button>
 		</div>
 	{/if}
@@ -476,12 +545,26 @@
 					</span>
 				</div>
 				<div class="cancel-sheet__row">
-					<span class="cancel-sheet__label">강사</span>
-					<span class="cancel-sheet__value">
-						{selectedReservation.instructor_name} 선생님
-					</span>
+					<span class="cancel-sheet__label">{selectedReservation.slot_type === 'ENSEMBLE' ? '유형' : '강사'}</span>
+					<span class="cancel-sheet__value">{getInstructorLabel(selectedReservation)}</span>
 				</div>
+				{#if selectedReservation.pass_name}
+					<div class="cancel-sheet__row">
+						<span class="cancel-sheet__label">수강권</span>
+						<span class="cancel-sheet__value">{selectedReservation.pass_name}</span>
+					</div>
+				{/if}
 			</div>
+			{#if selectedReservation.pass_category === 'ROTATION'}
+				<p class="cancel-sheet__refund-notice">
+					취소 시 0.5인원이 환불됩니다.
+				</p>
+			{/if}
+			{#if getTicketValue(selectedReservation.ticket_value) > 1}
+				<p class="cancel-sheet__refund-notice">
+					취소 시 {getTicketValue(selectedReservation.ticket_value)}회가 환불됩니다.
+				</p>
+			{/if}
 			<div class="cancel-sheet__buttons">
 				<Button
 					variant="secondary"
@@ -587,6 +670,11 @@
 			font-size: var(--font-size-sm);
 			color: var(--color-text-secondary);
 		}
+
+		&__tag {
+			font-size: var(--font-size-xs);
+			color: var(--color-info);
+		}
 	}
 
 	.my-content {
@@ -660,6 +748,26 @@
 			font-size: var(--font-size-sm);
 			color: var(--color-text-secondary);
 		}
+
+		&__pass {
+			font-size: var(--font-size-sm);
+			color: var(--color-text-secondary);
+		}
+
+		&__ticket {
+			color: var(--color-warning);
+			font-weight: var(--font-weight-medium);
+		}
+
+		&__capacity-badge {
+			display: inline-block;
+			padding: 2px 6px;
+			font-size: var(--font-size-xs);
+			font-weight: var(--font-weight-medium);
+			color: var(--color-info);
+			background: var(--color-info-bg);
+			border-radius: var(--radius-full);
+		}
 	}
 
 	.booking-sheet {
@@ -702,6 +810,37 @@
 		&__field-label {
 			font-size: var(--font-size-sm);
 			color: var(--color-text-secondary);
+		}
+
+		&__pass-notice {
+			font-size: var(--font-size-sm);
+			color: var(--color-text-secondary);
+			padding: var(--space-sm) var(--space-md);
+			background: var(--color-bg);
+			border-radius: var(--radius-sm);
+
+			&--info {
+				color: var(--color-info);
+				background: var(--color-info-bg);
+			}
+		}
+
+		&__ticket-notice {
+			font-size: var(--font-size-sm);
+			color: var(--color-warning);
+			font-weight: var(--font-weight-medium);
+			padding: var(--space-sm) var(--space-md);
+			background: var(--color-warning-bg);
+			border-radius: var(--radius-sm);
+		}
+
+		&__capacity-notice {
+			font-size: var(--font-size-sm);
+			color: var(--color-info);
+			font-weight: var(--font-weight-medium);
+			padding: var(--space-sm) var(--space-md);
+			background: var(--color-info-bg);
+			border-radius: var(--radius-sm);
 		}
 
 		&__select {
@@ -760,6 +899,13 @@
 			font-size: var(--font-size-sm);
 			font-weight: var(--font-weight-medium);
 			color: var(--color-text);
+		}
+
+		&__refund-notice {
+			font-size: var(--font-size-sm);
+			color: var(--color-warning);
+			text-align: center;
+			font-weight: var(--font-weight-medium);
 		}
 
 		&__buttons {
