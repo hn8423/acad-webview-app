@@ -105,11 +105,13 @@ static/                     # Static files
 ## Route Map
 
 ### Auth (no layout chrome)
+
 - `/auth/login` — Phone + password login
 - `/auth/signup` — SMS verification + registration
 - `/auth/select-academy` — Academy selection (post-login)
 
 ### App — Member (Header + BottomNav)
+
 - `/app` — Main page (drink tickets, passes, notices, calendar)
 - `/app/notice` — Notice list
 - `/app/notice/[id]` — Notice detail
@@ -120,6 +122,7 @@ static/                     # Static files
 - `/app/profile` — My profile
 
 ### Admin (Header + Sidebar)
+
 - `/admin` — Dashboard (role-filtered cards)
 - `/admin/notices` — Notice management (CRUD) `[ADMIN only]`
 - `/admin/instructors` — Instructor management `[ADMIN only]`
@@ -183,28 +186,27 @@ import type { ApiResponse, PaginatedList, CursorPaginatedList } from '$lib/types
 
 // Standard pagination (offset-based)
 export function getItems(academyId: number, page = 1, limit = 20) {
-  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
-  return get<ApiResponse<PaginatedList<Item>>>(
-    `/academic/academies/${academyId}/items?${params}`
-  );
+	const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+	return get<ApiResponse<PaginatedList<Item>>>(`/academic/academies/${academyId}/items?${params}`);
 }
 
 // Infinite scroll (cursor-based)
 export function getMembers(academyId: number, cursor?: number, limit = 20) {
-  const params = new URLSearchParams({ limit: String(limit) });
-  if (cursor) params.set('cursor', String(cursor));
-  return get<ApiResponse<CursorPaginatedList<Member>>>(
-    `/academic/academies/${academyId}/members?${params}`
-  );
+	const params = new URLSearchParams({ limit: String(limit) });
+	if (cursor) params.set('cursor', String(cursor));
+	return get<ApiResponse<CursorPaginatedList<Member>>>(
+		`/academic/academies/${academyId}/members?${params}`
+	);
 }
 
 // Auth endpoints: pass skipAuth = true (3rd param)
 export function login(data: LoginRequest) {
-  return post<ApiResponse<LoginResponse>>('/academic/auth/login', data, true);
+	return post<ApiResponse<LoginResponse>>('/academic/auth/login', data, true);
 }
 ```
 
 **Backend response envelope** (unwrapped automatically by `client.ts`):
+
 ```
 Backend: { response: { data: { result_status, result_data, result_message } } }
 Client:  ApiResponse<T> = { status: boolean, message: string, data: T }
@@ -218,26 +220,30 @@ let items = $state<Item[]>([]);
 let loading = $state(false);
 
 export function getItemStore() {
-  async function load(academyId: number) {
-    loading = true;
-    try {
-      const res = await getItems(academyId);
-      if (res.status) items = res.data.list;
-    } finally {
-      loading = false;
-    }
-  }
+	async function load(academyId: number) {
+		loading = true;
+		try {
+			const res = await getItems(academyId);
+			if (res.status) items = res.data.list;
+		} finally {
+			loading = false;
+		}
+	}
 
-  function clear() {
-    items = [];
-  }
+	function clear() {
+		items = [];
+	}
 
-  return {
-    get items() { return items; },       // Getter, not direct state access
-    get loading() { return loading; },
-    load,
-    clear
-  };
+	return {
+		get items() {
+			return items;
+		}, // Getter, not direct state access
+		get loading() {
+			return loading;
+		},
+		load,
+		clear
+	};
 }
 
 export const itemStore = getItemStore();
@@ -247,51 +253,48 @@ export const itemStore = getItemStore();
 
 ```svelte
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { academyStore } from '$lib/stores/academy.svelte';
-  import Spinner from '$lib/components/ui/Spinner.svelte';
+	import { onMount } from 'svelte';
+	import { academyStore } from '$lib/stores/academy.svelte';
+	import Spinner from '$lib/components/ui/Spinner.svelte';
 
-  let items = $state<Item[]>([]);
-  let loading = $state(true);
+	let items = $state<Item[]>([]);
+	let loading = $state(true);
 
-  onMount(async () => {
-    const academyId = academyStore.academyId;
-    if (!academyId) return;
-    try {
-      const [res1, res2] = await Promise.allSettled([
-        getItems(academyId),
-        getOtherData(academyId)
-      ]);
-      if (res1.status === 'fulfilled' && res1.value.status) {
-        items = res1.value.data.list;
-      }
-    } finally {
-      loading = false;
-    }
-  });
+	onMount(async () => {
+		const academyId = academyStore.academyId;
+		if (!academyId) return;
+		try {
+			const [res1, res2] = await Promise.allSettled([getItems(academyId), getOtherData(academyId)]);
+			if (res1.status === 'fulfilled' && res1.value.status) {
+				items = res1.value.data.list;
+			}
+		} finally {
+			loading = false;
+		}
+	});
 
-  let activeItems = $derived(items.filter((item) => item.is_active));
+	let activeItems = $derived(items.filter((item) => item.is_active));
 </script>
 
 <div class="page-name">
-  {#if loading}
-    <div class="page-name__loading"><Spinner /></div>
-  {:else}
-    <!-- Content -->
-  {/if}
+	{#if loading}
+		<div class="page-name__loading"><Spinner /></div>
+	{:else}
+		<!-- Content -->
+	{/if}
 </div>
 
 <style lang="scss">
-  @use '$lib/styles/variables' as *;
+	@use '$lib/styles/variables' as *;
 
-  .page-name {
-    padding: $space-md;
+	.page-name {
+		padding: $space-md;
 
-    &__loading {
-      @include flex-center;
-      min-height: 200px;
-    }
-  }
+		&__loading {
+			@include flex-center;
+			min-height: 200px;
+		}
+	}
 </style>
 ```
 
@@ -299,46 +302,46 @@ export const itemStore = getItemStore();
 
 ```svelte
 <script lang="ts">
-  import type { Snippet } from 'svelte';
+	import type { Snippet } from 'svelte';
 
-  interface Props {
-    variant?: 'primary' | 'secondary';
-    disabled?: boolean;
-    children: Snippet;          // Slot content
-    onclick?: () => void;
-  }
+	interface Props {
+		variant?: 'primary' | 'secondary';
+		disabled?: boolean;
+		children: Snippet; // Slot content
+		onclick?: () => void;
+	}
 
-  let {
-    variant = 'primary',
-    disabled = false,
-    children,
-    onclick
-  }: Props = $props();
+	let { variant = 'primary', disabled = false, children, onclick }: Props = $props();
 </script>
 
-<div
-  class="comp comp--{variant}"
-  class:comp--disabled={disabled}
-  {onclick}
->
-  {@render children()}
+<div class="comp comp--{variant}" class:comp--disabled={disabled} {onclick}>
+	{@render children()}
 </div>
 
 <style lang="scss">
-  @use '$lib/styles/variables' as *;
+	@use '$lib/styles/variables' as *;
 
-  .comp {
-    border-radius: $radius-md;
-    padding: $space-sm $space-md;
+	.comp {
+		border-radius: $radius-md;
+		padding: $space-sm $space-md;
 
-    &--primary { background: $color-primary; color: white; }
-    &--secondary { background: $color-bg; }
-    &--disabled { opacity: 0.5; pointer-events: none; }
-  }
+		&--primary {
+			background: $color-primary;
+			color: white;
+		}
+		&--secondary {
+			background: $color-bg;
+		}
+		&--disabled {
+			opacity: 0.5;
+			pointer-events: none;
+		}
+	}
 </style>
 ```
 
 Key Svelte 5 patterns:
+
 - `$bindable()` for two-way binding (e.g., `value = $bindable('')` in Input)
 - `children: Snippet` + `{@render children()}` for slot content
 - Event handlers as function props: `onclick`, `onclose`, `oninput`
@@ -359,6 +362,7 @@ $effect(() => {
 ```
 
 Admin layout adds role guard:
+
 ```svelte
 if (!academyStore.memberRole || academyStore.memberRole === 'STUDENT') {
   goto('/auth/select-academy', { replaceState: true });
@@ -367,17 +371,17 @@ if (!academyStore.memberRole || academyStore.memberRole === 'STUDENT') {
 
 ## File Modification Guide
 
-| Task | Files to check/modify |
-|------|----------------------|
-| New domain feature | `types/{domain}.ts` → `api/{domain}.ts` → `routes/{area}/+page.svelte` |
-| New admin page | Above + `config/admin-permissions.ts` (ROUTE_ROLES) + `AdminSidebar.svelte` (MENU_ROUTE_MAP) |
-| New app page | Above + `BottomNav.svelte` (NAV_ROUTE_MAP) |
-| New UI component | `components/ui/{Name}.svelte` (follow Props interface + $props() pattern) |
-| New domain component | `components/{domain}/{Name}.svelte` |
-| New store | `stores/{domain}.svelte.ts` (factory function + getter pattern) |
-| Modify navigation | `BottomNav.svelte` (app) or `AdminSidebar.svelte` (admin) |
-| Change permissions | `config/admin-permissions.ts` ROUTE_ROLES map |
-| Add formatting util | `utils/format.ts` (pure functions, no side effects) |
+| Task                 | Files to check/modify                                                                        |
+| -------------------- | -------------------------------------------------------------------------------------------- |
+| New domain feature   | `types/{domain}.ts` → `api/{domain}.ts` → `routes/{area}/+page.svelte`                       |
+| New admin page       | Above + `config/admin-permissions.ts` (ROUTE_ROLES) + `AdminSidebar.svelte` (MENU_ROUTE_MAP) |
+| New app page         | Above + `BottomNav.svelte` (NAV_ROUTE_MAP)                                                   |
+| New UI component     | `components/ui/{Name}.svelte` (follow Props interface + $props() pattern)                    |
+| New domain component | `components/{domain}/{Name}.svelte`                                                          |
+| New store            | `stores/{domain}.svelte.ts` (factory function + getter pattern)                              |
+| Modify navigation    | `BottomNav.svelte` (app) or `AdminSidebar.svelte` (admin)                                    |
+| Change permissions   | `config/admin-permissions.ts` ROUTE_ROLES map                                                |
+| Add formatting util  | `utils/format.ts` (pure functions, no side effects)                                          |
 
 ## Design System
 
@@ -472,11 +476,11 @@ import { render } from 'vitest-browser-svelte';
 import Page from './+page.svelte';
 
 describe('/+page.svelte', () => {
-  it('should render heading', async () => {
-    render(Page);
-    const heading = page.getByRole('heading', { level: 1 });
-    await expect.element(heading).toBeInTheDocument();
-  });
+	it('should render heading', async () => {
+		render(Page);
+		const heading = page.getByRole('heading', { level: 1 });
+		await expect.element(heading).toBeInTheDocument();
+	});
 });
 ```
 

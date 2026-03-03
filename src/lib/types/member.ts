@@ -45,6 +45,7 @@ export interface MemberPass {
 	id: number;
 	pass_name: string;
 	pass_category: string;
+	ticket_value?: number;
 	instructor_id?: number;
 	instructor_name: string;
 	start_date: string;

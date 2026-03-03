@@ -69,83 +69,83 @@
 	</div>
 
 	<div class="my-feedback__content">
-	{#if loading}
-		<div class="my-feedback__loading">
-			<Spinner />
-		</div>
-	{:else if feedbackList.length === 0}
-		<p class="my-feedback__empty">받은 피드백이 없습니다.</p>
-	{:else}
-		<div class="feedback-list">
-			{#each feedbackList as item, i}
-				<div
-					class="feedback-row"
-					role="button"
-					tabindex="0"
-					onclick={() => goto(`/app/feedback/${item.id}`)}
-					onkeydown={(e) => {
-						if (e.key === 'Enter' || e.key === ' ') {
-							e.preventDefault();
-							goto(`/app/feedback/${item.id}`);
-						}
-					}}
-				>
-					<div class="feedback-row__left">
-						<Badge variant={item.feedback_type === 'WEEKLY' ? 'info' : 'success'}>
-							{item.feedback_type === 'WEEKLY' ? '위클리' : '먼슬리'}
-						</Badge>
-						<div class="feedback-row__info">
-							<span class="feedback-row__date">{formatDate(item.feedback_date)}</span>
-							<span class="feedback-row__instructor">{item.instructor_name}</span>
+		{#if loading}
+			<div class="my-feedback__loading">
+				<Spinner />
+			</div>
+		{:else if feedbackList.length === 0}
+			<p class="my-feedback__empty">받은 피드백이 없습니다.</p>
+		{:else}
+			<div class="feedback-list">
+				{#each feedbackList as item, i}
+					<div
+						class="feedback-row"
+						role="button"
+						tabindex="0"
+						onclick={() => goto(`/app/feedback/${item.id}`)}
+						onkeydown={(e) => {
+							if (e.key === 'Enter' || e.key === ' ') {
+								e.preventDefault();
+								goto(`/app/feedback/${item.id}`);
+							}
+						}}
+					>
+						<div class="feedback-row__left">
+							<Badge variant={item.feedback_type === 'WEEKLY' ? 'info' : 'success'}>
+								{item.feedback_type === 'WEEKLY' ? '위클리' : '먼슬리'}
+							</Badge>
+							<div class="feedback-row__info">
+								<span class="feedback-row__date">{formatDate(item.feedback_date)}</span>
+								<span class="feedback-row__instructor">{item.instructor_name}</span>
+							</div>
+						</div>
+						<div class="feedback-row__right">
+							<svg
+								width="16"
+								height="16"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="var(--color-text-muted)"
+								stroke-width="2"
+							>
+								<path d="M9 18l6-6-6-6" />
+							</svg>
 						</div>
 					</div>
-					<div class="feedback-row__right">
-						<svg
-							width="16"
-							height="16"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="var(--color-text-muted)"
-							stroke-width="2"
-						>
-							<path d="M9 18l6-6-6-6" />
-						</svg>
-					</div>
-				</div>
-				{#if i < feedbackList.length - 1}
-					<div class="feedback-list__divider"></div>
-				{/if}
-			{/each}
-		</div>
-
-		{#if totalPages > 1}
-			<div class="my-feedback__pagination">
-				<Button
-					size="sm"
-					variant="ghost"
-					disabled={currentPage <= 1}
-					onclick={() => {
-						currentPage -= 1;
-						fetchFeedback();
-					}}
-				>
-					이전
-				</Button>
-				<span class="my-feedback__page">{currentPage} / {totalPages}</span>
-				<Button
-					size="sm"
-					variant="ghost"
-					disabled={currentPage >= totalPages}
-					onclick={() => {
-						currentPage += 1;
-						fetchFeedback();
-					}}
-				>
-					다음
-				</Button>
+					{#if i < feedbackList.length - 1}
+						<div class="feedback-list__divider"></div>
+					{/if}
+				{/each}
 			</div>
+
+			{#if totalPages > 1}
+				<div class="my-feedback__pagination">
+					<Button
+						size="sm"
+						variant="ghost"
+						disabled={currentPage <= 1}
+						onclick={() => {
+							currentPage -= 1;
+							fetchFeedback();
+						}}
+					>
+						이전
+					</Button>
+					<span class="my-feedback__page">{currentPage} / {totalPages}</span>
+					<Button
+						size="sm"
+						variant="ghost"
+						disabled={currentPage >= totalPages}
+						onclick={() => {
+							currentPage += 1;
+							fetchFeedback();
+						}}
+					>
+						다음
+					</Button>
+				</div>
+			{/if}
 		{/if}
-	{/if}
 	</div>
 </div>
 

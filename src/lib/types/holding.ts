@@ -18,3 +18,11 @@ export interface CreateHoldingRequest {
 export interface UpdateHoldingRequest {
 	status: 'APPROVED' | 'REJECTED';
 }
+
+export interface AdminCreateHoldingRequest {
+	member_id: number;
+	pass_id: number;
+	holding_start: string;
+	holding_end: string;
+	reason?: string;
+}

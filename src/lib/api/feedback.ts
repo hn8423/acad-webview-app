@@ -33,15 +33,8 @@ export function createCategory(academyId: number, data: CreateCategoryRequest) {
 	return post<ApiResponse<FeedbackCategory>>(`${BASE(academyId)}/categories`, data);
 }
 
-export function updateCategory(
-	academyId: number,
-	categoryId: number,
-	data: UpdateCategoryRequest
-) {
-	return patch<ApiResponse<FeedbackCategory>>(
-		`${BASE(academyId)}/categories/${categoryId}`,
-		data
-	);
+export function updateCategory(academyId: number, categoryId: number, data: UpdateCategoryRequest) {
+	return patch<ApiResponse<FeedbackCategory>>(`${BASE(academyId)}/categories/${categoryId}`, data);
 }
 
 export function deleteCategory(academyId: number, categoryId: number) {

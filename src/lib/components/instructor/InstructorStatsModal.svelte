@@ -106,7 +106,7 @@
 	);
 </script>
 
-<Modal isOpen={isOpen} title="{instructor?.name ?? ''} 강사 통계" onclose={onclose}>
+<Modal {isOpen} title="{instructor?.name ?? ''} 강사 통계" {onclose}>
 	<div class="stats-modal">
 		<div class="month-nav">
 			<button type="button" class="month-nav__btn" onclick={goToPrevMonth} aria-label="이전 달">
@@ -125,12 +125,12 @@
 			</button>
 			<span class="month-nav__label">{monthLabel}</span>
 			<button
-			type="button"
-			class="month-nav__btn"
-			onclick={goToNextMonth}
-			disabled={isCurrentMonth()}
-			aria-label="다음 달"
-		>
+				type="button"
+				class="month-nav__btn"
+				onclick={goToNextMonth}
+				disabled={isCurrentMonth()}
+				aria-label="다음 달"
+			>
 				<svg
 					width="20"
 					height="20"

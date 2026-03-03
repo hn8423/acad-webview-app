@@ -8,6 +8,7 @@ import type {
 	LessonSlot,
 	MyReservation,
 	ReservationStatus,
+	SlotType,
 	UpdateReservationStatusRequest,
 	UpdateSlotRequest
 } from '$lib/types/reservation';
@@ -36,26 +37,27 @@ export function getMyReservations(academyId: number, status?: ReservationStatus)
 }
 
 export function cancelReservation(academyId: number, reservationId: number) {
-	return del<ApiResponse<void>>(
-		`/academic/academies/${academyId}/reservations/${reservationId}`
-	);
+	return del<ApiResponse<void>>(`/academic/academies/${academyId}/reservations/${reservationId}`);
 }
 
 // Admin: Lesson Slot CRUD
 
-export function getLessonSlots(academyId: number, date: string, instructorId?: number) {
+export function getLessonSlots(
+	academyId: number,
+	date: string,
+	instructorId?: number,
+	slotType?: SlotType
+) {
 	const params = new URLSearchParams({ date });
 	if (instructorId) params.set('instructor_id', String(instructorId));
+	if (slotType) params.set('slot_type', slotType);
 	return get<ApiResponse<LessonSlot[]>>(
 		`/academic/academies/${academyId}/lesson-slots?${params.toString()}`
 	);
 }
 
 export function createLessonSlot(academyId: number, data: CreateSlotRequest) {
-	return post<ApiResponse<LessonSlot>>(
-		`/academic/academies/${academyId}/lesson-slots`,
-		data
-	);
+	return post<ApiResponse<LessonSlot>>(`/academic/academies/${academyId}/lesson-slots`, data);
 }
 
 export function updateLessonSlot(academyId: number, slotId: number, data: UpdateSlotRequest) {
@@ -66,9 +68,7 @@ export function updateLessonSlot(academyId: number, slotId: number, data: Update
 }
 
 export function deleteLessonSlot(academyId: number, slotId: number) {
-	return del<ApiResponse<void>>(
-		`/academic/academies/${academyId}/lesson-slots/${slotId}`
-	);
+	return del<ApiResponse<void>>(`/academic/academies/${academyId}/lesson-slots/${slotId}`);
 }
 
 // Admin: Reservation Status Management

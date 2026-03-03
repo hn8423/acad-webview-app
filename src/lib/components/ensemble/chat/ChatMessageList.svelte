@@ -36,8 +36,7 @@
 		const prev = messages[index - 1];
 		if (!prev) return true;
 		return (
-			prev.sender_member_id !== msg.sender_member_id ||
-			!isSameDay(prev.created_at, msg.created_at)
+			prev.sender_member_id !== msg.sender_member_id || !isSameDay(prev.created_at, msg.created_at)
 		);
 	}
 

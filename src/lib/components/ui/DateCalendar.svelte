@@ -180,10 +180,7 @@
 
 	<div class="date-calendar__grid">
 		{#each DAY_NAMES as day, i}
-			<div
-				class="date-calendar__header"
-				class:date-calendar__header--weekend={i === 0 || i === 6}
-			>
+			<div class="date-calendar__header" class:date-calendar__header--weekend={i === 0 || i === 6}>
 				{day}
 			</div>
 		{/each}

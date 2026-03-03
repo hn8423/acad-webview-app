@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { academyStore } from '$lib/stores/academy.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import {
@@ -9,9 +10,12 @@
 		updateReservationStatus
 	} from '$lib/api/reservation';
 	import { formatTimeRange, getTodayString } from '$lib/utils/format';
+	import { getTicketValue, getCapacityWeight, isActiveReservationStatus } from '$lib/utils/pass';
 	import type {
 		LessonSlot,
 		SlotStatus,
+		SlotReservation,
+		SlotType,
 		ReservationStatus,
 		CreateSlotRequest,
 		UpdateSlotRequest
@@ -32,8 +36,9 @@
 	let createForm = $state<CreateSlotRequest>({
 		slot_date: getTodayString(),
 		start_time: '10:00',
-		end_time: '10:50',
-		max_capacity: 1
+		end_time: '11:00',
+		max_capacity: 1,
+		slot_type: 'REGULAR'
 	});
 
 	// Edit slot modal
@@ -44,6 +49,23 @@
 	// Delete slot modal
 	let showDeleteModal = $state(false);
 	let deleteTarget = $state<LessonSlot | null>(null);
+
+	// Reservation status confirmation modal
+	let showStatusConfirmModal = $state(false);
+	let statusConfirmTarget = $state<{
+		reservationId: number;
+		memberName: string;
+		passName: string;
+		passCategory?: string;
+		ticketValue: number;
+		capacityWeight: number;
+		currentStatus: ReservationStatus;
+		newStatus: 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW';
+	} | null>(null);
+
+	// Feedback prompt modal
+	let showFeedbackPrompt = $state(false);
+	let completedMemberName = $state('');
 
 	async function fetchSlots(date: string) {
 		const academyId = academyStore.academyId;
@@ -75,10 +97,34 @@
 		createForm = {
 			slot_date: selectedDate,
 			start_time: '10:00',
-			end_time: '10:50',
-			max_capacity: 1
+			end_time: '11:00',
+			max_capacity: 1,
+			slot_type: 'REGULAR'
 		};
 		showCreateModal = true;
+	}
+
+	function handleSlotTypeChange(type: SlotType) {
+		const hours = type === 'ENSEMBLE' ? 2 : 1;
+		const [h, m] = createForm.start_time.split(':').map(Number);
+		const endH = String(Math.min(h + hours, 23)).padStart(2, '0');
+		const endTime = `${endH}:${String(m).padStart(2, '0')}`;
+		createForm = {
+			...createForm,
+			slot_type: type,
+			max_capacity: type === 'ENSEMBLE' ? 5 : 1,
+			end_time: endTime
+		};
+	}
+
+	function getSlotLabel(slot: { slot_type: SlotType; instructor_name: string | null }): string {
+		if (slot.slot_type === 'ENSEMBLE') return '합주 수업';
+		return slot.instructor_name ?? '강사 미지정';
+	}
+
+	function canEditSlot(slot: LessonSlot): boolean {
+		if (slot.slot_type === 'ENSEMBLE') return academyStore.isAdmin;
+		return !academyStore.isAdmin;
 	}
 
 	async function handleCreateSlot() {
@@ -155,7 +201,45 @@
 
 	// Reservation status handlers
 
-	async function handleReservationStatus(reservationId: number, status: ReservationStatus) {
+	function computeWeightedCount(reservations: SlotReservation[]): number {
+		return reservations
+			.filter((rv) => isActiveReservationStatus(rv.status))
+			.reduce((sum, rv) => sum + getCapacityWeight(rv.pass_category), 0);
+	}
+
+	function openStatusConfirm(
+		rv: SlotReservation,
+		newStatus: 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW'
+	) {
+		statusConfirmTarget = {
+			reservationId: rv.reservation_id,
+			memberName: rv.member_name,
+			passName: rv.pass_name ?? '',
+			passCategory: rv.pass_category,
+			ticketValue: getTicketValue(rv.ticket_value),
+			capacityWeight: getCapacityWeight(rv.pass_category),
+			currentStatus: rv.status,
+			newStatus
+		};
+		showStatusConfirmModal = true;
+	}
+
+	async function handleConfirmStatusChange() {
+		if (!statusConfirmTarget) return;
+		await handleReservationStatus(
+			statusConfirmTarget.reservationId,
+			statusConfirmTarget.newStatus,
+			statusConfirmTarget.memberName
+		);
+		showStatusConfirmModal = false;
+		statusConfirmTarget = null;
+	}
+
+	async function handleReservationStatus(
+		reservationId: number,
+		status: ReservationStatus,
+		memberName?: string
+	) {
 		const academyId = academyStore.academyId;
 		if (!academyId || status === 'PENDING') return;
 		actionLoading = true;
@@ -166,6 +250,11 @@
 			if (res.status) {
 				toastStore.success(`예약이 ${getStatusLabel(status)} 처리되었습니다`);
 				await fetchSlots(selectedDate);
+
+				if (status === 'COMPLETED' && memberName) {
+					completedMemberName = memberName;
+					showFeedbackPrompt = true;
+				}
 			}
 		} catch (error) {
 			toastStore.error('예약 상태 변경에 실패했습니다');
@@ -192,14 +281,13 @@
 	function getReservationBadgeVariant(
 		status: ReservationStatus
 	): 'success' | 'warning' | 'danger' | 'info' | 'neutral' {
-		const map: Record<ReservationStatus, 'success' | 'warning' | 'danger' | 'info' | 'neutral'> =
-			{
-				PENDING: 'warning',
-				CONFIRMED: 'info',
-				COMPLETED: 'success',
-				NO_SHOW: 'danger',
-				CANCELLED: 'neutral'
-			};
+		const map: Record<ReservationStatus, 'success' | 'warning' | 'danger' | 'info' | 'neutral'> = {
+			PENDING: 'warning',
+			CONFIRMED: 'info',
+			COMPLETED: 'success',
+			NO_SHOW: 'danger',
+			CANCELLED: 'neutral'
+		};
 		return map[status];
 	}
 
@@ -221,10 +309,7 @@
 		<Button size="sm" onclick={openCreateModal}>+ 슬롯 추가</Button>
 	</div>
 
-	<DateCalendar
-		{selectedDate}
-		onselect={(date) => (selectedDate = date)}
-	/>
+	<DateCalendar {selectedDate} onselect={(date) => (selectedDate = date)} />
 
 	{#if loading}
 		<div class="reservations__loading"><Spinner /></div>
@@ -238,14 +323,19 @@
 				<div class="slot-card">
 					<div class="slot-card__header">
 						<div class="slot-card__info">
-							<span class="slot-card__time">
-								{formatTimeRange(slot.start_time, slot.end_time)}
-							</span>
-							<span class="slot-card__instructor">{slot.instructor_name}</span>
+							<div class="slot-card__time-row">
+								<span class="slot-card__time">
+									{formatTimeRange(slot.start_time, slot.end_time)}
+								</span>
+								{#if slot.slot_type === 'ENSEMBLE'}
+									<Badge variant="info">합주</Badge>
+								{/if}
+							</div>
+							<span class="slot-card__instructor">{getSlotLabel(slot)}</span>
 						</div>
 						<div class="slot-card__meta">
 							<span class="slot-card__capacity">
-								예약 {slot.current_count}/{slot.max_capacity}
+								예약 {computeWeightedCount(slot.reservations)}/{slot.max_capacity}
 							</span>
 							<Badge variant={getSlotBadgeVariant(slot.status)}>
 								{getStatusLabel(slot.status)}
@@ -259,6 +349,16 @@
 								<div class="reservation-row">
 									<div class="reservation-row__info">
 										<span class="reservation-row__name">{rv.member_name}</span>
+										{#if rv.pass_name}
+											<span class="reservation-row__pass">{rv.pass_name}</span>
+										{/if}
+										{#if rv.pass_category === 'ROTATION'}
+											<Badge variant="info">로테이션</Badge>
+											<span class="reservation-row__weight">0.5인원</span>
+										{/if}
+										{#if getTicketValue(rv.ticket_value) > 1}
+											<Badge variant="warning">{getTicketValue(rv.ticket_value)}회 차감</Badge>
+										{/if}
 										<Badge variant={getReservationBadgeVariant(rv.status)}>
 											{getStatusLabel(rv.status)}
 										</Badge>
@@ -268,14 +368,14 @@
 											<button
 												class="action-btn action-btn--confirm"
 												disabled={actionLoading}
-												onclick={() => handleReservationStatus(rv.reservation_id, 'CONFIRMED')}
+												onclick={() => openStatusConfirm(rv, 'CONFIRMED')}
 											>
 												승인
 											</button>
 											<button
 												class="action-btn action-btn--cancel"
 												disabled={actionLoading}
-												onclick={() => handleReservationStatus(rv.reservation_id, 'CANCELLED')}
+												onclick={() => openStatusConfirm(rv, 'CANCELLED')}
 											>
 												취소
 											</button>
@@ -283,21 +383,21 @@
 											<button
 												class="action-btn action-btn--complete"
 												disabled={actionLoading}
-												onclick={() => handleReservationStatus(rv.reservation_id, 'COMPLETED')}
+												onclick={() => openStatusConfirm(rv, 'COMPLETED')}
 											>
 												완료
 											</button>
 											<button
 												class="action-btn action-btn--noshow"
 												disabled={actionLoading}
-												onclick={() => handleReservationStatus(rv.reservation_id, 'NO_SHOW')}
+												onclick={() => openStatusConfirm(rv, 'NO_SHOW')}
 											>
 												노쇼
 											</button>
 											<button
 												class="action-btn action-btn--cancel"
 												disabled={actionLoading}
-												onclick={() => handleReservationStatus(rv.reservation_id, 'CANCELLED')}
+												onclick={() => openStatusConfirm(rv, 'CANCELLED')}
 											>
 												취소
 											</button>
@@ -310,12 +410,14 @@
 						<p class="slot-card__no-reservations">예약 없음</p>
 					{/if}
 
-					<div class="slot-card__footer">
-						<button class="slot-action-btn" onclick={() => openEditModal(slot)}>수정</button>
-						<button class="slot-action-btn slot-action-btn--danger" onclick={() => openDeleteModal(slot)}>
-							삭제
-						</button>
-					</div>
+					{#if canEditSlot(slot)}
+						<div class="slot-card__footer">
+							<button class="slot-action-btn" onclick={() => openEditModal(slot)}>수정</button>
+							<button class="slot-action-btn slot-action-btn--danger" onclick={() => openDeleteModal(slot)}>
+								삭제
+							</button>
+						</div>
+					{/if}
 				</div>
 			{/each}
 		</div>
@@ -323,8 +425,34 @@
 </div>
 
 <!-- Create Slot Modal -->
-<Modal isOpen={showCreateModal} title="수업 슬롯 추가" position="center" onclose={() => (showCreateModal = false)}>
+<Modal
+	isOpen={showCreateModal}
+	title="수업 슬롯 추가"
+	position="center"
+	onclose={() => (showCreateModal = false)}
+>
 	<div class="modal-form">
+		<div class="modal-form__field">
+			<span class="modal-form__label">수업 유형</span>
+			<div class="slot-type-toggle">
+				<button
+					type="button"
+					class="slot-type-toggle__btn"
+					class:slot-type-toggle__btn--active={createForm.slot_type !== 'ENSEMBLE'}
+					onclick={() => handleSlotTypeChange('REGULAR')}
+				>
+					일반 수업
+				</button>
+				<button
+					type="button"
+					class="slot-type-toggle__btn"
+					class:slot-type-toggle__btn--active={createForm.slot_type === 'ENSEMBLE'}
+					onclick={() => handleSlotTypeChange('ENSEMBLE')}
+				>
+					합주 수업
+				</button>
+			</div>
+		</div>
 		<div class="modal-form__field">
 			<span class="modal-form__label">날짜</span>
 			<span class="modal-form__value">{createForm.slot_date}</span>
@@ -341,12 +469,7 @@
 		</div>
 		<label class="modal-form__field">
 			<span class="modal-form__label">최대 인원</span>
-			<input
-				type="number"
-				class="modal-form__input"
-				min="1"
-				bind:value={createForm.max_capacity}
-			/>
+			<input type="number" class="modal-form__input" min="1" bind:value={createForm.max_capacity} />
 		</label>
 		<div class="modal-form__actions">
 			<Button fullWidth loading={actionLoading} onclick={handleCreateSlot}>생성</Button>
@@ -356,7 +479,12 @@
 </Modal>
 
 <!-- Edit Slot Modal -->
-<Modal isOpen={showEditModal} title="슬롯 수정" position="center" onclose={() => (showEditModal = false)}>
+<Modal
+	isOpen={showEditModal}
+	title="슬롯 수정"
+	position="center"
+	onclose={() => (showEditModal = false)}
+>
 	<div class="modal-form">
 		<div class="modal-form__row">
 			<label class="modal-form__field">
@@ -370,12 +498,7 @@
 		</div>
 		<label class="modal-form__field">
 			<span class="modal-form__label">최대 인원</span>
-			<input
-				type="number"
-				class="modal-form__input"
-				min="1"
-				bind:value={editForm.max_capacity}
-			/>
+			<input type="number" class="modal-form__input" min="1" bind:value={editForm.max_capacity} />
 		</label>
 		<label class="modal-form__field">
 			<span class="modal-form__label">상태</span>
@@ -393,13 +516,18 @@
 </Modal>
 
 <!-- Delete Slot Confirmation Modal -->
-<Modal isOpen={showDeleteModal} title="슬롯 삭제" position="center" onclose={() => (showDeleteModal = false)}>
+<Modal
+	isOpen={showDeleteModal}
+	title="슬롯 삭제"
+	position="center"
+	onclose={() => (showDeleteModal = false)}
+>
 	<p class="modal-message">
 		{#if deleteTarget}
-			{formatTimeRange(deleteTarget.start_time, deleteTarget.end_time)} ({deleteTarget.instructor_name}) 슬롯을 삭제하시겠습니까?
+			{formatTimeRange(deleteTarget.start_time, deleteTarget.end_time)} ({getSlotLabel(deleteTarget)}) 슬롯을 삭제하시겠습니까?
 		{/if}
 	</p>
-	{#if deleteTarget && deleteTarget.current_count > 0}
+	{#if deleteTarget && computeWeightedCount(deleteTarget.reservations) > 0}
 		<p class="modal-warning">활성 예약이 있는 슬롯은 삭제할 수 없습니다.</p>
 	{/if}
 	<div class="modal-form__actions">
@@ -407,12 +535,96 @@
 			variant="danger"
 			fullWidth
 			loading={actionLoading}
-			disabled={deleteTarget !== null && deleteTarget.current_count > 0}
+			disabled={deleteTarget !== null && computeWeightedCount(deleteTarget.reservations) > 0}
 			onclick={handleDeleteSlot}
 		>
 			삭제
 		</Button>
 		<Button variant="secondary" fullWidth onclick={() => (showDeleteModal = false)}>취소</Button>
+	</div>
+</Modal>
+
+<!-- Reservation Status Confirmation Modal -->
+<Modal
+	isOpen={showStatusConfirmModal}
+	title="예약 상태 변경"
+	position="center"
+	onclose={() => {
+		showStatusConfirmModal = false;
+		statusConfirmTarget = null;
+	}}
+>
+	{#if statusConfirmTarget}
+		<div class="status-confirm">
+			<p class="status-confirm__message">
+				<strong>{statusConfirmTarget.memberName}</strong>님의 예약을
+				<strong>{getStatusLabel(statusConfirmTarget.newStatus)}</strong> 처리하시겠습니까?
+			</p>
+			{#if statusConfirmTarget.passName}
+				<div class="status-confirm__detail">
+					수강권: {statusConfirmTarget.passName}
+				</div>
+			{/if}
+			{#if statusConfirmTarget.capacityWeight !== 1}
+				<div class="status-confirm__capacity-info">
+					{#if statusConfirmTarget.newStatus === 'CONFIRMED'}
+						{statusConfirmTarget.capacityWeight}인원이 차감됩니다. (로테이션)
+					{:else if statusConfirmTarget.newStatus === 'CANCELLED'}
+						{statusConfirmTarget.capacityWeight}인원이 환원됩니다. (로테이션)
+					{/if}
+				</div>
+			{/if}
+			{#if statusConfirmTarget.ticketValue > 1}
+				<div class="status-confirm__ticket-info">
+					{#if statusConfirmTarget.newStatus === 'COMPLETED'}
+						{statusConfirmTarget.ticketValue}회가 차감됩니다.
+					{:else if statusConfirmTarget.newStatus === 'NO_SHOW'}
+						{statusConfirmTarget.ticketValue}회가 차감됩니다. (노쇼)
+					{:else if statusConfirmTarget.newStatus === 'CANCELLED' && (statusConfirmTarget.currentStatus === 'COMPLETED' || statusConfirmTarget.currentStatus === 'NO_SHOW')}
+						{statusConfirmTarget.ticketValue}회가 환불됩니다.
+					{/if}
+				</div>
+			{/if}
+			<div class="status-confirm__actions">
+				<Button
+					fullWidth
+					loading={actionLoading}
+					variant={statusConfirmTarget.newStatus === 'CANCELLED' || statusConfirmTarget.newStatus === 'NO_SHOW' ? 'danger' : 'primary'}
+					onclick={handleConfirmStatusChange}
+				>
+					{getStatusLabel(statusConfirmTarget.newStatus)} 처리
+				</Button>
+				<Button
+					variant="secondary"
+					fullWidth
+					onclick={() => {
+						showStatusConfirmModal = false;
+						statusConfirmTarget = null;
+					}}
+				>
+					닫기
+				</Button>
+			</div>
+		</div>
+	{/if}
+</Modal>
+
+<!-- Feedback Prompt Modal -->
+<Modal isOpen={showFeedbackPrompt} title="피드백 작성" position="center" onclose={() => (showFeedbackPrompt = false)}>
+	<p class="modal-message">
+		수업이 완료되었습니다. {completedMemberName} 학생의 위클리 피드백을 작성하시겠습니까?
+	</p>
+	<div class="modal-form__actions">
+		<Button
+			fullWidth
+			onclick={() => {
+				showFeedbackPrompt = false;
+				goto(`/admin/feedback/new-weekly?member_name=${encodeURIComponent(completedMemberName)}`);
+			}}
+		>
+			피드백 작성
+		</Button>
+		<Button variant="secondary" fullWidth onclick={() => (showFeedbackPrompt = false)}>나중에</Button>
 	</div>
 </Modal>
 
@@ -480,6 +692,12 @@
 			gap: var(--space-xs);
 		}
 
+		&__time-row {
+			display: flex;
+			align-items: center;
+			gap: var(--space-sm);
+		}
+
 		&__time {
 			font-size: var(--font-size-base);
 			font-weight: var(--font-weight-semibold);
@@ -543,6 +761,17 @@
 			font-size: var(--font-size-sm);
 			font-weight: var(--font-weight-medium);
 			color: var(--color-text);
+		}
+
+		&__pass {
+			font-size: var(--font-size-xs);
+			color: var(--color-text-muted);
+		}
+
+		&__weight {
+			font-size: var(--font-size-xs);
+			color: var(--color-info);
+			font-weight: var(--font-weight-medium);
 		}
 
 		&__actions {
@@ -666,6 +895,33 @@
 		}
 	}
 
+	.slot-type-toggle {
+		display: flex;
+		gap: var(--space-xs);
+		background: var(--color-bg);
+		border-radius: var(--radius-md);
+		padding: var(--space-2xs);
+
+		&__btn {
+			flex: 1;
+			padding: 10px 0;
+			border-radius: var(--radius-sm);
+			font-size: var(--font-size-sm);
+			font-weight: var(--font-weight-medium);
+			color: var(--color-text-secondary);
+			background: none;
+			transition:
+				background-color var(--transition-fast),
+				color var(--transition-fast);
+
+			&--active {
+				background: var(--color-white);
+				color: var(--color-text);
+				box-shadow: var(--shadow-sm);
+			}
+		}
+	}
+
 	.modal-message {
 		font-size: var(--font-size-base);
 		color: var(--color-text);
@@ -680,5 +936,54 @@
 		padding: var(--space-sm) var(--space-md);
 		background: var(--color-danger-bg);
 		border-radius: var(--radius-sm);
+	}
+
+	.status-confirm {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-md);
+
+		&__message {
+			font-size: var(--font-size-base);
+			color: var(--color-text);
+			line-height: var(--line-height-base);
+
+			:global(strong) {
+				font-weight: var(--font-weight-semibold);
+			}
+		}
+
+		&__detail {
+			font-size: var(--font-size-sm);
+			color: var(--color-text-secondary);
+			padding: var(--space-sm) var(--space-md);
+			background: var(--color-bg);
+			border-radius: var(--radius-sm);
+		}
+
+		&__ticket-info {
+			font-size: var(--font-size-sm);
+			color: var(--color-warning);
+			font-weight: var(--font-weight-medium);
+			padding: var(--space-sm) var(--space-md);
+			background: var(--color-warning-bg);
+			border-radius: var(--radius-sm);
+		}
+
+		&__capacity-info {
+			font-size: var(--font-size-sm);
+			color: var(--color-info);
+			font-weight: var(--font-weight-medium);
+			padding: var(--space-sm) var(--space-md);
+			background: var(--color-info-bg);
+			border-radius: var(--radius-sm);
+		}
+
+		&__actions {
+			display: flex;
+			flex-direction: column;
+			gap: var(--space-sm);
+			margin-top: var(--space-sm);
+		}
 	}
 </style>
