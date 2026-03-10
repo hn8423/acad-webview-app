@@ -55,7 +55,7 @@ export interface NoticeFile {
 export interface CalendarEvent {
 	id: number;
 	event_title: string;
-	event_type: 'LESSON' | 'PARTY' | 'HOLIDAY' | 'PERFORMANCE' | 'OTHER';
+	event_type: 'LESSON' | 'PARTY' | 'HOLIDAY' | 'PERFORMANCE' | 'OTHER' | 'RESERVATION';
 	event_date: string;
 	start_time: string | null;
 	end_time: string | null;

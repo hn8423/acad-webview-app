@@ -10,13 +10,16 @@
 		toLocalDateString
 	} from '$lib/utils/format';
 	import type { CalendarEvent } from '$lib/types/academy';
+	import type { MyReservation } from '$lib/types/reservation';
 	import Spinner from './Spinner.svelte';
 
 	interface Props {
 		academyId: number;
+		reservations?: MyReservation[];
+		oncancelreservation?: (reservationId: number) => void;
 	}
 
-	let { academyId }: Props = $props();
+	let { academyId, reservations = [], oncancelreservation }: Props = $props();
 
 	const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
 
@@ -25,7 +28,8 @@
 		PARTY: '#fbbf24',
 		HOLIDAY: '#f87171',
 		PERFORMANCE: '#34d399',
-		OTHER: '#94a3b8'
+		OTHER: '#94a3b8',
+		RESERVATION: '#a78bfa'
 	};
 
 	const EVENT_TYPE_LABELS: Record<CalendarEvent['event_type'], string> = {
@@ -33,7 +37,8 @@
 		PARTY: '파티',
 		HOLIDAY: '휴일',
 		PERFORMANCE: '공연',
-		OTHER: '기타'
+		OTHER: '기타',
+		RESERVATION: '내 예약'
 	};
 
 	const MAX_EVENT_DOTS = 3;
@@ -47,12 +52,35 @@
 	let loading = $state(true);
 	let errorMessage = $state<string | null>(null);
 
+	function reservationToCalendarEvent(r: MyReservation): CalendarEvent {
+		const label = r.status === 'PENDING' ? '대기중' : '확정';
+		return {
+			id: r.reservation_id,
+			event_title: r.instructor_name ? `${r.instructor_name} 수업` : '레슨 예약',
+			event_type: 'RESERVATION',
+			event_date: r.slot_date,
+			start_time: r.start_time,
+			end_time: r.end_time,
+			description: `${label}${r.pass_name ? ` · ${r.pass_name}` : ''}`,
+			color: '',
+			is_all_day: false
+		};
+	}
+
+	let reservationEvents = $derived(
+		reservations
+			.filter((r) => r.status === 'PENDING' || r.status === 'CONFIRMED')
+			.map(reservationToCalendarEvent)
+	);
+
+	let allEvents = $derived([...events, ...reservationEvents]);
+
 	let monthLabel = $derived(formatMonth(currentYear, currentMonth));
 
-	let calendarCells = $derived(buildCalendarCells(currentYear, currentMonth, events));
+	let calendarCells = $derived(buildCalendarCells(currentYear, currentMonth, allEvents));
 
 	let selectedEvents = $derived(
-		events
+		allEvents
 			.filter((e) => e.event_date === selectedDate)
 			.sort((a, b) => {
 				const aAllDay = a.is_all_day;
@@ -285,12 +313,23 @@
 				<div class="event-item" style="--event-color: {getEventColor(event)}">
 					<div class="event-item__header">
 						<span class="event-item__title">{event.event_title}</span>
-						<span
-							class="event-type-badge"
-							style="background-color: {getEventColor(event)}20; color: {getEventColor(event)}"
-						>
-							{EVENT_TYPE_LABELS[event.event_type] ?? event.event_type}
-						</span>
+						<div class="event-item__actions">
+							<span
+								class="event-type-badge"
+								style="background-color: {getEventColor(event)}20; color: {getEventColor(event)}"
+							>
+								{EVENT_TYPE_LABELS[event.event_type] ?? event.event_type}
+							</span>
+							{#if event.event_type === 'RESERVATION' && oncancelreservation}
+								<button
+									type="button"
+									class="event-item__cancel"
+									onclick={() => oncancelreservation(event.id)}
+								>
+									취소
+								</button>
+							{/if}
+						</div>
 					</div>
 					<div class="event-item__time">
 						{#if event.is_all_day}
@@ -472,6 +511,29 @@
 			justify-content: space-between;
 			gap: var(--space-sm);
 			margin-bottom: 2px;
+		}
+
+		&__actions {
+			display: flex;
+			align-items: center;
+			gap: var(--space-xs);
+			flex-shrink: 0;
+		}
+
+		&__cancel {
+			background: none;
+			border: none;
+			font-size: var(--font-size-xs);
+			color: var(--color-danger);
+			cursor: pointer;
+			padding: 2px var(--space-xs);
+			border-radius: var(--radius-sm);
+			font-weight: var(--font-weight-medium);
+			transition: background-color var(--transition-fast);
+
+			&:active {
+				background-color: var(--color-danger-bg);
+			}
 		}
 
 		&__title {
