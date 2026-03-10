@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { getCalendarEvents } from '$lib/api/academy';
-	import { getAvailableSlots } from '$lib/api/reservation';
 	import {
 		formatMonth,
 		formatTime,
@@ -11,7 +10,7 @@
 		toLocalDateString
 	} from '$lib/utils/format';
 	import type { CalendarEvent } from '$lib/types/academy';
-	import type { MyReservation } from '$lib/types/reservation';
+	import type { MyReservation, ReservationStatus } from '$lib/types/reservation';
 	import Spinner from './Spinner.svelte';
 
 	interface Props {
@@ -45,6 +44,7 @@
 	const MAX_EVENT_DOTS = 3;
 	const today = getTodayString();
 	const now = new Date();
+	const VISIBLE_STATUSES: ReservationStatus[] = ['PENDING', 'CONFIRMED', 'COMPLETED'];
 
 	let currentYear = $state(now.getFullYear());
 	let currentMonth = $state(now.getMonth() + 1);
@@ -52,12 +52,11 @@
 	let events = $state<CalendarEvent[]>([]);
 	let loading = $state(true);
 	let errorMessage = $state<string | null>(null);
-	let slotCountMap = $state<Record<string, number>>({});
-	let countsLoading = $state(false);
 
 	const RESERVATION_STATUS_COLORS: Record<string, string> = {
 		PENDING: '#fbbf24',
-		CONFIRMED: '#34d399'
+		CONFIRMED: '#34d399',
+		COMPLETED: '#60a5fa'
 	};
 
 	function reservationToCalendarEvent(r: MyReservation): CalendarEvent {
@@ -65,7 +64,7 @@
 			id: r.reservation_id,
 			event_title: r.instructor_name ? `${r.instructor_name} 수업` : '레슨 예약',
 			event_type: 'RESERVATION',
-			event_date: r.slot_date,
+			event_date: toLocalDateString(r.slot_date),
 			start_time: r.start_time,
 			end_time: r.end_time,
 			description: '',
@@ -81,11 +80,31 @@
 			: '강사 미지정';
 	}
 
-	let reservationEvents = $derived(
-		reservations
-			.filter((r) => r.status === 'PENDING' || r.status === 'CONFIRMED')
-			.map(reservationToCalendarEvent)
+	function getStatusLabel(status: ReservationStatus): string {
+		switch (status) {
+			case 'PENDING':
+				return '대기중';
+			case 'CONFIRMED':
+				return '확정';
+			case 'COMPLETED':
+				return '완료';
+			default:
+				return status;
+		}
+	}
+
+	let visibleReservations = $derived(
+		reservations.filter((r) => VISIBLE_STATUSES.includes(r.status))
 	);
+
+	let reservationCountMap = $derived(
+		visibleReservations.reduce<Record<string, number>>((map, r) => {
+			const date = toLocalDateString(r.slot_date);
+			return { ...map, [date]: (map[date] ?? 0) + 1 };
+		}, {})
+	);
+
+	let reservationEvents = $derived(visibleReservations.map(reservationToCalendarEvent));
 
 	let allEvents = $derived([...events, ...reservationEvents]);
 
@@ -94,12 +113,8 @@
 	let calendarCells = $derived(buildCalendarCells(currentYear, currentMonth, allEvents));
 
 	let selectedReservations = $derived(
-		reservations
-			.filter(
-				(r) =>
-					r.slot_date === selectedDate &&
-					(r.status === 'PENDING' || r.status === 'CONFIRMED')
-			)
+		visibleReservations
+			.filter((r) => toLocalDateString(r.slot_date) === selectedDate)
 			.sort((a, b) => (a.start_time ?? '').localeCompare(b.start_time ?? ''))
 	);
 
@@ -256,45 +271,6 @@
 		fetchEvents(currentYear, currentMonth);
 	});
 
-	async function loadMonthSlotCounts(year: number, month: number) {
-		countsLoading = true;
-		const todayStr = getTodayString();
-		const daysInMonth = getDaysInMonth(year, month);
-		const dates: string[] = [];
-
-		for (let d = 1; d <= daysInMonth; d++) {
-			const dateStr = toDateString(year, month, d);
-			if (dateStr >= todayStr) dates.push(dateStr);
-		}
-
-		if (dates.length === 0) {
-			slotCountMap = {};
-			countsLoading = false;
-			return;
-		}
-
-		try {
-			const results = await Promise.allSettled(
-				dates.map((date) => getAvailableSlots(academyId, date))
-			);
-			const newMap: Record<string, number> = {};
-			results.forEach((result, i) => {
-				if (result.status === 'fulfilled' && result.value.status && result.value.data) {
-					const count = result.value.data.length;
-					if (count > 0) newMap[dates[i]] = count;
-				}
-			});
-			slotCountMap = newMap;
-		} catch {
-			slotCountMap = {};
-		} finally {
-			countsLoading = false;
-		}
-	}
-
-	$effect(() => {
-		loadMonthSlotCounts(currentYear, currentMonth);
-	});
 </script>
 
 <div class="section-card">
@@ -350,12 +326,12 @@
 					onclick={() => selectDate(cell.fullDate)}
 				>
 					<span class="calendar-cell__date">{cell.date}</span>
-					{#if (slotCountMap[cell.fullDate] ?? 0) > 0 && cell.fullDate >= today}
+					{#if (reservationCountMap[cell.fullDate] ?? 0) > 0}
 						<span
 							class="calendar-cell__count"
 							class:calendar-cell__count--selected={cell.fullDate === selectedDate}
 						>
-							{slotCountMap[cell.fullDate]}건
+							{reservationCountMap[cell.fullDate]}건
 						</span>
 					{/if}
 					{#if cell.events.length > 0}
@@ -386,17 +362,18 @@
 			{#if selectedReservations.length > 0}
 				<div class="reservation-cards">
 					{#each selectedReservations as reservation}
-						{@const isPending = reservation.status === 'PENDING'}
+						{@const canCancel = reservation.status === 'PENDING' || reservation.status === 'CONFIRMED'}
 						<div class="reservation-card">
 							<div class="reservation-card__header">
 								<span
 									class="reservation-card__badge"
-									class:reservation-card__badge--confirmed={!isPending}
-									class:reservation-card__badge--pending={isPending}
+									class:reservation-card__badge--pending={reservation.status === 'PENDING'}
+									class:reservation-card__badge--confirmed={reservation.status === 'CONFIRMED'}
+									class:reservation-card__badge--completed={reservation.status === 'COMPLETED'}
 								>
-									{isPending ? '대기중' : '확정'}
+									{getStatusLabel(reservation.status)}
 								</span>
-								{#if oncancelreservation}
+								{#if oncancelreservation && canCancel}
 									<button
 										type="button"
 										class="reservation-card__cancel"
@@ -412,6 +389,11 @@
 							<div class="reservation-card__instructor">
 								{getReservationLabel(reservation)}
 							</div>
+							{#if reservation.pass_name}
+								<div class="reservation-card__pass">
+									{reservation.pass_name}
+								</div>
+							{/if}
 						</div>
 					{/each}
 				</div>
@@ -647,6 +629,11 @@
 				background: var(--color-warning-bg);
 				color: var(--color-warning);
 			}
+
+			&--completed {
+				background: var(--color-info-bg);
+				color: var(--color-info);
+			}
 		}
 
 		&__cancel {
@@ -673,6 +660,12 @@
 		&__instructor {
 			font-size: var(--font-size-sm);
 			color: var(--color-text-muted);
+		}
+
+		&__pass {
+			font-size: var(--font-size-xs);
+			color: var(--color-text-muted);
+			margin-top: 2px;
 		}
 	}
 
