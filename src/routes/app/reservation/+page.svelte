@@ -5,7 +5,8 @@
 		getAvailableSlots,
 		getMyReservations,
 		createReservation,
-		cancelReservation
+		cancelReservation,
+		cancelReservationAsNoShow
 	} from '$lib/api/reservation';
 	import { getMyPasses } from '$lib/api/member';
 	import Card from '$lib/components/ui/Card.svelte';
@@ -23,6 +24,7 @@
 		getDaysInMonth
 	} from '$lib/utils/format';
 	import { getTicketValue, getCapacityWeight } from '$lib/utils/pass';
+	import { isReservationDay } from '$lib/utils/reservation';
 	import type {
 		AvailableSlot,
 		MyReservation,
@@ -59,6 +61,10 @@
 	let cancelSheetOpen = $state(false);
 	let selectedReservation = $state<MyReservation | null>(null);
 	let cancelling = $state(false);
+
+	let isSameDayCancel = $derived(
+		selectedReservation ? isReservationDay(selectedReservation.slot_date) : false
+	);
 
 	let activePasses = $derived(
 		memberPasses.filter((p) => p.status === 'ACTIVE' && p.remaining_lessons > 0)
@@ -250,9 +256,14 @@
 
 		cancelling = true;
 		try {
-			const res = await cancelReservation(academyId, selectedReservation.reservation_id);
+			const noShow = isReservationDay(selectedReservation.slot_date);
+			const res = noShow
+				? await cancelReservationAsNoShow(academyId, selectedReservation.reservation_id)
+				: await cancelReservation(academyId, selectedReservation.reservation_id);
 			if (res.status) {
-				toastStore.success('예약이 취소되었습니다.');
+				toastStore.success(
+					noShow ? '당일 취소로 노쇼 처리되었습니다.' : '예약이 취소되었습니다.'
+				);
 				cancelSheetOpen = false;
 				selectedReservation = null;
 				loadMyReservations();
@@ -394,7 +405,7 @@
 									<Badge variant={getStatusVariant(reservation.status)}>
 										{getStatusLabel(reservation.status)}
 									</Badge>
-									{#if reservation.status === 'PENDING'}
+									{#if reservation.status === 'PENDING' || reservation.status === 'CONFIRMED'}
 										<button
 											type="button"
 											class="reservation-card__cancel"
@@ -529,7 +540,11 @@
 >
 	{#if selectedReservation}
 		<div class="cancel-sheet">
-			<p class="cancel-sheet__message">정말 예약을 취소하시겠습니까?</p>
+			<p class="cancel-sheet__message">
+				{isSameDayCancel
+					? '당일 취소는 노쇼로 처리됩니다. 정말 취소하시겠습니까?'
+					: '정말 예약을 취소하시겠습니까?'}
+			</p>
 			<div class="cancel-sheet__info">
 				<div class="cancel-sheet__row">
 					<span class="cancel-sheet__label">날짜</span>
@@ -555,15 +570,22 @@
 					</div>
 				{/if}
 			</div>
-			{#if selectedReservation.pass_category === 'ROTATION'}
-				<p class="cancel-sheet__refund-notice">
-					취소 시 0.5인원이 환불됩니다.
-				</p>
-			{/if}
-			{#if getTicketValue(selectedReservation.ticket_value) > 1}
-				<p class="cancel-sheet__refund-notice">
-					취소 시 {getTicketValue(selectedReservation.ticket_value)}회가 환불됩니다.
-				</p>
+			{#if isSameDayCancel}
+				<div class="cancel-sheet__noshow-warning">
+					당일 취소는 노쇼(No-Show)로 처리됩니다.
+					수강권이 차감되며 환불되지 않습니다.
+				</div>
+			{:else}
+				{#if selectedReservation.pass_category === 'ROTATION'}
+					<p class="cancel-sheet__refund-notice">
+						취소 시 0.5인원이 환불됩니다.
+					</p>
+				{/if}
+				{#if getTicketValue(selectedReservation.ticket_value) > 1}
+					<p class="cancel-sheet__refund-notice">
+						취소 시 {getTicketValue(selectedReservation.ticket_value)}회가 환불됩니다.
+					</p>
+				{/if}
 			{/if}
 			<div class="cancel-sheet__buttons">
 				<Button
@@ -577,7 +599,7 @@
 					닫기
 				</Button>
 				<Button variant="danger" fullWidth loading={cancelling} onclick={handleConfirmCancel}>
-					취소하기
+					{isSameDayCancel ? '노쇼 처리하기' : '취소하기'}
 				</Button>
 			</div>
 		</div>
@@ -906,6 +928,17 @@
 			color: var(--color-warning);
 			text-align: center;
 			font-weight: var(--font-weight-medium);
+		}
+
+		&__noshow-warning {
+			font-size: var(--font-size-sm);
+			color: var(--color-danger);
+			font-weight: var(--font-weight-medium);
+			padding: var(--space-sm) var(--space-md);
+			background: var(--color-danger-bg);
+			border-radius: var(--radius-sm);
+			text-align: center;
+			line-height: 1.5;
 		}
 
 		&__buttons {
