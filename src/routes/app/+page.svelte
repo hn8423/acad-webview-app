@@ -1,17 +1,22 @@
 <script lang="ts">
 	import { academyStore } from '$lib/stores/academy.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
-	import { getMyPasses, getMyDrinkTickets } from '$lib/api/member';
+	import { getMyPasses, getMyDrinkTickets, useDrinkTicket } from '$lib/api/member';
 	import { getRecentNotices } from '$lib/api/academy';
 	import { createHolding } from '$lib/api/holding';
+	import { login } from '$lib/api/auth';
+	import { apiRequest } from '$lib/api/client';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import CalendarSection from '$lib/components/ui/CalendarSection.svelte';
 	import HoldingRequestModal from '$lib/components/holding/HoldingRequestModal.svelte';
+	import DrinkRedeemModal from '$lib/components/drink/DrinkRedeemModal.svelte';
 	import { formatDate } from '$lib/utils/format';
 	import { getPassStatusVariant, getPassStatusLabel, getTicketValue } from '$lib/utils/pass';
 	import type { MemberPass, DrinkTicket } from '$lib/types/member';
 	import type { Notice } from '$lib/types/academy';
+	import type { ApiResponse } from '$lib/types/api';
+	import type { UserAcademy } from '$lib/types/auth';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 
@@ -25,6 +30,10 @@
 	let holdingSubmitting = $state(false);
 	let holdingError = $state('');
 	let holdingRequestedPassIds = $state(new Set<number>());
+
+	let showDrinkRedeemModal = $state(false);
+	let drinkRedeemSubmitting = $state(false);
+	let drinkRedeemError = $state('');
 
 	onMount(async () => {
 		const academyId = academyStore.academyId;
@@ -91,6 +100,81 @@
 			holdingSubmitting = false;
 		}
 	}
+
+	function openDrinkRedeemModal() {
+		if (totalDrinks <= 0) return;
+		drinkRedeemError = '';
+		showDrinkRedeemModal = true;
+	}
+
+	async function handleDrinkRedeem(data: { phone: string; password: string }) {
+		const academyId = academyStore.academyId;
+		if (!academyId) return;
+
+		drinkRedeemSubmitting = true;
+		drinkRedeemError = '';
+
+		try {
+			const loginRes = await login({
+				user_phone: data.phone,
+				password: data.password,
+				device_type: 'ANDROID'
+			});
+
+			if (!loginRes.status || !loginRes.data) {
+				drinkRedeemError = '로그인에 실패했습니다. 번호와 비밀번호를 확인해주세요.';
+				return;
+			}
+
+			const adminToken = loginRes.data.access_token;
+
+			const academiesRes = await apiRequest<ApiResponse<UserAcademy[]>>(
+				'/academic/auth/me/academies',
+				{
+					skipAuth: true,
+					headers: { Authorization: `Bearer ${adminToken}` }
+				}
+			);
+
+			if (!academiesRes.status || !academiesRes.data) {
+				drinkRedeemError = '학원 정보를 조회할 수 없습니다.';
+				return;
+			}
+
+			const adminAcademy = academiesRes.data.find(
+				(a) => a.academy_id === academyId && a.member_role === 'ADMIN'
+			);
+
+			if (!adminAcademy) {
+				drinkRedeemError = '관리자 권한이 없는 계정입니다.';
+				return;
+			}
+
+			const ticket = drinkTickets.find((t) => t.remaining_count > 0);
+			if (!ticket) {
+				drinkRedeemError = '사용 가능한 음료권이 없습니다.';
+				return;
+			}
+
+			const useRes = await useDrinkTicket(academyId, ticket.id, 1);
+
+			if (useRes.status) {
+				drinkTickets = drinkTickets.map((t) =>
+					t.id === ticket.id
+						? { ...t, remaining_count: useRes.data.remaining_count }
+						: t
+				);
+				toastStore.success('음료권 1잔이 사용되었습니다.');
+				showDrinkRedeemModal = false;
+			} else {
+				drinkRedeemError = useRes.message || '음료권 사용에 실패했습니다.';
+			}
+		} catch (err) {
+			drinkRedeemError = err instanceof Error ? err.message : '음료권 사용에 실패했습니다.';
+		} finally {
+			drinkRedeemSubmitting = false;
+		}
+	}
 </script>
 
 <div class="main-page">
@@ -103,7 +187,13 @@
 		<section class="main-page__section">
 			<div class="section-card">
 				<h2 class="section-title">음료권</h2>
-				<div class="drink-card">
+				<button
+					type="button"
+					class="drink-card"
+					class:drink-card--disabled={totalDrinks <= 0}
+					disabled={totalDrinks <= 0}
+					onclick={openDrinkRedeemModal}
+				>
 					<div class="drink-card__icon">
 						<svg
 							width="40"
@@ -122,7 +212,10 @@
 						<span class="drink-card__count">{totalDrinks}</span>
 						<span class="drink-card__label">잔 남음</span>
 					</div>
-				</div>
+					{#if totalDrinks > 0}
+						<span class="drink-card__action">사용하기</span>
+					{/if}
+				</button>
 			</div>
 		</section>
 
@@ -233,6 +326,18 @@
 	error={holdingError}
 />
 
+<DrinkRedeemModal
+	isOpen={showDrinkRedeemModal}
+	{totalDrinks}
+	onclose={() => {
+		showDrinkRedeemModal = false;
+		drinkRedeemError = '';
+	}}
+	onsubmit={handleDrinkRedeem}
+	submitting={drinkRedeemSubmitting}
+	error={drinkRedeemError}
+/>
+
 <style lang="scss">
 	.main-page {
 		padding: var(--space-md);
@@ -292,6 +397,26 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-lg);
+		width: 100%;
+		background: none;
+		border: none;
+		padding: 0;
+		cursor: pointer;
+		text-align: left;
+		transition: opacity var(--transition-fast);
+
+		&:active {
+			opacity: 0.6;
+		}
+
+		&--disabled {
+			cursor: default;
+			opacity: 0.5;
+
+			&:active {
+				opacity: 0.5;
+			}
+		}
 
 		&__icon {
 			flex-shrink: 0;
@@ -301,6 +426,7 @@
 			display: flex;
 			align-items: baseline;
 			gap: var(--space-sm);
+			flex: 1;
 		}
 
 		&__count {
@@ -317,6 +443,13 @@
 		&__label {
 			font-size: var(--font-size-base);
 			color: var(--color-text-secondary);
+		}
+
+		&__action {
+			font-size: var(--font-size-sm);
+			font-weight: var(--font-weight-medium);
+			color: var(--color-primary);
+			white-space: nowrap;
 		}
 	}
 
