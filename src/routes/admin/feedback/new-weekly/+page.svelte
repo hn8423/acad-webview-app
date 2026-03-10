@@ -10,7 +10,6 @@
 	import Input from '$lib/components/ui/Input.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
-	import MediaUpload from '$lib/components/ui/MediaUpload.svelte';
 	import { formatPhone } from '$lib/utils/format';
 	import type { MemberListItem, MemberPass } from '$lib/types/member';
 	import { onMount } from 'svelte';
@@ -35,8 +34,6 @@
 	let strengths = $state('');
 	let improvements = $state('');
 	let notes = $state('');
-	let videoUrl = $state('');
-
 	const stepLabels = ['학생 선택', '피드백 작성'];
 	const activePasses = $derived(passes.filter((p) => p.status === 'ACTIVE'));
 
@@ -118,8 +115,7 @@
 				lesson_content: lessonContent.trim(),
 				strengths: strengths.trim() || undefined,
 				improvements: improvements.trim() || undefined,
-				notes: notes.trim() || undefined,
-				video_url: videoUrl.trim() || undefined
+				notes: notes.trim() || undefined
 			});
 			if (res.status) {
 				toastStore.success('위클리 피드백이 작성되었습니다.');
@@ -285,8 +281,6 @@
 								rows="2"
 							></textarea>
 						</div>
-
-						<MediaUpload label="미디어 첨부 (선택)" bind:value={videoUrl} />
 
 						{#if error}
 							<p class="create-form__error">{error}</p>
