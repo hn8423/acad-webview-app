@@ -3,17 +3,21 @@
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import { getMyPasses, getMyDrinkTickets, useDrinkTicket } from '$lib/api/member';
 	import { getRecentNotices } from '$lib/api/academy';
+	import { getMyReservations, cancelReservation } from '$lib/api/reservation';
 	import { createHolding } from '$lib/api/holding';
 	import { login } from '$lib/api/auth';
 	import { apiRequest } from '$lib/api/client';
 	import Badge from '$lib/components/ui/Badge.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import CalendarSection from '$lib/components/ui/CalendarSection.svelte';
+	import BottomSheet from '$lib/components/ui/BottomSheet.svelte';
 	import HoldingRequestModal from '$lib/components/holding/HoldingRequestModal.svelte';
 	import DrinkRedeemModal from '$lib/components/drink/DrinkRedeemModal.svelte';
-	import { formatDate } from '$lib/utils/format';
+	import { formatDate, formatTimeRange, getDayOfWeek } from '$lib/utils/format';
 	import { getPassStatusVariant, getPassStatusLabel, getTicketValue } from '$lib/utils/pass';
 	import type { MemberPass, DrinkTicket } from '$lib/types/member';
+	import type { MyReservation } from '$lib/types/reservation';
 	import type { Notice } from '$lib/types/academy';
 	import type { ApiResponse } from '$lib/types/api';
 	import type { UserAcademy } from '$lib/types/auth';
@@ -23,7 +27,12 @@
 	let passes = $state<MemberPass[]>([]);
 	let drinkTickets = $state<DrinkTicket[]>([]);
 	let recentNotices = $state<Notice[]>([]);
+	let myReservations = $state<MyReservation[]>([]);
 	let loading = $state(true);
+
+	let cancelSheetOpen = $state(false);
+	let cancelTarget = $state<MyReservation | null>(null);
+	let cancelling = $state(false);
 
 	let showHoldingModal = $state(false);
 	let holdingTargetPass = $state<MemberPass | null>(null);
@@ -40,10 +49,11 @@
 		if (!academyId) return;
 
 		try {
-			const [passRes, drinkRes, noticeRes] = await Promise.allSettled([
+			const [passRes, drinkRes, noticeRes, reservationRes] = await Promise.allSettled([
 				getMyPasses(academyId),
 				getMyDrinkTickets(academyId),
-				getRecentNotices(academyId)
+				getRecentNotices(academyId),
+				getMyReservations(academyId)
 			]);
 
 			if (passRes.status === 'fulfilled' && passRes.value.status) {
@@ -54,6 +64,9 @@
 			}
 			if (noticeRes.status === 'fulfilled' && noticeRes.value.status) {
 				recentNotices = noticeRes.value.data;
+			}
+			if (reservationRes.status === 'fulfilled' && reservationRes.value.status) {
+				myReservations = reservationRes.value.data;
 			}
 		} catch {
 			// errors handled per-section
@@ -175,6 +188,43 @@
 			drinkRedeemSubmitting = false;
 		}
 	}
+
+	function handleCancelReservation(reservationId: number) {
+		const target = myReservations.find((r) => r.reservation_id === reservationId);
+		if (!target) return;
+		cancelTarget = target;
+		cancelSheetOpen = true;
+	}
+
+	async function handleConfirmCancel() {
+		const academyId = academyStore.academyId;
+		if (!academyId || !cancelTarget) return;
+
+		cancelling = true;
+		try {
+			const res = await cancelReservation(academyId, cancelTarget.reservation_id);
+			if (res.status) {
+				toastStore.success('예약이 취소되었습니다.');
+				cancelSheetOpen = false;
+				cancelTarget = null;
+				const refreshRes = await getMyReservations(academyId);
+				if (refreshRes.status) {
+					myReservations = refreshRes.data;
+				}
+			}
+		} catch {
+			// handled by client.ts
+		} finally {
+			cancelling = false;
+		}
+	}
+
+	function getInstructorLabel(reservation: MyReservation): string {
+		if (reservation.slot_type === 'ENSEMBLE') return '합주 수업';
+		return reservation.instructor_name
+			? `${reservation.instructor_name} 선생님`
+			: '강사 미지정';
+	}
 </script>
 
 <div class="main-page">
@@ -279,7 +329,11 @@
 		<!-- 캘린더 조회 -->
 		{#if academyStore.academyId}
 			<section class="main-page__section">
-				<CalendarSection academyId={academyStore.academyId} />
+				<CalendarSection
+					academyId={academyStore.academyId}
+					reservations={myReservations}
+					oncancelreservation={handleCancelReservation}
+				/>
 			</section>
 		{/if}
 
@@ -337,6 +391,72 @@
 	submitting={drinkRedeemSubmitting}
 	error={drinkRedeemError}
 />
+
+<!-- 예약 취소 확인 BottomSheet -->
+<BottomSheet
+	bind:isOpen={cancelSheetOpen}
+	title="예약 취소"
+	onclose={() => {
+		cancelSheetOpen = false;
+		cancelTarget = null;
+	}}
+>
+	{#if cancelTarget}
+		<div class="cancel-sheet">
+			<p class="cancel-sheet__message">정말 예약을 취소하시겠습니까?</p>
+			<div class="cancel-sheet__info">
+				<div class="cancel-sheet__row">
+					<span class="cancel-sheet__label">날짜</span>
+					<span class="cancel-sheet__value">
+						{formatDate(cancelTarget.slot_date)}
+						({getDayOfWeek(cancelTarget.slot_date)})
+					</span>
+				</div>
+				<div class="cancel-sheet__row">
+					<span class="cancel-sheet__label">시간</span>
+					<span class="cancel-sheet__value">
+						{formatTimeRange(cancelTarget.start_time, cancelTarget.end_time)}
+					</span>
+				</div>
+				<div class="cancel-sheet__row">
+					<span class="cancel-sheet__label">{cancelTarget.slot_type === 'ENSEMBLE' ? '유형' : '강사'}</span>
+					<span class="cancel-sheet__value">{getInstructorLabel(cancelTarget)}</span>
+				</div>
+				{#if cancelTarget.pass_name}
+					<div class="cancel-sheet__row">
+						<span class="cancel-sheet__label">수강권</span>
+						<span class="cancel-sheet__value">{cancelTarget.pass_name}</span>
+					</div>
+				{/if}
+			</div>
+			{#if cancelTarget.pass_category === 'ROTATION'}
+				<p class="cancel-sheet__refund-notice">
+					취소 시 0.5인원이 환불됩니다.
+				</p>
+			{/if}
+			{#if getTicketValue(cancelTarget.ticket_value) > 1}
+				<p class="cancel-sheet__refund-notice">
+					취소 시 {getTicketValue(cancelTarget.ticket_value)}회가 환불됩니다.
+				</p>
+			{/if}
+			<div class="cancel-sheet__buttons">
+				<Button
+					variant="secondary"
+					fullWidth
+					onclick={() => {
+						cancelSheetOpen = false;
+						cancelTarget = null;
+					}}
+				>
+					닫기
+				</Button>
+				<Button variant="danger" fullWidth loading={cancelling} onclick={handleConfirmCancel}>
+					취소하기
+				</Button>
+			</div>
+		</div>
+	{/if}
+</BottomSheet>
 
 <style lang="scss">
 	.main-page {
@@ -603,6 +723,56 @@
 			font-size: var(--font-size-xs);
 			color: var(--color-text-muted);
 			white-space: nowrap;
+		}
+	}
+
+	.cancel-sheet {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-lg);
+
+		&__message {
+			font-size: var(--font-size-base);
+			color: var(--color-text);
+			text-align: center;
+		}
+
+		&__info {
+			display: flex;
+			flex-direction: column;
+			gap: var(--space-sm);
+			padding: var(--space-md);
+			background: var(--color-bg);
+			border-radius: var(--radius-md);
+		}
+
+		&__row {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+		}
+
+		&__label {
+			font-size: var(--font-size-sm);
+			color: var(--color-text-secondary);
+		}
+
+		&__value {
+			font-size: var(--font-size-sm);
+			font-weight: var(--font-weight-medium);
+			color: var(--color-text);
+		}
+
+		&__refund-notice {
+			font-size: var(--font-size-sm);
+			color: var(--color-warning);
+			text-align: center;
+			font-weight: var(--font-weight-medium);
+		}
+
+		&__buttons {
+			display: flex;
+			gap: var(--space-sm);
 		}
 	}
 </style>
