@@ -5,6 +5,7 @@
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import { getMembers, getMemberPasses } from '$lib/api/member';
 	import { createWeeklyFeedback } from '$lib/api/feedback';
+	import { updateReservationStatus } from '$lib/api/reservation';
 	import BackHeader from '$lib/components/layout/BackHeader.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
@@ -15,6 +16,8 @@
 	import { onMount } from 'svelte';
 
 	let step = $state(1);
+	let reservationId = $state<number | null>(null);
+	let completingReservation = $derived(reservationId !== null);
 
 	// Step 1: 학생 검색/선택
 	let members = $state<MemberListItem[]>([]);
@@ -39,6 +42,11 @@
 
 	onMount(() => {
 		const memberNameParam = page.url.searchParams.get('member_name');
+		const reservationIdParam = page.url.searchParams.get('reservation_id');
+
+		if (reservationIdParam) {
+			reservationId = Number(reservationIdParam);
+		}
 		if (memberNameParam) {
 			search = memberNameParam;
 		}
@@ -118,8 +126,22 @@
 				notes: notes.trim() || undefined
 			});
 			if (res.status) {
-				toastStore.success('위클리 피드백이 작성되었습니다.');
-				goto('/admin/feedback');
+				if (reservationId) {
+					try {
+						await updateReservationStatus(academyId, reservationId, {
+							status: 'COMPLETED'
+						});
+						toastStore.success('피드백이 작성되고 수업이 완료 처리되었습니다.');
+					} catch {
+						toastStore.error(
+							'피드백은 작성되었으나 예약 완료 처리에 실패했습니다. 예약 관리에서 수동으로 완료 처리해주세요.'
+						);
+					}
+					goto('/admin/reservations');
+				} else {
+					toastStore.success('위클리 피드백이 작성되었습니다.');
+					goto('/admin/feedback');
+				}
 			}
 		} catch (err) {
 			error = err instanceof Error ? err.message : '피드백 작성에 실패했습니다.';
@@ -131,7 +153,7 @@
 
 <div class="weekly-page">
 	<BackHeader
-		title="위클리 피드백 작성"
+		title={completingReservation ? '수업 완료 - 피드백 작성' : '위클리 피드백 작성'}
 		onback={() => {
 			if (step > 1) {
 				step -= 1;
@@ -139,12 +161,18 @@
 				passes = [];
 				error = '';
 			} else {
-				goto('/admin/feedback');
+				goto(completingReservation ? '/admin/reservations' : '/admin/feedback');
 			}
 		}}
 	/>
 
 	<div class="weekly-page__content">
+		{#if completingReservation}
+			<div class="reservation-notice">
+				수업 완료를 위한 위클리 피드백을 작성합니다. 피드백 제출 시 수업이 완료 처리됩니다.
+			</div>
+		{/if}
+
 		<!-- 스텝 인디케이터 -->
 		<div class="step-indicator">
 			<span class="step-indicator__text">
@@ -287,8 +315,13 @@
 						{/if}
 
 						<div class="create-form__actions">
-							<Button type="submit" fullWidth loading={creating}>작성하기</Button>
-							<Button variant="secondary" fullWidth onclick={() => goto('/admin/feedback')}
+							<Button type="submit" fullWidth loading={creating}>
+								{completingReservation ? '피드백 작성 및 수업 완료' : '작성하기'}
+							</Button>
+							<Button
+								variant="secondary"
+								fullWidth
+								onclick={() => goto(completingReservation ? '/admin/reservations' : '/admin/feedback')}
 								>취소</Button
 							>
 						</div>
@@ -316,6 +349,17 @@
 			color: var(--color-text-muted);
 			padding: var(--space-2xl);
 		}
+	}
+
+	.reservation-notice {
+		font-size: var(--font-size-sm);
+		color: var(--color-primary);
+		font-weight: var(--font-weight-medium);
+		padding: var(--space-sm) var(--space-md);
+		background: var(--color-primary-bg);
+		border-radius: var(--radius-md);
+		margin-bottom: var(--space-md);
+		line-height: var(--line-height-base);
 	}
 
 	.step-indicator {
