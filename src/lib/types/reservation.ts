@@ -57,6 +57,7 @@ export interface LessonSlot {
 	start_time: string;
 	end_time: string;
 	max_capacity: number;
+	min_capacity?: number;
 	current_count: number;
 	status: SlotStatus;
 	reservations: SlotReservation[];
@@ -67,6 +68,7 @@ export interface CreateSlotRequest {
 	start_time: string;
 	end_time: string;
 	max_capacity?: number;
+	min_capacity?: number;
 	slot_type?: SlotType;
 }
 
@@ -74,6 +76,7 @@ export interface UpdateSlotRequest {
 	start_time?: string;
 	end_time?: string;
 	max_capacity?: number;
+	min_capacity?: number;
 	status?: SlotStatus;
 }
 
