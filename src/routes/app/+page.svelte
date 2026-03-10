@@ -135,7 +135,7 @@
 		try {
 			const loginRes = await login({
 				user_phone: data.phone,
-				password: data.password,
+				password: btoa(data.password),
 				device_type: 'ANDROID'
 			});
 
