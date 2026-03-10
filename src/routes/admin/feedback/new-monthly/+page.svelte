@@ -346,7 +346,7 @@
 					</div>
 
 					<div class="create-form__field">
-						<label class="create-form__label" for="songs">중점 사항</label>
+						<label class="create-form__label" for="songs">고민</label>
 						<textarea
 							id="songs"
 							class="create-form__textarea"
