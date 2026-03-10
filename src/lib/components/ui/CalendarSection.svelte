@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { getCalendarEvents } from '$lib/api/academy';
+	import { getAvailableSlots } from '$lib/api/reservation';
 	import {
 		formatMonth,
 		formatTime,
@@ -51,6 +52,8 @@
 	let events = $state<CalendarEvent[]>([]);
 	let loading = $state(true);
 	let errorMessage = $state<string | null>(null);
+	let slotCountMap = $state<Record<string, number>>({});
+	let countsLoading = $state(false);
 
 	const RESERVATION_STATUS_COLORS: Record<string, string> = {
 		PENDING: '#fbbf24',
@@ -252,6 +255,46 @@
 	$effect(() => {
 		fetchEvents(currentYear, currentMonth);
 	});
+
+	async function loadMonthSlotCounts(year: number, month: number) {
+		countsLoading = true;
+		const todayStr = getTodayString();
+		const daysInMonth = getDaysInMonth(year, month);
+		const dates: string[] = [];
+
+		for (let d = 1; d <= daysInMonth; d++) {
+			const dateStr = toDateString(year, month, d);
+			if (dateStr >= todayStr) dates.push(dateStr);
+		}
+
+		if (dates.length === 0) {
+			slotCountMap = {};
+			countsLoading = false;
+			return;
+		}
+
+		try {
+			const results = await Promise.allSettled(
+				dates.map((date) => getAvailableSlots(academyId, date))
+			);
+			const newMap: Record<string, number> = {};
+			results.forEach((result, i) => {
+				if (result.status === 'fulfilled' && result.value.status && result.value.data) {
+					const count = result.value.data.length;
+					if (count > 0) newMap[dates[i]] = count;
+				}
+			});
+			slotCountMap = newMap;
+		} catch {
+			slotCountMap = {};
+		} finally {
+			countsLoading = false;
+		}
+	}
+
+	$effect(() => {
+		loadMonthSlotCounts(currentYear, currentMonth);
+	});
 </script>
 
 <div class="section-card">
@@ -307,6 +350,14 @@
 					onclick={() => selectDate(cell.fullDate)}
 				>
 					<span class="calendar-cell__date">{cell.date}</span>
+					{#if (slotCountMap[cell.fullDate] ?? 0) > 0 && cell.fullDate >= today}
+						<span
+							class="calendar-cell__count"
+							class:calendar-cell__count--selected={cell.fullDate === selectedDate}
+						>
+							{slotCountMap[cell.fullDate]}건
+						</span>
+					{/if}
 					{#if cell.events.length > 0}
 						<div class="event-dots">
 							{#each cell.events.slice(0, MAX_EVENT_DOTS) as event}
@@ -504,6 +555,10 @@
 				font-weight: var(--font-weight-bold);
 			}
 
+			.calendar-cell__count {
+				color: var(--color-on-primary);
+			}
+
 			.event-dot {
 				background-color: var(--color-on-primary) !important;
 			}
@@ -513,6 +568,14 @@
 			font-size: var(--font-size-sm);
 			line-height: 1;
 			color: var(--color-text);
+		}
+
+		&__count {
+			font-size: 10px;
+			font-weight: var(--font-weight-semibold);
+			color: var(--color-primary);
+			margin-top: 1px;
+			line-height: 1;
 		}
 	}
 
