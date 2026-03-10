@@ -105,12 +105,13 @@
 		const [h, m] = createForm.start_time.split(':').map(Number);
 		const endH = String(Math.min(h + hours, 23)).padStart(2, '0');
 		const endTime = `${endH}:${String(m).padStart(2, '0')}`;
-		createForm = {
-			...createForm,
-			slot_type: type,
-			max_capacity: type === 'ENSEMBLE' ? 5 : 1,
-			end_time: endTime
-		};
+		if (type === 'ENSEMBLE') {
+			const { max_capacity: _, ...rest } = createForm;
+			createForm = { ...rest, slot_type: type, min_capacity: 5, end_time: endTime };
+		} else {
+			const { min_capacity: _, ...rest } = createForm;
+			createForm = { ...rest, slot_type: type, max_capacity: 1, end_time: endTime };
+		}
 	}
 
 	function getSlotLabel(slot: { slot_type: SlotType; instructor_name: string | null }): string {
@@ -143,12 +144,20 @@
 
 	function openEditModal(slot: LessonSlot) {
 		editTarget = slot;
-		editForm = {
-			start_time: slot.start_time,
-			end_time: slot.end_time,
-			max_capacity: slot.max_capacity,
-			status: slot.status
-		};
+		editForm =
+			slot.slot_type === 'ENSEMBLE'
+				? {
+						start_time: slot.start_time,
+						end_time: slot.end_time,
+						min_capacity: slot.min_capacity ?? slot.max_capacity,
+						status: slot.status
+					}
+				: {
+						start_time: slot.start_time,
+						end_time: slot.end_time,
+						max_capacity: slot.max_capacity,
+						status: slot.status
+					};
 		showEditModal = true;
 	}
 
@@ -464,8 +473,12 @@
 			</label>
 		</div>
 		<label class="modal-form__field">
-			<span class="modal-form__label">최대 인원</span>
-			<input type="number" class="modal-form__input" min="1" bind:value={createForm.max_capacity} />
+			<span class="modal-form__label">{createForm.slot_type === 'ENSEMBLE' ? '최소 인원' : '최대 인원'}</span>
+			{#if createForm.slot_type === 'ENSEMBLE'}
+				<input type="number" class="modal-form__input" min="1" bind:value={createForm.min_capacity} />
+			{:else}
+				<input type="number" class="modal-form__input" min="1" bind:value={createForm.max_capacity} />
+			{/if}
 		</label>
 		<div class="modal-form__actions">
 			<Button fullWidth loading={actionLoading} onclick={handleCreateSlot}>생성</Button>
@@ -493,8 +506,12 @@
 			</label>
 		</div>
 		<label class="modal-form__field">
-			<span class="modal-form__label">최대 인원</span>
-			<input type="number" class="modal-form__input" min="1" bind:value={editForm.max_capacity} />
+			<span class="modal-form__label">{editTarget?.slot_type === 'ENSEMBLE' ? '최소 인원' : '최대 인원'}</span>
+			{#if editTarget?.slot_type === 'ENSEMBLE'}
+				<input type="number" class="modal-form__input" min="1" bind:value={editForm.min_capacity} />
+			{:else}
+				<input type="number" class="modal-form__input" min="1" bind:value={editForm.max_capacity} />
+			{/if}
 		</label>
 		<label class="modal-form__field">
 			<span class="modal-form__label">상태</span>
