@@ -63,10 +63,6 @@
 		newStatus: 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW';
 	} | null>(null);
 
-	// Feedback prompt modal
-	let showFeedbackPrompt = $state(false);
-	let completedMemberName = $state('');
-
 	async function fetchSlots(date: string) {
 		const academyId = academyStore.academyId;
 		if (!academyId) return;
@@ -222,10 +218,21 @@
 
 	async function handleConfirmStatusChange() {
 		if (!statusConfirmTarget) return;
+
+		if (statusConfirmTarget.newStatus === 'COMPLETED') {
+			showStatusConfirmModal = false;
+			const params = new URLSearchParams({
+				reservation_id: String(statusConfirmTarget.reservationId),
+				member_name: statusConfirmTarget.memberName
+			});
+			statusConfirmTarget = null;
+			goto(`/admin/feedback/new-weekly?${params.toString()}`);
+			return;
+		}
+
 		await handleReservationStatus(
 			statusConfirmTarget.reservationId,
-			statusConfirmTarget.newStatus,
-			statusConfirmTarget.memberName
+			statusConfirmTarget.newStatus
 		);
 		showStatusConfirmModal = false;
 		statusConfirmTarget = null;
@@ -233,8 +240,7 @@
 
 	async function handleReservationStatus(
 		reservationId: number,
-		status: ReservationStatus,
-		memberName?: string
+		status: ReservationStatus
 	) {
 		const academyId = academyStore.academyId;
 		if (!academyId || status === 'PENDING') return;
@@ -246,11 +252,6 @@
 			if (res.status) {
 				toastStore.success(`예약이 ${getStatusLabel(status)} 처리되었습니다`);
 				await fetchSlots(selectedDate);
-
-				if (status === 'COMPLETED' && memberName) {
-					completedMemberName = memberName;
-					showFeedbackPrompt = true;
-				}
 			}
 		} catch (error) {
 			toastStore.error('예약 상태 변경에 실패했습니다');
@@ -556,6 +557,11 @@
 				<strong>{statusConfirmTarget.memberName}</strong>님의 예약을
 				<strong>{getStatusLabel(statusConfirmTarget.newStatus)}</strong> 처리하시겠습니까?
 			</p>
+			{#if statusConfirmTarget.newStatus === 'COMPLETED'}
+				<div class="status-confirm__feedback-notice">
+					수업 완료를 위해 위클리 피드백을 먼저 작성해야 합니다.
+				</div>
+			{/if}
 			{#if statusConfirmTarget.passName}
 				<div class="status-confirm__detail">
 					수강권: {statusConfirmTarget.passName}
@@ -588,7 +594,7 @@
 					variant={statusConfirmTarget.newStatus === 'CANCELLED' || statusConfirmTarget.newStatus === 'NO_SHOW' ? 'danger' : 'primary'}
 					onclick={handleConfirmStatusChange}
 				>
-					{getStatusLabel(statusConfirmTarget.newStatus)} 처리
+					{statusConfirmTarget.newStatus === 'COMPLETED' ? '피드백 작성하러 가기' : `${getStatusLabel(statusConfirmTarget.newStatus)} 처리`}
 				</Button>
 				<Button
 					variant="secondary"
@@ -603,25 +609,6 @@
 			</div>
 		</div>
 	{/if}
-</Modal>
-
-<!-- Feedback Prompt Modal -->
-<Modal isOpen={showFeedbackPrompt} title="피드백 작성" position="center" onclose={() => (showFeedbackPrompt = false)}>
-	<p class="modal-message">
-		수업이 완료되었습니다. {completedMemberName} 학생의 위클리 피드백을 작성하시겠습니까?
-	</p>
-	<div class="modal-form__actions">
-		<Button
-			fullWidth
-			onclick={() => {
-				showFeedbackPrompt = false;
-				goto(`/admin/feedback/new-weekly?member_name=${encodeURIComponent(completedMemberName)}`);
-			}}
-		>
-			피드백 작성
-		</Button>
-		<Button variant="secondary" fullWidth onclick={() => (showFeedbackPrompt = false)}>나중에</Button>
-	</div>
 </Modal>
 
 <style lang="scss">
@@ -972,6 +959,15 @@
 			font-weight: var(--font-weight-medium);
 			padding: var(--space-sm) var(--space-md);
 			background: var(--color-info-bg);
+			border-radius: var(--radius-sm);
+		}
+
+		&__feedback-notice {
+			font-size: var(--font-size-sm);
+			color: var(--color-primary);
+			font-weight: var(--font-weight-medium);
+			padding: var(--space-sm) var(--space-md);
+			background: var(--color-primary-bg);
 			border-radius: var(--radius-sm);
 		}
 
