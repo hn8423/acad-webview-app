@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { academyStore } from '$lib/stores/academy.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
@@ -9,8 +10,9 @@
 		deleteLessonSlot,
 		updateReservationStatus
 	} from '$lib/api/reservation';
-	import { formatTimeRange, getTodayString } from '$lib/utils/format';
+	import { formatTimeRange, getTodayString, getDaysInMonth } from '$lib/utils/format';
 	import { getTicketValue, getCapacityWeight, isActiveReservationStatus } from '$lib/utils/pass';
+	import { filterActionDates } from '$lib/utils/reservation';
 	import type {
 		LessonSlot,
 		SlotStatus,
@@ -30,6 +32,10 @@
 	let slots = $state<LessonSlot[]>([]);
 	let loading = $state(true);
 	let actionLoading = $state(false);
+
+	// Marked dates for calendar dot indicators
+	let markedDates = $state<Set<string>>(new Set());
+	const markedDatesCache = new Map<string, Set<string>>();
 
 	// Create slot modal
 	let showCreateModal = $state(false);
@@ -83,6 +89,86 @@
 		fetchSlots(selectedDate);
 	});
 
+	// Fetch action-needed dates for calendar dot indicators
+	let actionDateRequestId = 0;
+
+	async function fetchActionDates(year: number, month: number) {
+		const academyId = academyStore.academyId;
+		if (!academyId) return;
+
+		const cacheKey = `${year}-${String(month).padStart(2, '0')}`;
+		const cached = markedDatesCache.get(cacheKey);
+		if (cached) {
+			markedDates = cached;
+			return;
+		}
+
+		const today = getTodayString();
+		const todayMonth = today.substring(0, 7);
+		const daysInMonth = getDaysInMonth(year, month);
+
+		let lastDay: number;
+		if (cacheKey < todayMonth) {
+			lastDay = daysInMonth;
+		} else if (cacheKey === todayMonth) {
+			lastDay = parseInt(today.substring(8, 10), 10);
+		} else {
+			markedDates = new Set();
+			return;
+		}
+
+		const datesToFetch: string[] = [];
+		for (let d = 1; d <= lastDay; d++) {
+			datesToFetch.push(
+				`${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+			);
+		}
+
+		const requestId = ++actionDateRequestId;
+
+		try {
+			const BATCH_SIZE = 5;
+			const slotsByDate = new Map<string, LessonSlot[]>();
+
+			for (let i = 0; i < datesToFetch.length; i += BATCH_SIZE) {
+				if (requestId !== actionDateRequestId) return;
+				const batch = datesToFetch.slice(i, i + BATCH_SIZE);
+				const results = await Promise.allSettled(
+					batch.map((date) => getLessonSlots(academyId, date))
+				);
+				results.forEach((result, idx) => {
+					if (result.status === 'fulfilled' && result.value.status) {
+						slotsByDate.set(batch[idx], result.value.data);
+					}
+				});
+			}
+
+			if (requestId !== actionDateRequestId) return;
+
+			const actionDates = filterActionDates(slotsByDate, today);
+			markedDates = actionDates;
+			markedDatesCache.set(cacheKey, actionDates);
+		} catch {
+			// Dots are non-critical; silently fail
+		}
+	}
+
+	function invalidateMonthCache(date: string) {
+		const cacheKey = date.substring(0, 7);
+		markedDatesCache.delete(cacheKey);
+		const [y, m] = cacheKey.split('-').map(Number);
+		fetchActionDates(y, m);
+	}
+
+	function handleMonthChange(year: number, month: number) {
+		fetchActionDates(year, month);
+	}
+
+	onMount(() => {
+		const now = new Date();
+		fetchActionDates(now.getFullYear(), now.getMonth() + 1);
+	});
+
 	// Slot CRUD handlers
 
 	function openCreateModal() {
@@ -130,6 +216,7 @@
 				toastStore.success('수업 슬롯이 생성되었습니다');
 				showCreateModal = false;
 				await fetchSlots(selectedDate);
+				invalidateMonthCache(selectedDate);
 			}
 		} catch (error) {
 			toastStore.error('슬롯 생성에 실패했습니다');
@@ -168,6 +255,7 @@
 				showEditModal = false;
 				editTarget = null;
 				await fetchSlots(selectedDate);
+				invalidateMonthCache(selectedDate);
 			}
 		} catch (error) {
 			toastStore.error('슬롯 수정에 실패했습니다');
@@ -192,6 +280,7 @@
 				showDeleteModal = false;
 				deleteTarget = null;
 				await fetchSlots(selectedDate);
+				invalidateMonthCache(selectedDate);
 			}
 		} catch (error) {
 			toastStore.error('슬롯 삭제에 실패했습니다');
@@ -261,6 +350,7 @@
 			if (res.status) {
 				toastStore.success(`예약이 ${getStatusLabel(status)} 처리되었습니다`);
 				await fetchSlots(selectedDate);
+				invalidateMonthCache(selectedDate);
 			}
 		} catch (error) {
 			toastStore.error('예약 상태 변경에 실패했습니다');
@@ -315,7 +405,12 @@
 		<Button size="sm" onclick={openCreateModal}>+ 슬롯 추가</Button>
 	</div>
 
-	<DateCalendar {selectedDate} onselect={(date) => (selectedDate = date)} />
+	<DateCalendar
+		{selectedDate}
+		{markedDates}
+		onselect={(date) => (selectedDate = date)}
+		onmonthchange={handleMonthChange}
+	/>
 
 	{#if loading}
 		<div class="reservations__loading"><Spinner /></div>
