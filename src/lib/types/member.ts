@@ -1,3 +1,6 @@
+export type MemberRole = 'STUDENT' | 'INSTRUCTOR' | 'ADMIN';
+export type StudentPassStatus = 'ALL' | 'ACTIVE' | 'EXPIRED';
+
 export interface Member {
 	id: number;
 	academy_id: number;

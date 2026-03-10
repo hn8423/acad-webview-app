@@ -25,11 +25,20 @@ export function joinAcademy(academyId: number, nickname?: string) {
 	});
 }
 
-export function getMembers(academyId: number, cursor?: number, limit = 20, search?: string) {
+export function getMembers(
+	academyId: number,
+	cursor?: number,
+	limit = 20,
+	search?: string,
+	role?: 'STUDENT' | 'INSTRUCTOR' | 'ADMIN',
+	passStatus?: 'ACTIVE' | 'EXPIRED'
+) {
 	const params = new URLSearchParams();
 	if (cursor) params.set('cursor', String(cursor));
 	params.set('limit', String(limit));
 	if (search) params.set('search', search);
+	if (role) params.set('role', role);
+	if (passStatus) params.set('pass_status', passStatus);
 	return get<ApiResponse<CursorPaginatedList<MemberListItem>>>(
 		`/academic/academies/${academyId}/members?${params.toString()}`
 	);
