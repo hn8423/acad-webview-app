@@ -11,6 +11,7 @@
 	} from '$lib/utils/format';
 	import type { CalendarEvent } from '$lib/types/academy';
 	import type { MyReservation, ReservationStatus } from '$lib/types/reservation';
+	import { isReservationDay } from '$lib/utils/reservation';
 	import Spinner from './Spinner.svelte';
 
 	interface Props {
@@ -363,6 +364,7 @@
 				<div class="reservation-cards">
 					{#each selectedReservations as reservation}
 						{@const canCancel = reservation.status === 'PENDING' || reservation.status === 'CONFIRMED'}
+					{@const isSameDay = canCancel && isReservationDay(reservation.slot_date)}
 						<div class="reservation-card">
 							<div class="reservation-card__header">
 								<span
@@ -379,7 +381,7 @@
 										class="reservation-card__cancel"
 										onclick={() => oncancelreservation(reservation.reservation_id)}
 									>
-										취소
+										{isSameDay ? '노쇼' : '취소'}
 									</button>
 								{/if}
 							</div>

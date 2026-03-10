@@ -1,13 +1,13 @@
 import type { LessonSlot } from '$lib/types/reservation';
-import { getTodayString } from '$lib/utils/format';
+import { getTodayString, toLocalDateString } from '$lib/utils/format';
 
 export function isReservationDay(slotDate: string): boolean {
-	return slotDate.slice(0, 10) <= getTodayString();
+	return toLocalDateString(slotDate) <= getTodayString();
 }
 
 export function hasActionNeeded(slot: LessonSlot, today: string): boolean {
 	return slot.reservations.some((rv) => {
-		if (rv.status === 'CONFIRMED' && slot.slot_date.slice(0, 10) <= today) return true;
+		if (rv.status === 'CONFIRMED' && toLocalDateString(slot.slot_date) <= today) return true;
 		return false;
 	});
 }

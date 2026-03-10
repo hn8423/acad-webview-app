@@ -403,12 +403,13 @@
 										{getStatusLabel(reservation.status)}
 									</Badge>
 									{#if reservation.status === 'PENDING' || reservation.status === 'CONFIRMED'}
+										{@const isSameDay = isReservationDay(reservation.slot_date)}
 										<button
 											type="button"
 											class="reservation-card__cancel"
 											onclick={() => handleCancelClick(reservation)}
 										>
-											취소
+											{isSameDay ? '노쇼' : '취소'}
 										</button>
 									{/if}
 								</div>
