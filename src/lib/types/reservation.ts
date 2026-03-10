@@ -70,6 +70,7 @@ export interface CreateSlotRequest {
 	max_capacity?: number;
 	min_capacity?: number;
 	slot_type?: SlotType;
+	instructor_id?: number;
 }
 
 export interface UpdateSlotRequest {

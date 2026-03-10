@@ -10,6 +10,8 @@
 		deleteLessonSlot,
 		updateReservationStatus
 	} from '$lib/api/reservation';
+	import { getInstructors } from '$lib/api/member';
+	import type { Instructor } from '$lib/types/member';
 	import { formatTimeRange, getTodayString, getDaysInMonth } from '$lib/utils/format';
 	import { getTicketValue, getCapacityWeight, isActiveReservationStatus } from '$lib/utils/pass';
 	import { filterActionDates } from '$lib/utils/reservation';
@@ -32,6 +34,9 @@
 	let slots = $state<LessonSlot[]>([]);
 	let loading = $state(true);
 	let actionLoading = $state(false);
+
+	// Instructor list for admin slot creation
+	let instructors = $state<Instructor[]>([]);
 
 	// Marked dates for calendar dot indicators
 	let markedDates = $state<Set<string>>(new Set());
@@ -164,20 +169,43 @@
 		fetchActionDates(year, month);
 	}
 
-	onMount(() => {
+	onMount(async () => {
 		const now = new Date();
 		fetchActionDates(now.getFullYear(), now.getMonth() + 1);
+
+		if (academyStore.isAdmin) {
+			const academyId = academyStore.academyId;
+			if (!academyId) return;
+			try {
+				const res = await getInstructors(academyId);
+				if (res.status) {
+					const data = res.data;
+					instructors = Array.isArray(data) ? data : data.instructors;
+				}
+			} catch {
+				// Non-critical; instructor list unavailable
+			}
+		}
 	});
 
 	// Slot CRUD handlers
 
+	function getInstructorId(inst: Instructor): number {
+		return inst.instructor_id ?? inst.id ?? inst.member_id;
+	}
+
 	function openCreateModal() {
+		const firstInstructorId =
+			academyStore.isAdmin && instructors.length > 0
+				? getInstructorId(instructors[0])
+				: undefined;
 		createForm = {
 			slot_date: selectedDate,
 			start_time: '10:00',
 			end_time: '11:00',
 			max_capacity: 1,
-			slot_type: 'REGULAR'
+			slot_type: 'REGULAR',
+			instructor_id: firstInstructorId
 		};
 		showCreateModal = true;
 	}
@@ -568,6 +596,22 @@
 				<input type="time" class="modal-form__input" bind:value={createForm.end_time} />
 			</label>
 		</div>
+		{#if academyStore.isAdmin}
+			<div class="modal-form__field">
+				<span class="modal-form__label">담당 강사</span>
+				{#if instructors.length === 0}
+					<div class="modal-form__notice">
+						강사가 없습니다. 강사를 추가해주세요.
+					</div>
+				{:else}
+					<select class="modal-form__input" bind:value={createForm.instructor_id}>
+						{#each instructors as inst}
+							<option value={getInstructorId(inst)}>{inst.user_name}</option>
+						{/each}
+					</select>
+				{/if}
+			</div>
+		{/if}
 		<label class="modal-form__field">
 			<span class="modal-form__label">{createForm.slot_type === 'ENSEMBLE' ? '최소 인원' : '최대 인원'}</span>
 			{#if createForm.slot_type === 'ENSEMBLE'}
@@ -577,7 +621,14 @@
 			{/if}
 		</label>
 		<div class="modal-form__actions">
-			<Button fullWidth loading={actionLoading} onclick={handleCreateSlot}>생성</Button>
+			<Button
+				fullWidth
+				loading={actionLoading}
+				disabled={academyStore.isAdmin && instructors.length === 0}
+				onclick={handleCreateSlot}
+			>
+				생성
+			</Button>
 			<Button variant="secondary" fullWidth onclick={() => (showCreateModal = false)}>취소</Button>
 		</div>
 	</div>
@@ -975,6 +1026,15 @@
 			padding: 14px 16px;
 			background: var(--color-bg);
 			border-radius: var(--radius-md);
+		}
+
+		&__notice {
+			font-size: var(--font-size-sm);
+			color: var(--color-warning);
+			font-weight: var(--font-weight-medium);
+			padding: var(--space-sm) var(--space-md);
+			background: var(--color-warning-bg);
+			border-radius: var(--radius-sm);
 		}
 
 		&__row {
