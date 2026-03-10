@@ -90,10 +90,6 @@
 	// Slot CRUD handlers
 
 	function openCreateModal() {
-		if (academyStore.isAdmin) {
-			toastStore.error('관리자는 강의를 열 수 없습니다');
-			return;
-		}
 		createForm = {
 			slot_date: selectedDate,
 			start_time: '10:00',
@@ -123,8 +119,8 @@
 	}
 
 	function canEditSlot(slot: LessonSlot): boolean {
-		if (slot.slot_type === 'ENSEMBLE') return academyStore.isAdmin;
-		return !academyStore.isAdmin;
+		if (academyStore.isAdmin) return true;
+		return slot.slot_type !== 'ENSEMBLE';
 	}
 
 	async function handleCreateSlot() {
