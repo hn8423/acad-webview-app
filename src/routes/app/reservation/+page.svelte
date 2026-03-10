@@ -343,6 +343,8 @@
 
 	<!-- Book Tab -->
 	{#if activeTab === 'book'}
+		<PassSummary passes={memberPasses} loading={passesLoading} />
+
 		<ReservationCalendar
 			{selectedDate}
 			{slotCountMap}
@@ -350,8 +352,6 @@
 			onselect={handleDateSelect}
 			onmonthchange={handleMonthChange}
 		/>
-
-		<PassSummary passes={memberPasses} loading={passesLoading} />
 
 		<div class="slots-content">
 			{#if slotsLoading}
