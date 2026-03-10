@@ -365,9 +365,6 @@
 										<span class="slot-card__tag">모든 수강권 가능</span>
 									{/if}
 								</div>
-								<Badge variant={slot.remaining_capacity <= 1 ? 'danger' : 'success'}>
-									잔여 {slot.remaining_capacity}석
-								</Badge>
 							</div>
 						</Card>
 					{/each}
