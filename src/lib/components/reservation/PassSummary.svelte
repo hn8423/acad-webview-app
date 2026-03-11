@@ -23,10 +23,6 @@
 		passes.filter((p) => p.status !== 'ACTIVE' || p.remaining_lessons <= 0)
 	);
 
-	function getProgressPercent(pass: MemberPass): number {
-		if (pass.total_lessons <= 0) return 0;
-		return ((pass.total_lessons - pass.remaining_lessons) / pass.total_lessons) * 100;
-	}
 </script>
 
 <section class="pass-summary">
@@ -75,25 +71,7 @@
 			<div class="pass-summary-card__instructor">
 				{pass.instructor_name} 선생님
 			</div>
-			<div class="pass-summary-card__progress">
-				<div
-					class="pass-summary-card__progress-bar"
-					role="progressbar"
-					aria-label="{pass.pass_name} 진행률"
-					aria-valuenow={pass.total_lessons - pass.remaining_lessons}
-					aria-valuemin={0}
-					aria-valuemax={pass.total_lessons}
-				>
-					<div
-						class="pass-summary-card__progress-fill"
-						style="width: {getProgressPercent(pass)}%"
-					></div>
-				</div>
-				<span class="pass-summary-card__remaining">
-					잔여 {pass.remaining_lessons}/{pass.total_lessons}회
-				</span>
-			</div>
-			<div class="pass-summary-card__date">
+				<div class="pass-summary-card__date">
 				{formatDate(pass.start_date)} ~ {formatDate(pass.end_date)}
 			</div>
 		</div>
@@ -262,33 +240,6 @@
 			margin-bottom: var(--space-sm);
 		}
 
-		&__progress {
-			display: flex;
-			align-items: center;
-			gap: var(--space-sm);
-			margin-bottom: var(--space-xs);
-		}
-
-		&__progress-bar {
-			flex: 1;
-			height: 6px;
-			background-color: var(--color-divider);
-			border-radius: var(--radius-full);
-			overflow: hidden;
-		}
-
-		&__progress-fill {
-			height: 100%;
-			background: var(--color-primary-gradient);
-			border-radius: var(--radius-full);
-			transition: width var(--transition-base);
-		}
-
-		&__remaining {
-			font-size: var(--font-size-xs);
-			color: var(--color-text-secondary);
-			white-space: nowrap;
-		}
 
 		&__date {
 			font-size: var(--font-size-xs);
