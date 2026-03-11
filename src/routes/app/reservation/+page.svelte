@@ -23,7 +23,7 @@
 		getTodayString,
 		getDaysInMonth
 	} from '$lib/utils/format';
-	import { getTicketValue, getCapacityWeight } from '$lib/utils/pass';
+	import { getTicketValue, getCapacityWeight, getReservationWeight } from '$lib/utils/pass';
 	import { isReservationDay } from '$lib/utils/reservation';
 	import type {
 		AvailableSlot,
@@ -81,6 +81,16 @@
 	let filteredPasses = $derived(getPassesForSlot(selectedSlot));
 	let selectedPass = $derived(filteredPasses.find((p) => p.id === selectedPassId) ?? null);
 	let isRotationPass = $derived(selectedPass?.pass_category === 'ROTATION');
+	let selectedPassWeight = $derived(
+		selectedPass
+			? getReservationWeight(selectedPass.pass_category, selectedPass.ticket_value)
+			: 1
+	);
+	let exceedsCapacity = $derived(
+		selectedSlot && selectedPass
+			? selectedSlot.remaining_capacity < selectedPassWeight
+			: false
+	);
 
 	onMount(() => {
 		const now = new Date();
@@ -427,8 +437,8 @@
 									{#if reservation.pass_name}
 										<span class="reservation-card__pass">
 											{reservation.pass_name}
-											{#if reservation.pass_category === 'ROTATION'}
-												<span class="reservation-card__capacity-badge">0.5인원</span>
+											{#if getReservationWeight(reservation.pass_category, reservation.ticket_value) !== 1}
+												<span class="reservation-card__capacity-badge">{getReservationWeight(reservation.pass_category, reservation.ticket_value)}인원</span>
 											{/if}
 											{#if getTicketValue(reservation.ticket_value) > 1}
 												<span class="reservation-card__ticket">({getTicketValue(reservation.ticket_value)}회 차감)</span>
@@ -485,8 +495,10 @@
 					aria-label="사용할 수강권 선택"
 				>
 					{#each filteredPasses as pass}
-						<option value={pass.id}>
-							{pass.pass_name} (잔여 {pass.remaining_lessons}회){pass.pass_category === 'ROTATION' ? ' [0.5인원]' : ''}{getTicketValue(pass.ticket_value) > 1 ? ` [${getTicketValue(pass.ticket_value)}회 차감]` : ''}
+						{@const passWeight = getReservationWeight(pass.pass_category, pass.ticket_value)}
+						{@const fits = !selectedSlot || selectedSlot.remaining_capacity >= passWeight}
+						<option value={pass.id} disabled={!fits}>
+							{pass.pass_name} (잔여 {pass.remaining_lessons}회){passWeight !== 1 ? ` [${passWeight}인원]` : ''}{getTicketValue(pass.ticket_value) > 1 ? ` [${getTicketValue(pass.ticket_value)}회 차감]` : ''}{!fits ? ' (용량 초과)' : ''}
 						</option>
 					{/each}
 				</select>
@@ -502,9 +514,9 @@
 				</p>
 			{/if}
 
-			{#if isRotationPass}
+			{#if selectedPass && selectedPassWeight !== 1}
 				<div class="booking-sheet__capacity-notice">
-					로테이션 수강권은 0.5인원으로 차감됩니다.
+					이 수강권은 {selectedPassWeight}인원으로 차감됩니다.
 				</div>
 			{/if}
 
@@ -514,9 +526,15 @@
 				</div>
 			{/if}
 
-			<Button fullWidth loading={submitting} onclick={handleConfirmBooking}>
-				{#if isRotationPass}
-					예약하기 (0.5인원 차감)
+			{#if exceedsCapacity}
+				<div class="booking-sheet__capacity-warning">
+					잔여 용량({selectedSlot?.remaining_capacity})이 부족하여 예약할 수 없습니다. (필요: {selectedPassWeight}인원)
+				</div>
+			{/if}
+
+			<Button fullWidth loading={submitting} disabled={exceedsCapacity} onclick={handleConfirmBooking}>
+				{#if selectedPassWeight !== 1}
+					예약하기 ({selectedPassWeight}인원 차감)
 				{:else if selectedPass && getTicketValue(selectedPass.ticket_value) > 1}
 					예약하기 ({getTicketValue(selectedPass.ticket_value)}회 차감)
 				{:else}
@@ -574,9 +592,10 @@
 					수강권이 차감되며 환불되지 않습니다.
 				</div>
 			{:else}
-				{#if selectedReservation.pass_category === 'ROTATION'}
+				{@const cancelWeight = getReservationWeight(selectedReservation.pass_category, selectedReservation.ticket_value)}
+				{#if cancelWeight !== 1}
 					<p class="cancel-sheet__refund-notice">
-						취소 시 0.5인원이 환불됩니다.
+						취소 시 {cancelWeight}인원이 환원됩니다.
 					</p>
 				{/if}
 				{#if getTicketValue(selectedReservation.ticket_value) > 1}
@@ -860,6 +879,15 @@
 			font-weight: var(--font-weight-medium);
 			padding: var(--space-sm) var(--space-md);
 			background: var(--color-info-bg);
+			border-radius: var(--radius-sm);
+		}
+
+		&__capacity-warning {
+			font-size: var(--font-size-sm);
+			color: var(--color-danger);
+			font-weight: var(--font-weight-medium);
+			padding: var(--space-sm) var(--space-md);
+			background: var(--color-danger-bg);
 			border-radius: var(--radius-sm);
 		}
 
