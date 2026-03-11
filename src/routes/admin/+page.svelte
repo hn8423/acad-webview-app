@@ -10,6 +10,8 @@
 	import Card from '$lib/components/ui/Card.svelte';
 	import { goto } from '$app/navigation';
 
+	let iconErrors = $state<Record<number, boolean>>({});
+
 	let navItems = $derived(
 		academyStore
 			.getEnabledNavItems('ADMIN')
@@ -40,9 +42,17 @@
 			<Card onclick={() => handleCardClick(navItem)}>
 				<div class="dashboard-card">
 					<div class="dashboard-card__icon">
-						{#if navItem.nav_icon && isIconUrl(navItem.nav_icon)}
-							<span class="dashboard-card__mask-icon" style:--icon-url="url('{navItem.nav_icon}')"
-							></span>
+						{#if navItem.nav_icon && isIconUrl(navItem.nav_icon) && !iconErrors[navItem.nav_id]}
+							<img
+								class="dashboard-card__nav-icon-img"
+								src={navItem.nav_icon}
+								alt=""
+								width="24"
+								height="24"
+								onerror={() => {
+									iconErrors = { ...iconErrors, [navItem.nav_id]: true };
+								}}
+							/>
 						{:else}
 							<svg
 								width="24"
@@ -104,19 +114,10 @@
 			border-radius: var(--radius-full);
 		}
 
-		&__mask-icon {
-			display: inline-block;
+		&__nav-icon-img {
 			width: 24px;
 			height: 24px;
-			background-color: var(--color-primary);
-			-webkit-mask-image: var(--icon-url);
-			mask-image: var(--icon-url);
-			-webkit-mask-size: contain;
-			mask-size: contain;
-			-webkit-mask-repeat: no-repeat;
-			mask-repeat: no-repeat;
-			-webkit-mask-position: center;
-			mask-position: center;
+			object-fit: contain;
 		}
 
 		&__label {

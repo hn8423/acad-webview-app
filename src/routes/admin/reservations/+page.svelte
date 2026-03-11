@@ -53,7 +53,7 @@
 		slot_date: getTodayString(),
 		start_time: '10:00',
 		end_time: '11:00',
-		max_capacity: 1,
+		max_capacity: 2,
 		slot_type: 'REGULAR'
 	});
 
@@ -222,10 +222,10 @@
 		const endTime = `${endH}:${String(m).padStart(2, '0')}`;
 		if (type === 'ENSEMBLE') {
 			const { max_capacity: _, ...rest } = createForm;
-			createForm = { ...rest, slot_type: type, min_capacity: 5, end_time: endTime };
+			createForm = { ...rest, slot_type: type, min_capacity: 4, end_time: endTime };
 		} else {
 			const { min_capacity: _, ...rest } = createForm;
-			createForm = { ...rest, slot_type: type, max_capacity: 1, end_time: endTime };
+			createForm = { ...rest, slot_type: type, max_capacity: 2, end_time: endTime };
 		}
 	}
 
@@ -488,6 +488,8 @@
 										{/if}
 										{#if rv.pass_category === 'ROTATION'}
 											<Badge variant="info">로테이션</Badge>
+										{:else if rv.pass_category === 'FULL'}
+											<Badge variant="warning">풀타임</Badge>
 										{/if}
 										{#if getReservationWeight(rv.pass_category, rv.ticket_value) !== 1}
 											<span class="reservation-row__weight">{getReservationWeight(rv.pass_category, rv.ticket_value)}인원</span>
