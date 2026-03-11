@@ -10,9 +10,10 @@
 		selectedDate: string;
 		onselect: (date: string) => void;
 		onmonthchange?: (year: number, month: number) => void;
+		markedDates?: Set<string>;
 	}
 
-	let { selectedDate, onselect, onmonthchange }: Props = $props();
+	let { selectedDate, onselect, onmonthchange, markedDates }: Props = $props();
 
 	const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
 	const today = getTodayString();
@@ -198,6 +199,9 @@
 					aria-label="{cell.date}일"
 				>
 					<span class="date-calendar__date">{cell.date}</span>
+					{#if markedDates?.has(cell.fullDate)}
+						<span class="date-calendar__dot"></span>
+					{/if}
 				</button>
 			{/each}
 		{/each}
@@ -277,6 +281,7 @@
 		&__cell {
 			@include press-scale;
 			display: flex;
+			flex-direction: column;
 			align-items: center;
 			justify-content: center;
 			border: none;
@@ -309,6 +314,10 @@
 					color: var(--color-on-primary);
 					font-weight: var(--font-weight-bold);
 				}
+
+				.date-calendar__dot {
+					background-color: var(--color-on-primary);
+				}
 			}
 		}
 
@@ -316,6 +325,15 @@
 			font-size: var(--font-size-sm);
 			line-height: 1;
 			color: var(--color-text);
+		}
+
+		&__dot {
+			width: 5px;
+			height: 5px;
+			border-radius: 50%;
+			background-color: var(--color-warning);
+			margin-top: 2px;
+			flex-shrink: 0;
 		}
 	}
 </style>

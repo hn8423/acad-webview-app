@@ -71,8 +71,7 @@ export function formatTimeRange(startTime: string, endTime: string): string {
 
 export function getDayOfWeek(dateStr: string): string {
 	const days = ['일', '월', '화', '수', '목', '금', '토'];
-	const [year, month, day] = dateStr.split('-').map(Number);
-	const date = new Date(year, month - 1, day);
+	const date = new Date(dateStr);
 	return days[date.getDay()];
 }
 

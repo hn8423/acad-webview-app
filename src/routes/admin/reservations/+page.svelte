@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { academyStore } from '$lib/stores/academy.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
@@ -9,8 +10,11 @@
 		deleteLessonSlot,
 		updateReservationStatus
 	} from '$lib/api/reservation';
-	import { formatTimeRange, getTodayString } from '$lib/utils/format';
+	import { getInstructors } from '$lib/api/member';
+	import type { Instructor } from '$lib/types/member';
+	import { formatTimeRange, getTodayString, getDaysInMonth } from '$lib/utils/format';
 	import { getTicketValue, getCapacityWeight, isActiveReservationStatus } from '$lib/utils/pass';
+	import { filterActionDates } from '$lib/utils/reservation';
 	import type {
 		LessonSlot,
 		SlotStatus,
@@ -30,6 +34,13 @@
 	let slots = $state<LessonSlot[]>([]);
 	let loading = $state(true);
 	let actionLoading = $state(false);
+
+	// Instructor list for admin slot creation
+	let instructors = $state<Instructor[]>([]);
+
+	// Marked dates for calendar dot indicators
+	let markedDates = $state<Set<string>>(new Set());
+	const markedDatesCache = new Map<string, Set<string>>();
 
 	// Create slot modal
 	let showCreateModal = $state(false);
@@ -63,10 +74,6 @@
 		newStatus: 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW';
 	} | null>(null);
 
-	// Feedback prompt modal
-	let showFeedbackPrompt = $state(false);
-	let completedMemberName = $state('');
-
 	async function fetchSlots(date: string) {
 		const academyId = academyStore.academyId;
 		if (!academyId) return;
@@ -87,19 +94,118 @@
 		fetchSlots(selectedDate);
 	});
 
-	// Slot CRUD handlers
+	// Fetch action-needed dates for calendar dot indicators
+	let actionDateRequestId = 0;
 
-	function openCreateModal() {
-		if (academyStore.isAdmin) {
-			toastStore.error('관리자는 강의를 열 수 없습니다');
+	async function fetchActionDates(year: number, month: number) {
+		const academyId = academyStore.academyId;
+		if (!academyId) return;
+
+		const cacheKey = `${year}-${String(month).padStart(2, '0')}`;
+		const cached = markedDatesCache.get(cacheKey);
+		if (cached) {
+			markedDates = cached;
 			return;
 		}
+
+		const today = getTodayString();
+		const todayMonth = today.substring(0, 7);
+		const daysInMonth = getDaysInMonth(year, month);
+
+		let lastDay: number;
+		if (cacheKey < todayMonth) {
+			lastDay = daysInMonth;
+		} else if (cacheKey === todayMonth) {
+			lastDay = parseInt(today.substring(8, 10), 10);
+		} else {
+			markedDates = new Set();
+			return;
+		}
+
+		const datesToFetch: string[] = [];
+		for (let d = 1; d <= lastDay; d++) {
+			datesToFetch.push(
+				`${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+			);
+		}
+
+		const requestId = ++actionDateRequestId;
+
+		try {
+			const BATCH_SIZE = 5;
+			const slotsByDate = new Map<string, LessonSlot[]>();
+
+			for (let i = 0; i < datesToFetch.length; i += BATCH_SIZE) {
+				if (requestId !== actionDateRequestId) return;
+				const batch = datesToFetch.slice(i, i + BATCH_SIZE);
+				const results = await Promise.allSettled(
+					batch.map((date) => getLessonSlots(academyId, date))
+				);
+				results.forEach((result, idx) => {
+					if (result.status === 'fulfilled' && result.value.status) {
+						slotsByDate.set(batch[idx], result.value.data);
+					}
+				});
+			}
+
+			if (requestId !== actionDateRequestId) return;
+
+			const actionDates = filterActionDates(slotsByDate, today);
+			markedDates = actionDates;
+			markedDatesCache.set(cacheKey, actionDates);
+		} catch {
+			// Dots are non-critical; silently fail
+		}
+	}
+
+	function invalidateMonthCache(date: string) {
+		const cacheKey = date.substring(0, 7);
+		markedDatesCache.delete(cacheKey);
+		const [y, m] = cacheKey.split('-').map(Number);
+		fetchActionDates(y, m);
+	}
+
+	function handleMonthChange(year: number, month: number) {
+		fetchActionDates(year, month);
+	}
+
+	onMount(async () => {
+		const now = new Date();
+		fetchActionDates(now.getFullYear(), now.getMonth() + 1);
+
+		if (academyStore.isAdmin) {
+			const academyId = academyStore.academyId;
+			if (!academyId) return;
+			try {
+				const res = await getInstructors(academyId);
+				if (res.status) {
+					const data = res.data;
+					instructors = Array.isArray(data) ? data : data.instructors;
+				}
+			} catch {
+				// Non-critical; instructor list unavailable
+			}
+		}
+	});
+
+	// Slot CRUD handlers
+
+	function getInstructorId(inst: Instructor): number {
+		return inst.instructor_id ?? inst.id ?? inst.member_id;
+	}
+
+	function openCreateModal() {
+		const firstInstructorId =
+			academyStore.isAdmin && instructors.length > 0
+				? getInstructorId(instructors[0])
+				: undefined;
 		createForm = {
 			slot_date: selectedDate,
 			start_time: '10:00',
 			end_time: '11:00',
 			max_capacity: 1,
-			slot_type: 'REGULAR'
+			slot_type: 'REGULAR',
+			instructor_id: firstInstructorId
 		};
 		showCreateModal = true;
 	}
@@ -109,12 +215,13 @@
 		const [h, m] = createForm.start_time.split(':').map(Number);
 		const endH = String(Math.min(h + hours, 23)).padStart(2, '0');
 		const endTime = `${endH}:${String(m).padStart(2, '0')}`;
-		createForm = {
-			...createForm,
-			slot_type: type,
-			max_capacity: type === 'ENSEMBLE' ? 5 : 1,
-			end_time: endTime
-		};
+		if (type === 'ENSEMBLE') {
+			const { max_capacity: _, ...rest } = createForm;
+			createForm = { ...rest, slot_type: type, min_capacity: 5, end_time: endTime };
+		} else {
+			const { min_capacity: _, ...rest } = createForm;
+			createForm = { ...rest, slot_type: type, max_capacity: 1, end_time: endTime };
+		}
 	}
 
 	function getSlotLabel(slot: { slot_type: SlotType; instructor_name: string | null }): string {
@@ -123,8 +230,8 @@
 	}
 
 	function canEditSlot(slot: LessonSlot): boolean {
-		if (slot.slot_type === 'ENSEMBLE') return academyStore.isAdmin;
-		return !academyStore.isAdmin;
+		if (academyStore.isAdmin) return true;
+		return slot.slot_type !== 'ENSEMBLE';
 	}
 
 	async function handleCreateSlot() {
@@ -137,6 +244,7 @@
 				toastStore.success('수업 슬롯이 생성되었습니다');
 				showCreateModal = false;
 				await fetchSlots(selectedDate);
+				invalidateMonthCache(selectedDate);
 			}
 		} catch (error) {
 			toastStore.error('슬롯 생성에 실패했습니다');
@@ -147,12 +255,20 @@
 
 	function openEditModal(slot: LessonSlot) {
 		editTarget = slot;
-		editForm = {
-			start_time: slot.start_time,
-			end_time: slot.end_time,
-			max_capacity: slot.max_capacity,
-			status: slot.status
-		};
+		editForm =
+			slot.slot_type === 'ENSEMBLE'
+				? {
+						start_time: slot.start_time,
+						end_time: slot.end_time,
+						min_capacity: slot.min_capacity ?? slot.max_capacity,
+						status: slot.status
+					}
+				: {
+						start_time: slot.start_time,
+						end_time: slot.end_time,
+						max_capacity: slot.max_capacity,
+						status: slot.status
+					};
 		showEditModal = true;
 	}
 
@@ -167,6 +283,7 @@
 				showEditModal = false;
 				editTarget = null;
 				await fetchSlots(selectedDate);
+				invalidateMonthCache(selectedDate);
 			}
 		} catch (error) {
 			toastStore.error('슬롯 수정에 실패했습니다');
@@ -191,6 +308,7 @@
 				showDeleteModal = false;
 				deleteTarget = null;
 				await fetchSlots(selectedDate);
+				invalidateMonthCache(selectedDate);
 			}
 		} catch (error) {
 			toastStore.error('슬롯 삭제에 실패했습니다');
@@ -226,10 +344,21 @@
 
 	async function handleConfirmStatusChange() {
 		if (!statusConfirmTarget) return;
+
+		if (statusConfirmTarget.newStatus === 'COMPLETED') {
+			showStatusConfirmModal = false;
+			const params = new URLSearchParams({
+				reservation_id: String(statusConfirmTarget.reservationId),
+				member_name: statusConfirmTarget.memberName
+			});
+			statusConfirmTarget = null;
+			goto(`/admin/feedback/new-weekly?${params.toString()}`);
+			return;
+		}
+
 		await handleReservationStatus(
 			statusConfirmTarget.reservationId,
-			statusConfirmTarget.newStatus,
-			statusConfirmTarget.memberName
+			statusConfirmTarget.newStatus
 		);
 		showStatusConfirmModal = false;
 		statusConfirmTarget = null;
@@ -237,8 +366,7 @@
 
 	async function handleReservationStatus(
 		reservationId: number,
-		status: ReservationStatus,
-		memberName?: string
+		status: ReservationStatus
 	) {
 		const academyId = academyStore.academyId;
 		if (!academyId || status === 'PENDING') return;
@@ -250,11 +378,7 @@
 			if (res.status) {
 				toastStore.success(`예약이 ${getStatusLabel(status)} 처리되었습니다`);
 				await fetchSlots(selectedDate);
-
-				if (status === 'COMPLETED' && memberName) {
-					completedMemberName = memberName;
-					showFeedbackPrompt = true;
-				}
+				invalidateMonthCache(selectedDate);
 			}
 		} catch (error) {
 			toastStore.error('예약 상태 변경에 실패했습니다');
@@ -309,7 +433,12 @@
 		<Button size="sm" onclick={openCreateModal}>+ 슬롯 추가</Button>
 	</div>
 
-	<DateCalendar {selectedDate} onselect={(date) => (selectedDate = date)} />
+	<DateCalendar
+		{selectedDate}
+		{markedDates}
+		onselect={(date) => (selectedDate = date)}
+		onmonthchange={handleMonthChange}
+	/>
 
 	{#if loading}
 		<div class="reservations__loading"><Spinner /></div>
@@ -467,12 +596,39 @@
 				<input type="time" class="modal-form__input" bind:value={createForm.end_time} />
 			</label>
 		</div>
+		{#if academyStore.isAdmin}
+			<div class="modal-form__field">
+				<span class="modal-form__label">담당 강사</span>
+				{#if instructors.length === 0}
+					<div class="modal-form__notice">
+						강사가 없습니다. 강사를 추가해주세요.
+					</div>
+				{:else}
+					<select class="modal-form__input" bind:value={createForm.instructor_id}>
+						{#each instructors as inst}
+							<option value={getInstructorId(inst)}>{inst.user_name}</option>
+						{/each}
+					</select>
+				{/if}
+			</div>
+		{/if}
 		<label class="modal-form__field">
-			<span class="modal-form__label">최대 인원</span>
-			<input type="number" class="modal-form__input" min="1" bind:value={createForm.max_capacity} />
+			<span class="modal-form__label">{createForm.slot_type === 'ENSEMBLE' ? '최소 인원' : '최대 인원'}</span>
+			{#if createForm.slot_type === 'ENSEMBLE'}
+				<input type="number" class="modal-form__input" min="1" bind:value={createForm.min_capacity} />
+			{:else}
+				<input type="number" class="modal-form__input" min="1" bind:value={createForm.max_capacity} />
+			{/if}
 		</label>
 		<div class="modal-form__actions">
-			<Button fullWidth loading={actionLoading} onclick={handleCreateSlot}>생성</Button>
+			<Button
+				fullWidth
+				loading={actionLoading}
+				disabled={academyStore.isAdmin && instructors.length === 0}
+				onclick={handleCreateSlot}
+			>
+				생성
+			</Button>
 			<Button variant="secondary" fullWidth onclick={() => (showCreateModal = false)}>취소</Button>
 		</div>
 	</div>
@@ -497,8 +653,12 @@
 			</label>
 		</div>
 		<label class="modal-form__field">
-			<span class="modal-form__label">최대 인원</span>
-			<input type="number" class="modal-form__input" min="1" bind:value={editForm.max_capacity} />
+			<span class="modal-form__label">{editTarget?.slot_type === 'ENSEMBLE' ? '최소 인원' : '최대 인원'}</span>
+			{#if editTarget?.slot_type === 'ENSEMBLE'}
+				<input type="number" class="modal-form__input" min="1" bind:value={editForm.min_capacity} />
+			{:else}
+				<input type="number" class="modal-form__input" min="1" bind:value={editForm.max_capacity} />
+			{/if}
 		</label>
 		<label class="modal-form__field">
 			<span class="modal-form__label">상태</span>
@@ -560,6 +720,11 @@
 				<strong>{statusConfirmTarget.memberName}</strong>님의 예약을
 				<strong>{getStatusLabel(statusConfirmTarget.newStatus)}</strong> 처리하시겠습니까?
 			</p>
+			{#if statusConfirmTarget.newStatus === 'COMPLETED'}
+				<div class="status-confirm__feedback-notice">
+					수업 완료를 위해 위클리 피드백을 먼저 작성해야 합니다.
+				</div>
+			{/if}
 			{#if statusConfirmTarget.passName}
 				<div class="status-confirm__detail">
 					수강권: {statusConfirmTarget.passName}
@@ -592,7 +757,7 @@
 					variant={statusConfirmTarget.newStatus === 'CANCELLED' || statusConfirmTarget.newStatus === 'NO_SHOW' ? 'danger' : 'primary'}
 					onclick={handleConfirmStatusChange}
 				>
-					{getStatusLabel(statusConfirmTarget.newStatus)} 처리
+					{statusConfirmTarget.newStatus === 'COMPLETED' ? '피드백 작성하러 가기' : `${getStatusLabel(statusConfirmTarget.newStatus)} 처리`}
 				</Button>
 				<Button
 					variant="secondary"
@@ -607,25 +772,6 @@
 			</div>
 		</div>
 	{/if}
-</Modal>
-
-<!-- Feedback Prompt Modal -->
-<Modal isOpen={showFeedbackPrompt} title="피드백 작성" position="center" onclose={() => (showFeedbackPrompt = false)}>
-	<p class="modal-message">
-		수업이 완료되었습니다. {completedMemberName} 학생의 위클리 피드백을 작성하시겠습니까?
-	</p>
-	<div class="modal-form__actions">
-		<Button
-			fullWidth
-			onclick={() => {
-				showFeedbackPrompt = false;
-				goto(`/admin/feedback/new-weekly?member_name=${encodeURIComponent(completedMemberName)}`);
-			}}
-		>
-			피드백 작성
-		</Button>
-		<Button variant="secondary" fullWidth onclick={() => (showFeedbackPrompt = false)}>나중에</Button>
-	</div>
 </Modal>
 
 <style lang="scss">
@@ -882,6 +1028,15 @@
 			border-radius: var(--radius-md);
 		}
 
+		&__notice {
+			font-size: var(--font-size-sm);
+			color: var(--color-warning);
+			font-weight: var(--font-weight-medium);
+			padding: var(--space-sm) var(--space-md);
+			background: var(--color-warning-bg);
+			border-radius: var(--radius-sm);
+		}
+
 		&__row {
 			display: flex;
 			gap: var(--space-md);
@@ -976,6 +1131,15 @@
 			font-weight: var(--font-weight-medium);
 			padding: var(--space-sm) var(--space-md);
 			background: var(--color-info-bg);
+			border-radius: var(--radius-sm);
+		}
+
+		&__feedback-notice {
+			font-size: var(--font-size-sm);
+			color: var(--color-primary);
+			font-weight: var(--font-weight-medium);
+			padding: var(--space-sm) var(--space-md);
+			background: var(--color-primary-bg);
 			border-radius: var(--radius-sm);
 		}
 

@@ -10,13 +10,17 @@
 		toLocalDateString
 	} from '$lib/utils/format';
 	import type { CalendarEvent } from '$lib/types/academy';
+	import type { MyReservation, ReservationStatus } from '$lib/types/reservation';
+	import { isReservationDay } from '$lib/utils/reservation';
 	import Spinner from './Spinner.svelte';
 
 	interface Props {
 		academyId: number;
+		reservations?: MyReservation[];
+		oncancelreservation?: (reservationId: number) => void;
 	}
 
-	let { academyId }: Props = $props();
+	let { academyId, reservations = [], oncancelreservation }: Props = $props();
 
 	const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
 
@@ -25,7 +29,8 @@
 		PARTY: '#fbbf24',
 		HOLIDAY: '#f87171',
 		PERFORMANCE: '#34d399',
-		OTHER: '#94a3b8'
+		OTHER: '#94a3b8',
+		RESERVATION: '#a78bfa'
 	};
 
 	const EVENT_TYPE_LABELS: Record<CalendarEvent['event_type'], string> = {
@@ -33,12 +38,14 @@
 		PARTY: '파티',
 		HOLIDAY: '휴일',
 		PERFORMANCE: '공연',
-		OTHER: '기타'
+		OTHER: '기타',
+		RESERVATION: '내 예약'
 	};
 
 	const MAX_EVENT_DOTS = 3;
 	const today = getTodayString();
 	const now = new Date();
+	const VISIBLE_STATUSES: ReservationStatus[] = ['PENDING', 'CONFIRMED', 'COMPLETED'];
 
 	let currentYear = $state(now.getFullYear());
 	let currentMonth = $state(now.getMonth() + 1);
@@ -47,20 +54,83 @@
 	let loading = $state(true);
 	let errorMessage = $state<string | null>(null);
 
+	const RESERVATION_STATUS_COLORS: Record<string, string> = {
+		PENDING: '#fbbf24',
+		CONFIRMED: '#34d399',
+		COMPLETED: '#60a5fa'
+	};
+
+	function reservationToCalendarEvent(r: MyReservation): CalendarEvent {
+		return {
+			id: r.reservation_id,
+			event_title: r.instructor_name ? `${r.instructor_name} 수업` : '레슨 예약',
+			event_type: 'RESERVATION',
+			event_date: toLocalDateString(r.slot_date),
+			start_time: r.start_time,
+			end_time: r.end_time,
+			description: '',
+			color: RESERVATION_STATUS_COLORS[r.status] ?? '#a78bfa',
+			is_all_day: false
+		};
+	}
+
+	function getReservationLabel(reservation: MyReservation): string {
+		if (reservation.slot_type === 'ENSEMBLE') return '합주 수업';
+		return reservation.instructor_name
+			? `${reservation.instructor_name} 선생님`
+			: '강사 미지정';
+	}
+
+	function getStatusLabel(status: ReservationStatus): string {
+		switch (status) {
+			case 'PENDING':
+				return '대기중';
+			case 'CONFIRMED':
+				return '확정';
+			case 'COMPLETED':
+				return '완료';
+			default:
+				return status;
+		}
+	}
+
+	let visibleReservations = $derived(
+		reservations.filter((r) => VISIBLE_STATUSES.includes(r.status))
+	);
+
+	let reservationCountMap = $derived(
+		visibleReservations.reduce<Record<string, number>>((map, r) => {
+			const date = toLocalDateString(r.slot_date);
+			return { ...map, [date]: (map[date] ?? 0) + 1 };
+		}, {})
+	);
+
+	let reservationEvents = $derived(visibleReservations.map(reservationToCalendarEvent));
+
+	let allEvents = $derived([...events, ...reservationEvents]);
+
 	let monthLabel = $derived(formatMonth(currentYear, currentMonth));
 
-	let calendarCells = $derived(buildCalendarCells(currentYear, currentMonth, events));
+	let calendarCells = $derived(buildCalendarCells(currentYear, currentMonth, allEvents));
 
-	let selectedEvents = $derived(
+	let selectedReservations = $derived(
+		visibleReservations
+			.filter((r) => toLocalDateString(r.slot_date) === selectedDate)
+			.sort((a, b) => (a.start_time ?? '').localeCompare(b.start_time ?? ''))
+	);
+
+	let selectedOtherEvents = $derived(
 		events
 			.filter((e) => e.event_date === selectedDate)
 			.sort((a, b) => {
-				const aAllDay = a.is_all_day;
-				const bAllDay = b.is_all_day;
-				if (aAllDay && !bAllDay) return -1;
-				if (!aAllDay && bAllDay) return 1;
+				if (a.is_all_day && !b.is_all_day) return -1;
+				if (!a.is_all_day && b.is_all_day) return 1;
 				return (a.start_time ?? '').localeCompare(b.start_time ?? '');
 			})
+	);
+
+	let hasSelectedContent = $derived(
+		selectedReservations.length > 0 || selectedOtherEvents.length > 0
 	);
 
 	interface CalendarCell {
@@ -201,6 +271,7 @@
 	$effect(() => {
 		fetchEvents(currentYear, currentMonth);
 	});
+
 </script>
 
 <div class="section-card">
@@ -256,6 +327,14 @@
 					onclick={() => selectDate(cell.fullDate)}
 				>
 					<span class="calendar-cell__date">{cell.date}</span>
+					{#if (reservationCountMap[cell.fullDate] ?? 0) > 0}
+						<span
+							class="calendar-cell__count"
+							class:calendar-cell__count--selected={cell.fullDate === selectedDate}
+						>
+							{reservationCountMap[cell.fullDate]}건
+						</span>
+					{/if}
 					{#if cell.events.length > 0}
 						<div class="event-dots">
 							{#each cell.events.slice(0, MAX_EVENT_DOTS) as event}
@@ -278,34 +357,79 @@
 			</div>
 		{:else if errorMessage}
 			<p class="empty-text">{errorMessage}</p>
-		{:else if selectedEvents.length === 0}
+		{:else if !hasSelectedContent}
 			<p class="empty-text">등록된 일정이 없습니다.</p>
 		{:else}
-			{#each selectedEvents as event}
-				<div class="event-item" style="--event-color: {getEventColor(event)}">
-					<div class="event-item__header">
-						<span class="event-item__title">{event.event_title}</span>
-						<span
-							class="event-type-badge"
-							style="background-color: {getEventColor(event)}20; color: {getEventColor(event)}"
-						>
-							{EVENT_TYPE_LABELS[event.event_type] ?? event.event_type}
-						</span>
-					</div>
-					<div class="event-item__time">
-						{#if event.is_all_day}
-							종일
-						{:else if event.start_time && event.end_time}
-							{formatTimeRange(event.start_time, event.end_time)}
-						{:else if event.start_time}
-							{formatTime(event.start_time)}
-						{/if}
-					</div>
-					{#if event.description}
-						<p class="event-item__desc">{event.description}</p>
-					{/if}
+			{#if selectedReservations.length > 0}
+				<div class="reservation-cards">
+					{#each selectedReservations as reservation}
+						{@const canCancel = reservation.status === 'PENDING' || reservation.status === 'CONFIRMED'}
+					{@const isSameDay = canCancel && isReservationDay(reservation.slot_date)}
+						<div class="reservation-card">
+							<div class="reservation-card__header">
+								<span
+									class="reservation-card__badge"
+									class:reservation-card__badge--pending={reservation.status === 'PENDING'}
+									class:reservation-card__badge--confirmed={reservation.status === 'CONFIRMED'}
+									class:reservation-card__badge--completed={reservation.status === 'COMPLETED'}
+								>
+									{getStatusLabel(reservation.status)}
+								</span>
+								{#if oncancelreservation && canCancel}
+									<button
+										type="button"
+										class="reservation-card__cancel"
+										onclick={() => oncancelreservation(reservation.reservation_id)}
+									>
+										{isSameDay ? '노쇼' : '취소'}
+									</button>
+								{/if}
+							</div>
+							<div class="reservation-card__time">
+								{formatTimeRange(reservation.start_time, reservation.end_time)}
+							</div>
+							<div class="reservation-card__instructor">
+								{getReservationLabel(reservation)}
+							</div>
+							{#if reservation.pass_name}
+								<div class="reservation-card__pass">
+									{reservation.pass_name}
+								</div>
+							{/if}
+						</div>
+					{/each}
 				</div>
-			{/each}
+			{/if}
+
+			{#if selectedOtherEvents.length > 0}
+				<div class="other-events">
+					{#each selectedOtherEvents as event}
+						<div class="event-item" style="--event-color: {getEventColor(event)}">
+							<div class="event-item__header">
+								<span class="event-item__title">{event.event_title}</span>
+								<span
+									class="event-type-badge"
+									style="background-color: {getEventColor(event)}20; color: {getEventColor(event)}"
+								>
+									{EVENT_TYPE_LABELS[event.event_type] ?? event.event_type}
+								</span>
+							</div>
+							<div class="event-item__time">
+								{#if event.is_all_day}
+									종일
+								{:else if event.start_time && event.end_time}
+									{formatTimeRange(event.start_time, event.end_time)}
+								{:else if event.start_time}
+									{formatTime(event.start_time)}
+								{/if}
+							</div>
+							{#if event.description}
+								<p class="event-item__desc">{event.description}</p>
+							{/if}
+						</div>
+					{/each}
+				</div>
+			{/if}
 		{/if}
 	</div>
 </div>
@@ -415,6 +539,10 @@
 				font-weight: var(--font-weight-bold);
 			}
 
+			.calendar-cell__count {
+				color: var(--color-on-primary);
+			}
+
 			.event-dot {
 				background-color: var(--color-on-primary) !important;
 			}
@@ -424,6 +552,14 @@
 			font-size: var(--font-size-sm);
 			line-height: 1;
 			color: var(--color-text);
+		}
+
+		&__count {
+			font-size: 10px;
+			font-weight: var(--font-weight-semibold);
+			color: var(--color-primary);
+			margin-top: 1px;
+			line-height: 1;
 		}
 	}
 
@@ -457,6 +593,87 @@
 		color: var(--color-text-muted);
 		padding: var(--space-md) 0;
 		font-size: var(--font-size-sm);
+	}
+
+	.reservation-cards {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-sm);
+		margin-bottom: var(--space-sm);
+	}
+
+	.reservation-card {
+		background: var(--color-bg);
+		border-radius: var(--radius-md);
+		padding: var(--space-md);
+
+		&__header {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			margin-bottom: var(--space-sm);
+		}
+
+		&__badge {
+			display: inline-flex;
+			align-items: center;
+			padding: 2px 10px;
+			border-radius: var(--radius-full);
+			font-size: var(--font-size-xs);
+			font-weight: var(--font-weight-semibold);
+
+			&--confirmed {
+				background: var(--color-success-bg);
+				color: var(--color-success);
+			}
+
+			&--pending {
+				background: var(--color-warning-bg);
+				color: var(--color-warning);
+			}
+
+			&--completed {
+				background: var(--color-info-bg);
+				color: var(--color-info);
+			}
+		}
+
+		&__cancel {
+			background: none;
+			border: none;
+			font-size: var(--font-size-sm);
+			color: var(--color-danger);
+			cursor: pointer;
+			padding: 2px var(--space-xs);
+			font-weight: var(--font-weight-medium);
+			transition: opacity var(--transition-fast);
+
+			&:active {
+				opacity: 0.6;
+			}
+		}
+
+		&__time {
+			font-size: var(--font-size-sm);
+			color: var(--color-text-secondary);
+			margin-bottom: 2px;
+		}
+
+		&__instructor {
+			font-size: var(--font-size-sm);
+			color: var(--color-text-muted);
+		}
+
+		&__pass {
+			font-size: var(--font-size-xs);
+			color: var(--color-text-muted);
+			margin-top: 2px;
+		}
+	}
+
+	.other-events {
+		display: flex;
+		flex-direction: column;
 	}
 
 	.event-item {

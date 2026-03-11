@@ -44,7 +44,6 @@
 	let passName = $state('');
 	let passCategory = $state<PassType['pass_category'] | ''>('');
 	let ticketValue = $state('');
-	let maxCapacity = $state('');
 	let durationDays = $state('');
 	let totalLessons = $state('');
 	let price = $state('');
@@ -81,7 +80,6 @@
 		passName = '';
 		passCategory = '';
 		ticketValue = '';
-		maxCapacity = '';
 		durationDays = '';
 		totalLessons = '';
 		price = '';
@@ -95,7 +93,6 @@
 		passName = pt.pass_name;
 		passCategory = pt.pass_category;
 		ticketValue = String(pt.ticket_value);
-		maxCapacity = String(pt.max_capacity);
 		durationDays = String(pt.duration_days);
 		totalLessons = String(pt.total_lessons);
 		price = String(pt.price);
@@ -127,7 +124,6 @@
 				pass_name: passName.trim(),
 				pass_category: passCategory as PassType['pass_category'],
 				ticket_value: ticketValue ? Number(ticketValue) : undefined,
-				max_capacity: maxCapacity ? Number(maxCapacity) : undefined,
 				duration_days: durationDays ? Number(durationDays) : undefined,
 				total_lessons: totalLessons ? Number(totalLessons) : undefined,
 				price: price ? Number(price) : undefined,
@@ -258,10 +254,7 @@
 
 		<Input type="number" label="가격 (원)" bind:value={price} placeholder="200000" />
 
-		<div class="pass-type-form__row">
-			<Input type="number" label="1회 차감 횟수" bind:value={ticketValue} placeholder="1" />
-			<Input type="number" label="최대 인원" bind:value={maxCapacity} placeholder="1" />
-		</div>
+		<Input type="number" label="1회 차감 횟수" bind:value={ticketValue} placeholder="1" />
 
 		<label class="pass-type-form__checkbox">
 			<input type="checkbox" bind:checked={allowDuplicateBooking} />

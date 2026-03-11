@@ -1,3 +1,6 @@
+export type MemberRole = 'STUDENT' | 'INSTRUCTOR' | 'ADMIN';
+export type StudentPassStatus = 'ALL' | 'ACTIVE' | 'EXPIRED';
+
 export interface Member {
 	id: number;
 	academy_id: number;
@@ -34,7 +37,7 @@ export interface PassType {
 	pass_name: string;
 	pass_category: 'ROTATION' | 'FULL' | 'ENSEMBLE' | 'PT' | 'GROUP';
 	ticket_value: number;
-	max_capacity: number;
+	max_capacity?: number;
 	duration_days: number;
 	total_lessons: number;
 	price: number;
@@ -126,7 +129,6 @@ export interface CreatePassTypeRequest {
 	pass_name: string;
 	pass_category: 'ROTATION' | 'FULL' | 'ENSEMBLE' | 'PT' | 'GROUP';
 	ticket_value?: number;
-	max_capacity?: number;
 	duration_days?: number;
 	total_lessons?: number;
 	price?: number;
@@ -137,7 +139,6 @@ export interface UpdatePassTypeRequest {
 	pass_name?: string;
 	pass_category?: 'ROTATION' | 'FULL' | 'ENSEMBLE' | 'PT' | 'GROUP';
 	ticket_value?: number;
-	max_capacity?: number;
 	duration_days?: number;
 	total_lessons?: number;
 	price?: number;

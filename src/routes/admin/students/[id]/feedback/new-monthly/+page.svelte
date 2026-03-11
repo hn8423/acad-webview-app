@@ -10,7 +10,6 @@
 	import Input from '$lib/components/ui/Input.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import ScoreInput from '$lib/components/feedback/ScoreInput.svelte';
-	import MediaUpload from '$lib/components/ui/MediaUpload.svelte';
 	import type { FeedbackCategory } from '$lib/types/feedback';
 	import type { MemberPass } from '$lib/types/member';
 	import { onMount } from 'svelte';
@@ -38,8 +37,6 @@
 	let focus = $state('');
 	let instructorGoals = $state('');
 	let instructorMessage = $state('');
-	let videoUrl = $state('');
-
 	const stepLabels = ['기본 정보', '카테고리별 평가', '커리큘럼'];
 	const memberId = $derived(Number(page.params.id));
 	const activePasses = $derived(passes.filter((p) => p.status === 'ACTIVE'));
@@ -116,8 +113,7 @@
 							}
 						: undefined,
 				instructor_goals: instructorGoals.trim() || undefined,
-				instructor_message: instructorMessage.trim() || undefined,
-				video_url: videoUrl.trim() || undefined
+				instructor_message: instructorMessage.trim() || undefined
 			});
 			if (res.status) {
 				toastStore.success('먼슬리 피드백이 작성되었습니다.');
@@ -272,8 +268,6 @@
 								rows="3"
 							></textarea>
 						</div>
-
-						<MediaUpload label="미디어 첨부 (선택)" bind:value={videoUrl} />
 
 						{#if error}
 							<p class="create-form__error">{error}</p>

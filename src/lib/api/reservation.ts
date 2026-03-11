@@ -40,6 +40,12 @@ export function cancelReservation(academyId: number, reservationId: number) {
 	return del<ApiResponse<void>>(`/academic/academies/${academyId}/reservations/${reservationId}`);
 }
 
+export function cancelReservationAsNoShow(academyId: number, reservationId: number) {
+	return patch<ApiResponse<void>>(`/academic/academies/${academyId}/reservations/${reservationId}`, {
+		status: 'NO_SHOW'
+	});
+}
+
 // Admin: Lesson Slot CRUD
 
 export function getLessonSlots(

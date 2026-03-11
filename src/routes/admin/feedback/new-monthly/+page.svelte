@@ -10,7 +10,6 @@
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import ScoreInput from '$lib/components/feedback/ScoreInput.svelte';
-	import MediaUpload from '$lib/components/ui/MediaUpload.svelte';
 	import { formatPhone } from '$lib/utils/format';
 	import type { MemberListItem, MemberPass } from '$lib/types/member';
 	import type { FeedbackCategory } from '$lib/types/feedback';
@@ -45,7 +44,6 @@
 	let focus = $state('');
 	let instructorGoals = $state('');
 	let instructorMessage = $state('');
-	let videoUrl = $state('');
 	let creating = $state(false);
 
 	const stepLabels = ['학생 선택', '기본 정보', '카테고리별 평가', '커리큘럼'];
@@ -168,8 +166,7 @@
 							}
 						: undefined,
 				instructor_goals: instructorGoals.trim() || undefined,
-				instructor_message: instructorMessage.trim() || undefined,
-				video_url: videoUrl.trim() || undefined
+				instructor_message: instructorMessage.trim() || undefined
 			});
 			if (res.status) {
 				toastStore.success('먼슬리 피드백이 작성되었습니다.');
@@ -349,7 +346,7 @@
 					</div>
 
 					<div class="create-form__field">
-						<label class="create-form__label" for="songs">중점 사항</label>
+						<label class="create-form__label" for="songs">고민</label>
 						<textarea
 							id="songs"
 							class="create-form__textarea"
@@ -380,8 +377,6 @@
 							rows="3"
 						></textarea>
 					</div>
-
-					<MediaUpload label="미디어 첨부 (선택)" bind:value={videoUrl} />
 
 					{#if error}
 						<p class="create-form__error">{error}</p>
