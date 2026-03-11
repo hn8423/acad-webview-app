@@ -2,7 +2,12 @@
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import { formatDate } from '$lib/utils/format';
-	import { getPassStatusVariant, getPassStatusLabel, getTicketValue } from '$lib/utils/pass';
+	import {
+		getPassStatusVariant,
+		getPassStatusLabel,
+		getTicketValue,
+		getCapacityWeight
+	} from '$lib/utils/pass';
 	import type { MemberPass } from '$lib/types/member';
 
 	interface Props {
@@ -57,8 +62,8 @@
 			<div class="pass-summary-card__header">
 				<span class="pass-summary-card__name">
 					{pass.pass_name}
-					{#if pass.pass_category === 'ROTATION'}
-						<span class="pass-summary-card__capacity-badge">0.5인원</span>
+					{#if getCapacityWeight(pass.pass_category) !== 1}
+						<span class="pass-summary-card__capacity-badge">{getCapacityWeight(pass.pass_category)}인원</span>
 					{/if}
 					{#if getTicketValue(pass.ticket_value) > 1}
 						<span class="pass-summary-card__ticket-badge">{getTicketValue(pass.ticket_value)}회 차감</span>

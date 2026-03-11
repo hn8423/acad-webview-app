@@ -33,7 +33,14 @@ export function getTicketValue(ticketValue?: number): number {
 }
 
 export function getCapacityWeight(passCategory?: string): number {
-	return passCategory === 'ROTATION' ? 0.5 : 1;
+	switch (passCategory) {
+		case 'FULL':
+			return 2;
+		case 'ROTATION':
+			return 0.5;
+		default:
+			return 1;
+	}
 }
 
 export function getReservationWeight(passCategory?: string, ticketValue?: number): number {

@@ -488,6 +488,8 @@
 										{/if}
 										{#if rv.pass_category === 'ROTATION'}
 											<Badge variant="info">로테이션</Badge>
+										{:else if rv.pass_category === 'FULL'}
+											<Badge variant="warning">풀타임</Badge>
 										{/if}
 										{#if getReservationWeight(rv.pass_category, rv.ticket_value) !== 1}
 											<span class="reservation-row__weight">{getReservationWeight(rv.pass_category, rv.ticket_value)}인원</span>
