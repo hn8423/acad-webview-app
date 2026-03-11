@@ -53,7 +53,7 @@
 		slot_date: getTodayString(),
 		start_time: '10:00',
 		end_time: '11:00',
-		max_capacity: 1,
+		max_capacity: 2,
 		slot_type: 'REGULAR'
 	});
 
@@ -222,10 +222,10 @@
 		const endTime = `${endH}:${String(m).padStart(2, '0')}`;
 		if (type === 'ENSEMBLE') {
 			const { max_capacity: _, ...rest } = createForm;
-			createForm = { ...rest, slot_type: type, min_capacity: 5, end_time: endTime };
+			createForm = { ...rest, slot_type: type, min_capacity: 4, end_time: endTime };
 		} else {
 			const { min_capacity: _, ...rest } = createForm;
-			createForm = { ...rest, slot_type: type, max_capacity: 1, end_time: endTime };
+			createForm = { ...rest, slot_type: type, max_capacity: 2, end_time: endTime };
 		}
 	}
 
