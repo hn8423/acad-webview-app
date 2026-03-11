@@ -10,27 +10,9 @@
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import { formatNumber } from '$lib/utils/format';
+	import { getPassCategoryLabel, getPassCategoryVariant } from '$lib/utils/pass';
 	import type { PassType, CreatePassTypeRequest, UpdatePassTypeRequest } from '$lib/types/member';
 	import { onMount } from 'svelte';
-
-	const CATEGORY_LABELS: Record<PassType['pass_category'], string> = {
-		ROTATION: '로테이션',
-		FULL: '풀타임',
-		ENSEMBLE: '앙상블',
-		PT: '개인레슨',
-		GROUP: '그룹'
-	};
-
-	const CATEGORY_VARIANTS: Record<
-		PassType['pass_category'],
-		'success' | 'warning' | 'danger' | 'info' | 'neutral'
-	> = {
-		ROTATION: 'info',
-		FULL: 'success',
-		ENSEMBLE: 'warning',
-		PT: 'danger',
-		GROUP: 'neutral'
-	};
 
 	let passTypes = $state<PassType[]>([]);
 	let loading = $state(true);
@@ -197,8 +179,8 @@
 				{#each passTypes as pt, i (pt.id)}
 					<div class="pass-type-item">
 						<div class="pass-type-item__header">
-							<Badge variant={CATEGORY_VARIANTS[pt.pass_category] ?? 'neutral'}>
-								{CATEGORY_LABELS[pt.pass_category] ?? pt.pass_category}
+							<Badge variant={getPassCategoryVariant(pt.pass_category)}>
+								{getPassCategoryLabel(pt.pass_category)}
 							</Badge>
 							<span class="pass-type-item__name">{pt.pass_name}</span>
 						</div>

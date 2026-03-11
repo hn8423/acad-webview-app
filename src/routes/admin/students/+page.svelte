@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { academyStore } from '$lib/stores/academy.svelte';
-	import { getMembers } from '$lib/api/member';
+	import { getMembers, getMemberPasses } from '$lib/api/member';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import { formatPhone } from '$lib/utils/format';
+	import { getPassCategoryLabel, getPassCategoryVariant } from '$lib/utils/pass';
 	import { goto } from '$app/navigation';
-	import type { MemberListItem, StudentPassStatus } from '$lib/types/member';
+	import type { MemberListItem, MemberPass, StudentPassStatus } from '$lib/types/member';
 	import { onMount } from 'svelte';
 
 	let members = $state<MemberListItem[]>([]);
@@ -17,6 +18,7 @@
 	let hasMore = $state(false);
 	let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 	let activeTab = $state<StudentPassStatus>('ALL');
+	let memberPassesMap = $state<Map<number, MemberPass[]>>(new Map());
 
 	const tabs: { label: string; value: StudentPassStatus }[] = [
 		{ label: '전체', value: 'ALL' },
@@ -64,6 +66,7 @@
 				}
 				nextCursor = res.data.next_cursor;
 				hasMore = res.data.next_cursor !== null;
+				fetchMemberPasses(filtered, append);
 			}
 		} catch {
 			// handle error
@@ -71,6 +74,27 @@
 			loading = false;
 			loadingMore = false;
 		}
+	}
+
+	async function fetchMemberPasses(memberList: MemberListItem[], append: boolean) {
+		const academyId = academyStore.academyId;
+		if (!academyId) return;
+
+		const withPasses = memberList.filter((m) => m.active_passes > 0);
+		if (withPasses.length === 0) return;
+
+		const results = await Promise.allSettled(
+			withPasses.map((m) => getMemberPasses(academyId, m.member_id))
+		);
+
+		const newMap = append ? new Map(memberPassesMap) : new Map<number, MemberPass[]>();
+		withPasses.forEach((member, i) => {
+			const result = results[i];
+			if (result.status === 'fulfilled' && result.value.status) {
+				newMap.set(member.member_id, result.value.data);
+			}
+		});
+		memberPassesMap = newMap;
 	}
 
 	function handleSearchInput() {
@@ -150,7 +174,13 @@
 						<span class="student-row__phone">{formatPhone(member.user_phone)}</span>
 					</div>
 					<div class="student-row__stats">
-						{#if member.active_passes > 0}
+						{#if memberPassesMap.has(member.member_id)}
+							{#each memberPassesMap.get(member.member_id)?.filter((p) => p.status === 'ACTIVE') ?? [] as pass}
+								<Badge variant={getPassCategoryVariant(pass.pass_category)}
+									>{getPassCategoryLabel(pass.pass_category)}</Badge
+								>
+							{/each}
+						{:else if member.active_passes > 0}
 							<Badge variant="success">수강권 {member.active_passes}</Badge>
 						{/if}
 					</div>
