@@ -36,6 +36,10 @@ export function getCapacityWeight(passCategory?: string): number {
 	return passCategory === 'ROTATION' ? 0.5 : 1;
 }
 
+export function getReservationWeight(passCategory?: string, ticketValue?: number): number {
+	return getCapacityWeight(passCategory) * getTicketValue(ticketValue);
+}
+
 export function isActiveReservationStatus(status: string): boolean {
 	return status === 'PENDING' || status === 'CONFIRMED';
 }
