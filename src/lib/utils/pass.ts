@@ -33,7 +33,14 @@ export function getTicketValue(ticketValue?: number): number {
 }
 
 export function getCapacityWeight(passCategory?: string): number {
-	return passCategory === 'ROTATION' ? 0.5 : 1;
+	switch (passCategory) {
+		case 'FULL':
+			return 2;
+		case 'ROTATION':
+			return 0.5;
+		default:
+			return 1;
+	}
 }
 
 export function getReservationWeight(passCategory?: string, ticketValue?: number): number {
@@ -42,4 +49,31 @@ export function getReservationWeight(passCategory?: string, ticketValue?: number
 
 export function isActiveReservationStatus(status: string): boolean {
 	return status === 'PENDING' || status === 'CONFIRMED';
+}
+
+type PassCategory = 'ROTATION' | 'FULL' | 'ENSEMBLE' | 'PT' | 'GROUP';
+type BadgeVariant = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
+
+const CATEGORY_LABELS: Record<PassCategory, string> = {
+	ROTATION: '로테이션',
+	FULL: '풀타임',
+	ENSEMBLE: '앙상블',
+	PT: '개인레슨',
+	GROUP: '그룹'
+};
+
+const CATEGORY_VARIANTS: Record<PassCategory, BadgeVariant> = {
+	ROTATION: 'info',
+	FULL: 'success',
+	ENSEMBLE: 'warning',
+	PT: 'danger',
+	GROUP: 'neutral'
+};
+
+export function getPassCategoryLabel(category: string): string {
+	return CATEGORY_LABELS[category as PassCategory] ?? category;
+}
+
+export function getPassCategoryVariant(category: string): BadgeVariant {
+	return CATEGORY_VARIANTS[category as PassCategory] ?? 'neutral';
 }

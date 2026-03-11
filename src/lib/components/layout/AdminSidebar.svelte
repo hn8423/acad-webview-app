@@ -17,6 +17,8 @@
 
 	let { isOpen = $bindable(false), onclose }: Props = $props();
 
+	let iconErrors = $state<Record<number, boolean>>({});
+
 	let navItems = $derived(
 		academyStore
 			.getEnabledNavItems('ADMIN')
@@ -96,8 +98,17 @@
 					class:sidebar__item--active={isActive(path)}
 					onclick={onclose}
 				>
-					{#if item.nav_icon && isIconUrl(item.nav_icon)}
-						<span class="sidebar__mask-icon" style:--icon-url="url('{item.nav_icon}')"></span>
+					{#if item.nav_icon && isIconUrl(item.nav_icon) && !iconErrors[item.nav_id]}
+						<img
+							class="sidebar__nav-icon-img"
+							src={item.nav_icon}
+							alt=""
+							width="20"
+							height="20"
+							onerror={() => {
+								iconErrors = { ...iconErrors, [item.nav_id]: true };
+							}}
+						/>
 					{:else}
 						<svg
 							width="20"
@@ -314,19 +325,10 @@
 			}
 		}
 
-		&__mask-icon {
-			display: inline-block;
+		&__nav-icon-img {
 			width: 20px;
 			height: 20px;
-			background-color: currentColor;
-			-webkit-mask-image: var(--icon-url);
-			mask-image: var(--icon-url);
-			-webkit-mask-size: contain;
-			mask-size: contain;
-			-webkit-mask-repeat: no-repeat;
-			mask-repeat: no-repeat;
-			-webkit-mask-position: center;
-			mask-position: center;
+			object-fit: contain;
 		}
 	}
 </style>

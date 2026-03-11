@@ -16,7 +16,12 @@
 	import DrinkRedeemModal from '$lib/components/drink/DrinkRedeemModal.svelte';
 	import { formatDate, formatTimeRange, getDayOfWeek } from '$lib/utils/format';
 	import { isReservationDay } from '$lib/utils/reservation';
-	import { getPassStatusVariant, getPassStatusLabel, getTicketValue } from '$lib/utils/pass';
+	import {
+		getPassStatusVariant,
+		getPassStatusLabel,
+		getTicketValue,
+		getReservationWeight
+	} from '$lib/utils/pass';
 	import type { MemberPass, DrinkTicket } from '$lib/types/member';
 	import type { MyReservation } from '$lib/types/reservation';
 	import type { Notice } from '$lib/types/academy';
@@ -449,9 +454,10 @@
 					수강권이 차감되며 환불되지 않습니다.
 				</div>
 			{:else}
-				{#if cancelTarget.pass_category === 'ROTATION'}
+				{@const cancelWeight = getReservationWeight(cancelTarget.pass_category, cancelTarget.ticket_value)}
+				{#if cancelWeight !== 1}
 					<p class="cancel-sheet__refund-notice">
-						취소 시 0.5인원이 환불됩니다.
+						취소 시 {cancelWeight}인원이 환원됩니다.
 					</p>
 				{/if}
 				{#if getTicketValue(cancelTarget.ticket_value) > 1}
