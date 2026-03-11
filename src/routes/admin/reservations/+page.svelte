@@ -13,7 +13,12 @@
 	import { getInstructors } from '$lib/api/member';
 	import type { Instructor } from '$lib/types/member';
 	import { formatTimeRange, getTodayString, getDaysInMonth } from '$lib/utils/format';
-	import { getTicketValue, getCapacityWeight, isActiveReservationStatus } from '$lib/utils/pass';
+	import {
+		getTicketValue,
+		getCapacityWeight,
+		getReservationWeight,
+		isActiveReservationStatus
+	} from '$lib/utils/pass';
 	import { filterActionDates } from '$lib/utils/reservation';
 	import type {
 		LessonSlot,
@@ -322,7 +327,7 @@
 	function computeWeightedCount(reservations: SlotReservation[]): number {
 		return reservations
 			.filter((rv) => isActiveReservationStatus(rv.status))
-			.reduce((sum, rv) => sum + getCapacityWeight(rv.pass_category), 0);
+			.reduce((sum, rv) => sum + getReservationWeight(rv.pass_category, rv.ticket_value), 0);
 	}
 
 	function openStatusConfirm(
@@ -335,7 +340,7 @@
 			passName: rv.pass_name ?? '',
 			passCategory: rv.pass_category,
 			ticketValue: getTicketValue(rv.ticket_value),
-			capacityWeight: getCapacityWeight(rv.pass_category),
+			capacityWeight: getReservationWeight(rv.pass_category, rv.ticket_value),
 			currentStatus: rv.status,
 			newStatus
 		};
@@ -483,7 +488,9 @@
 										{/if}
 										{#if rv.pass_category === 'ROTATION'}
 											<Badge variant="info">로테이션</Badge>
-											<span class="reservation-row__weight">0.5인원</span>
+										{/if}
+										{#if getReservationWeight(rv.pass_category, rv.ticket_value) !== 1}
+											<span class="reservation-row__weight">{getReservationWeight(rv.pass_category, rv.ticket_value)}인원</span>
 										{/if}
 										{#if getTicketValue(rv.ticket_value) > 1}
 											<Badge variant="warning">{getTicketValue(rv.ticket_value)}회 차감</Badge>
@@ -733,9 +740,9 @@
 			{#if statusConfirmTarget.capacityWeight !== 1}
 				<div class="status-confirm__capacity-info">
 					{#if statusConfirmTarget.newStatus === 'CONFIRMED'}
-						{statusConfirmTarget.capacityWeight}인원이 차감됩니다. (로테이션)
+						{statusConfirmTarget.capacityWeight}인원이 차감됩니다.
 					{:else if statusConfirmTarget.newStatus === 'CANCELLED'}
-						{statusConfirmTarget.capacityWeight}인원이 환원됩니다. (로테이션)
+						{statusConfirmTarget.capacityWeight}인원이 환원됩니다.
 					{/if}
 				</div>
 			{/if}

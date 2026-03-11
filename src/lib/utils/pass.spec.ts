@@ -4,6 +4,7 @@ import {
 	getPassStatusLabel,
 	getTicketValue,
 	getCapacityWeight,
+	getReservationWeight,
 	isActiveReservationStatus
 } from './pass';
 
@@ -74,6 +75,40 @@ describe('getTicketValue', () => {
 
 	it('should return 1 when negative', () => {
 		expect(getTicketValue(-1)).toBe(1);
+	});
+});
+
+describe('getReservationWeight', () => {
+	it('should return 1.0 for FULL with ticket_value 1', () => {
+		expect(getReservationWeight('FULL', 1)).toBe(1);
+	});
+
+	it('should return 2.0 for FULL with ticket_value 2', () => {
+		expect(getReservationWeight('FULL', 2)).toBe(2);
+	});
+
+	it('should return 0.5 for ROTATION with ticket_value 1', () => {
+		expect(getReservationWeight('ROTATION', 1)).toBe(0.5);
+	});
+
+	it('should return 1.0 for ROTATION with ticket_value 2', () => {
+		expect(getReservationWeight('ROTATION', 2)).toBe(1);
+	});
+
+	it('should return 1.5 for ROTATION with ticket_value 3', () => {
+		expect(getReservationWeight('ROTATION', 3)).toBe(1.5);
+	});
+
+	it('should return 1.0 for undefined values', () => {
+		expect(getReservationWeight(undefined, undefined)).toBe(1);
+	});
+
+	it('should return 1.0 for FULL with ticket_value 0', () => {
+		expect(getReservationWeight('FULL', 0)).toBe(1);
+	});
+
+	it('should return 1.0 for FULL with negative ticket_value', () => {
+		expect(getReservationWeight('FULL', -1)).toBe(1);
 	});
 });
 
