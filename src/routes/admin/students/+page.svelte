@@ -1,13 +1,12 @@
 <script lang="ts">
 	import { academyStore } from '$lib/stores/academy.svelte';
 	import { getMembers } from '$lib/api/member';
-	import Card from '$lib/components/ui/Card.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import { formatPhone } from '$lib/utils/format';
 	import { goto } from '$app/navigation';
-	import type { MemberListItem } from '$lib/types/member';
+	import type { MemberListItem, StudentPassStatus } from '$lib/types/member';
 	import { onMount } from 'svelte';
 
 	let members = $state<MemberListItem[]>([]);
@@ -17,6 +16,13 @@
 	let nextCursor = $state<number | null>(null);
 	let hasMore = $state(false);
 	let searchTimeout: ReturnType<typeof setTimeout> | null = null;
+	let activeTab = $state<StudentPassStatus>('ALL');
+
+	const tabs: { label: string; value: StudentPassStatus }[] = [
+		{ label: '전체', value: 'ALL' },
+		{ label: '수업중', value: 'ACTIVE' },
+		{ label: '만료', value: 'EXPIRED' }
+	];
 
 	onMount(() => fetchMembers());
 
@@ -32,12 +38,29 @@
 
 		try {
 			const cursor = append ? (nextCursor ?? undefined) : undefined;
-			const res = await getMembers(academyId, cursor, 20, search || undefined);
+			const passStatus = activeTab === 'ALL' ? undefined : activeTab;
+			const res = await getMembers(
+				academyId,
+				cursor,
+				20,
+				search || undefined,
+				'STUDENT',
+				passStatus
+			);
 			if (res.status && res.data) {
+				// 프론트엔드 안전장치: 백엔드가 role 파라미터 미지원 시 대비
+				const students = res.data.list.filter((m) => m.member_role === 'STUDENT');
+				const filtered =
+					activeTab === 'ALL'
+						? students
+						: activeTab === 'ACTIVE'
+							? students.filter((m) => m.active_passes > 0)
+							: students.filter((m) => m.active_passes === 0);
+
 				if (append) {
-					members = [...members, ...res.data.list];
+					members = [...members, ...filtered];
 				} else {
-					members = res.data.list;
+					members = filtered;
 				}
 				nextCursor = res.data.next_cursor;
 				hasMore = res.data.next_cursor !== null;
@@ -58,6 +81,13 @@
 		}, 300);
 	}
 
+	function handleTabChange(tab: StudentPassStatus) {
+		activeTab = tab;
+		search = '';
+		nextCursor = null;
+		fetchMembers();
+	}
+
 	function loadMore() {
 		if (!loadingMore && hasMore) {
 			fetchMembers(true);
@@ -67,6 +97,18 @@
 
 <div class="admin-students">
 	<h1 class="admin-students__title">수강생 관리</h1>
+
+	<div class="admin-students__tabs">
+		{#each tabs as tab}
+			<button
+				class="admin-students__tab"
+				class:admin-students__tab--active={activeTab === tab.value}
+				onclick={() => handleTabChange(tab.value)}
+			>
+				{tab.label}
+			</button>
+		{/each}
+	</div>
 
 	<div class="admin-students__search">
 		<Input placeholder="이름으로 검색..." bind:value={search} oninput={handleSearchInput} />
@@ -78,7 +120,15 @@
 		</div>
 	{:else if members.length === 0}
 		<p class="admin-students__empty">
-			{search ? '검색 결과가 없습니다.' : '등록된 수강생이 없습니다.'}
+			{#if search}
+				검색 결과가 없습니다.
+			{:else if activeTab === 'ACTIVE'}
+				수업중인 수강생이 없습니다.
+			{:else if activeTab === 'EXPIRED'}
+				만료된 수강생이 없습니다.
+			{:else}
+				등록된 수강생이 없습니다.
+			{/if}
 		</p>
 	{:else}
 		<div class="student-list">
@@ -131,6 +181,32 @@
 			letter-spacing: var(--letter-spacing-tight);
 			margin-bottom: var(--space-md);
 			color: var(--color-text);
+		}
+
+		&__tabs {
+			display: flex;
+			gap: var(--space-xs);
+			background: var(--color-bg);
+			border-radius: var(--radius-md);
+			padding: 4px;
+			margin-bottom: var(--space-md);
+		}
+
+		&__tab {
+			flex: 1;
+			padding: 8px 12px;
+			border-radius: var(--radius-sm);
+			font-size: var(--font-size-sm);
+			font-weight: var(--font-weight-medium);
+			color: var(--color-text-secondary);
+			transition: all var(--transition-fast);
+
+			&--active {
+				background: var(--color-white);
+				color: var(--color-primary);
+				font-weight: var(--font-weight-semibold);
+				box-shadow: var(--shadow-sm);
+			}
 		}
 
 		&__search {

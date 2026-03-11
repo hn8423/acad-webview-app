@@ -1,24 +1,43 @@
 <script lang="ts">
 	import { academyStore } from '$lib/stores/academy.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
-	import { getMyPasses, getMyDrinkTickets } from '$lib/api/member';
+	import { getMyPasses, getMyDrinkTickets, useDrinkTicket } from '$lib/api/member';
 	import { getRecentNotices } from '$lib/api/academy';
+	import { getMyReservations, cancelReservation, cancelReservationAsNoShow } from '$lib/api/reservation';
 	import { createHolding } from '$lib/api/holding';
+	import { login } from '$lib/api/auth';
+	import { apiRequest } from '$lib/api/client';
 	import Badge from '$lib/components/ui/Badge.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import CalendarSection from '$lib/components/ui/CalendarSection.svelte';
+	import BottomSheet from '$lib/components/ui/BottomSheet.svelte';
 	import HoldingRequestModal from '$lib/components/holding/HoldingRequestModal.svelte';
-	import { formatDate } from '$lib/utils/format';
+	import DrinkRedeemModal from '$lib/components/drink/DrinkRedeemModal.svelte';
+	import { formatDate, formatTimeRange, getDayOfWeek } from '$lib/utils/format';
+	import { isReservationDay } from '$lib/utils/reservation';
 	import { getPassStatusVariant, getPassStatusLabel, getTicketValue } from '$lib/utils/pass';
 	import type { MemberPass, DrinkTicket } from '$lib/types/member';
+	import type { MyReservation } from '$lib/types/reservation';
 	import type { Notice } from '$lib/types/academy';
+	import type { ApiResponse } from '$lib/types/api';
+	import type { UserAcademy } from '$lib/types/auth';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 
 	let passes = $state<MemberPass[]>([]);
 	let drinkTickets = $state<DrinkTicket[]>([]);
 	let recentNotices = $state<Notice[]>([]);
+	let myReservations = $state<MyReservation[]>([]);
 	let loading = $state(true);
+
+	let cancelSheetOpen = $state(false);
+	let cancelTarget = $state<MyReservation | null>(null);
+	let cancelling = $state(false);
+
+	let isSameDayCancel = $derived(
+		cancelTarget ? isReservationDay(cancelTarget.slot_date) : false
+	);
 
 	let showHoldingModal = $state(false);
 	let holdingTargetPass = $state<MemberPass | null>(null);
@@ -26,15 +45,20 @@
 	let holdingError = $state('');
 	let holdingRequestedPassIds = $state(new Set<number>());
 
+	let showDrinkRedeemModal = $state(false);
+	let drinkRedeemSubmitting = $state(false);
+	let drinkRedeemError = $state('');
+
 	onMount(async () => {
 		const academyId = academyStore.academyId;
 		if (!academyId) return;
 
 		try {
-			const [passRes, drinkRes, noticeRes] = await Promise.allSettled([
+			const [passRes, drinkRes, noticeRes, reservationRes] = await Promise.allSettled([
 				getMyPasses(academyId),
 				getMyDrinkTickets(academyId),
-				getRecentNotices(academyId)
+				getRecentNotices(academyId),
+				getMyReservations(academyId)
 			]);
 
 			if (passRes.status === 'fulfilled' && passRes.value.status) {
@@ -45,6 +69,9 @@
 			}
 			if (noticeRes.status === 'fulfilled' && noticeRes.value.status) {
 				recentNotices = noticeRes.value.data;
+			}
+			if (reservationRes.status === 'fulfilled' && reservationRes.value.status) {
+				myReservations = reservationRes.value.data;
 			}
 		} catch {
 			// errors handled per-section
@@ -91,6 +118,123 @@
 			holdingSubmitting = false;
 		}
 	}
+
+	function openDrinkRedeemModal() {
+		if (totalDrinks <= 0) return;
+		drinkRedeemError = '';
+		showDrinkRedeemModal = true;
+	}
+
+	async function handleDrinkRedeem(data: { phone: string; password: string }) {
+		const academyId = academyStore.academyId;
+		if (!academyId) return;
+
+		drinkRedeemSubmitting = true;
+		drinkRedeemError = '';
+
+		try {
+			const loginRes = await login({
+				user_phone: data.phone,
+				password: btoa(data.password),
+				device_type: 'ANDROID'
+			});
+
+			if (!loginRes.status || !loginRes.data) {
+				drinkRedeemError = '로그인에 실패했습니다. 번호와 비밀번호를 확인해주세요.';
+				return;
+			}
+
+			const adminToken = loginRes.data.access_token;
+
+			const academiesRes = await apiRequest<ApiResponse<UserAcademy[]>>(
+				'/academic/auth/me/academies',
+				{
+					skipAuth: true,
+					headers: { Authorization: `Bearer ${adminToken}` }
+				}
+			);
+
+			if (!academiesRes.status || !academiesRes.data) {
+				drinkRedeemError = '학원 정보를 조회할 수 없습니다.';
+				return;
+			}
+
+			const adminAcademy = academiesRes.data.find(
+				(a) => a.academy_id === academyId && a.member_role === 'ADMIN'
+			);
+
+			if (!adminAcademy) {
+				drinkRedeemError = '관리자 권한이 없는 계정입니다.';
+				return;
+			}
+
+			const ticket = drinkTickets.find((t) => t.remaining_count > 0);
+			if (!ticket) {
+				drinkRedeemError = '사용 가능한 음료권이 없습니다.';
+				return;
+			}
+
+			const useRes = await useDrinkTicket(academyId, ticket.id, 1);
+
+			if (useRes.status) {
+				drinkTickets = drinkTickets.map((t) =>
+					t.id === ticket.id
+						? { ...t, remaining_count: useRes.data.remaining_count }
+						: t
+				);
+				toastStore.success('음료권 1잔이 사용되었습니다.');
+				showDrinkRedeemModal = false;
+			} else {
+				drinkRedeemError = useRes.message || '음료권 사용에 실패했습니다.';
+			}
+		} catch (err) {
+			drinkRedeemError = err instanceof Error ? err.message : '음료권 사용에 실패했습니다.';
+		} finally {
+			drinkRedeemSubmitting = false;
+		}
+	}
+
+	function handleCancelReservation(reservationId: number) {
+		const target = myReservations.find((r) => r.reservation_id === reservationId);
+		if (!target) return;
+		cancelTarget = target;
+		cancelSheetOpen = true;
+	}
+
+	async function handleConfirmCancel() {
+		const academyId = academyStore.academyId;
+		if (!academyId || !cancelTarget) return;
+
+		cancelling = true;
+		try {
+			const noShow = isReservationDay(cancelTarget.slot_date);
+			const res = noShow
+				? await cancelReservationAsNoShow(academyId, cancelTarget.reservation_id)
+				: await cancelReservation(academyId, cancelTarget.reservation_id);
+			if (res.status) {
+				toastStore.success(
+					noShow ? '당일 취소로 노쇼 처리되었습니다.' : '예약이 취소되었습니다.'
+				);
+				cancelSheetOpen = false;
+				cancelTarget = null;
+				const refreshRes = await getMyReservations(academyId);
+				if (refreshRes.status) {
+					myReservations = refreshRes.data;
+				}
+			}
+		} catch {
+			// handled by client.ts
+		} finally {
+			cancelling = false;
+		}
+	}
+
+	function getInstructorLabel(reservation: MyReservation): string {
+		if (reservation.slot_type === 'ENSEMBLE') return '합주 수업';
+		return reservation.instructor_name
+			? `${reservation.instructor_name} 선생님`
+			: '강사 미지정';
+	}
 </script>
 
 <div class="main-page">
@@ -103,7 +247,13 @@
 		<section class="main-page__section">
 			<div class="section-card">
 				<h2 class="section-title">음료권</h2>
-				<div class="drink-card">
+				<button
+					type="button"
+					class="drink-card"
+					class:drink-card--disabled={totalDrinks <= 0}
+					disabled={totalDrinks <= 0}
+					onclick={openDrinkRedeemModal}
+				>
 					<div class="drink-card__icon">
 						<svg
 							width="40"
@@ -122,7 +272,10 @@
 						<span class="drink-card__count">{totalDrinks}</span>
 						<span class="drink-card__label">잔 남음</span>
 					</div>
-				</div>
+					{#if totalDrinks > 0}
+						<span class="drink-card__action">사용하기</span>
+					{/if}
+				</button>
 			</div>
 		</section>
 
@@ -186,7 +339,11 @@
 		<!-- 캘린더 조회 -->
 		{#if academyStore.academyId}
 			<section class="main-page__section">
-				<CalendarSection academyId={academyStore.academyId} />
+				<CalendarSection
+					academyId={academyStore.academyId}
+					reservations={myReservations}
+					oncancelreservation={handleCancelReservation}
+				/>
 			</section>
 		{/if}
 
@@ -232,6 +389,95 @@
 	submitting={holdingSubmitting}
 	error={holdingError}
 />
+
+<DrinkRedeemModal
+	isOpen={showDrinkRedeemModal}
+	{totalDrinks}
+	onclose={() => {
+		showDrinkRedeemModal = false;
+		drinkRedeemError = '';
+	}}
+	onsubmit={handleDrinkRedeem}
+	submitting={drinkRedeemSubmitting}
+	error={drinkRedeemError}
+/>
+
+<!-- 예약 취소 확인 BottomSheet -->
+<BottomSheet
+	bind:isOpen={cancelSheetOpen}
+	title="예약 취소"
+	onclose={() => {
+		cancelSheetOpen = false;
+		cancelTarget = null;
+	}}
+>
+	{#if cancelTarget}
+		<div class="cancel-sheet">
+			<p class="cancel-sheet__message">
+				{isSameDayCancel
+					? '당일 취소는 노쇼로 처리됩니다. 정말 취소하시겠습니까?'
+					: '정말 예약을 취소하시겠습니까?'}
+			</p>
+			<div class="cancel-sheet__info">
+				<div class="cancel-sheet__row">
+					<span class="cancel-sheet__label">날짜</span>
+					<span class="cancel-sheet__value">
+						{formatDate(cancelTarget.slot_date)}
+						({getDayOfWeek(cancelTarget.slot_date)})
+					</span>
+				</div>
+				<div class="cancel-sheet__row">
+					<span class="cancel-sheet__label">시간</span>
+					<span class="cancel-sheet__value">
+						{formatTimeRange(cancelTarget.start_time, cancelTarget.end_time)}
+					</span>
+				</div>
+				<div class="cancel-sheet__row">
+					<span class="cancel-sheet__label">{cancelTarget.slot_type === 'ENSEMBLE' ? '유형' : '강사'}</span>
+					<span class="cancel-sheet__value">{getInstructorLabel(cancelTarget)}</span>
+				</div>
+				{#if cancelTarget.pass_name}
+					<div class="cancel-sheet__row">
+						<span class="cancel-sheet__label">수강권</span>
+						<span class="cancel-sheet__value">{cancelTarget.pass_name}</span>
+					</div>
+				{/if}
+			</div>
+			{#if isSameDayCancel}
+				<div class="cancel-sheet__noshow-warning">
+					당일 취소는 노쇼(No-Show)로 처리됩니다.
+					수강권이 차감되며 환불되지 않습니다.
+				</div>
+			{:else}
+				{#if cancelTarget.pass_category === 'ROTATION'}
+					<p class="cancel-sheet__refund-notice">
+						취소 시 0.5인원이 환불됩니다.
+					</p>
+				{/if}
+				{#if getTicketValue(cancelTarget.ticket_value) > 1}
+					<p class="cancel-sheet__refund-notice">
+						취소 시 {getTicketValue(cancelTarget.ticket_value)}회가 환불됩니다.
+					</p>
+				{/if}
+			{/if}
+			<div class="cancel-sheet__buttons">
+				<Button
+					variant="secondary"
+					fullWidth
+					onclick={() => {
+						cancelSheetOpen = false;
+						cancelTarget = null;
+					}}
+				>
+					닫기
+				</Button>
+				<Button variant="danger" fullWidth loading={cancelling} onclick={handleConfirmCancel}>
+					{isSameDayCancel ? '노쇼 처리하기' : '취소하기'}
+				</Button>
+			</div>
+		</div>
+	{/if}
+</BottomSheet>
 
 <style lang="scss">
 	.main-page {
@@ -292,6 +538,26 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-lg);
+		width: 100%;
+		background: none;
+		border: none;
+		padding: 0;
+		cursor: pointer;
+		text-align: left;
+		transition: opacity var(--transition-fast);
+
+		&:active {
+			opacity: 0.6;
+		}
+
+		&--disabled {
+			cursor: default;
+			opacity: 0.5;
+
+			&:active {
+				opacity: 0.5;
+			}
+		}
 
 		&__icon {
 			flex-shrink: 0;
@@ -301,6 +567,7 @@
 			display: flex;
 			align-items: baseline;
 			gap: var(--space-sm);
+			flex: 1;
 		}
 
 		&__count {
@@ -317,6 +584,13 @@
 		&__label {
 			font-size: var(--font-size-base);
 			color: var(--color-text-secondary);
+		}
+
+		&__action {
+			font-size: var(--font-size-sm);
+			font-weight: var(--font-weight-medium);
+			color: var(--color-primary);
+			white-space: nowrap;
 		}
 	}
 
@@ -470,6 +744,67 @@
 			font-size: var(--font-size-xs);
 			color: var(--color-text-muted);
 			white-space: nowrap;
+		}
+	}
+
+	.cancel-sheet {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-lg);
+
+		&__message {
+			font-size: var(--font-size-base);
+			color: var(--color-text);
+			text-align: center;
+		}
+
+		&__info {
+			display: flex;
+			flex-direction: column;
+			gap: var(--space-sm);
+			padding: var(--space-md);
+			background: var(--color-bg);
+			border-radius: var(--radius-md);
+		}
+
+		&__row {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+		}
+
+		&__label {
+			font-size: var(--font-size-sm);
+			color: var(--color-text-secondary);
+		}
+
+		&__value {
+			font-size: var(--font-size-sm);
+			font-weight: var(--font-weight-medium);
+			color: var(--color-text);
+		}
+
+		&__refund-notice {
+			font-size: var(--font-size-sm);
+			color: var(--color-warning);
+			text-align: center;
+			font-weight: var(--font-weight-medium);
+		}
+
+		&__noshow-warning {
+			font-size: var(--font-size-sm);
+			color: var(--color-danger);
+			font-weight: var(--font-weight-medium);
+			padding: var(--space-sm) var(--space-md);
+			background: var(--color-danger-bg);
+			border-radius: var(--radius-sm);
+			text-align: center;
+			line-height: 1.5;
+		}
+
+		&__buttons {
+			display: flex;
+			gap: var(--space-sm);
 		}
 	}
 </style>
