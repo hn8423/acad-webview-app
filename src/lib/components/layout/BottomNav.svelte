@@ -20,6 +20,7 @@
 	};
 
 	let navItems = $derived(academyStore.getEnabledNavItems('USER'));
+	let iconErrors = $state<Record<number, boolean>>({});
 
 	function getNavPath(position: number): string {
 		return NAV_ROUTE_MAP[position] ?? '/app';
@@ -47,11 +48,15 @@
 	{#each navItems as item}
 		{@const path = getNavPath(item.nav_position)}
 		<a href={path} class="bottom-nav__item" class:bottom-nav__item--active={isActive(path)}>
-			{#if isIconUrl(item.nav_icon)}
-				<span
-					class="bottom-nav__icon bottom-nav__icon--mask"
-					style:--icon-url="url('{item.nav_icon}')"
-				></span>
+			{#if isIconUrl(item.nav_icon) && !iconErrors[item.nav_id]}
+				<img
+					class="bottom-nav__icon bottom-nav__icon--img"
+					src={item.nav_icon}
+					alt=""
+					onerror={() => {
+						iconErrors = { ...iconErrors, [item.nav_id]: true };
+					}}
+				/>
 			{:else}
 				<svg
 					class="bottom-nav__icon"
@@ -118,17 +123,8 @@
 			width: 24px;
 			height: 24px;
 
-			&--mask {
-				display: inline-block;
-				background-color: currentColor;
-				-webkit-mask-image: var(--icon-url);
-				mask-image: var(--icon-url);
-				-webkit-mask-size: contain;
-				mask-size: contain;
-				-webkit-mask-repeat: no-repeat;
-				mask-repeat: no-repeat;
-				-webkit-mask-position: center;
-				mask-position: center;
+			&--img {
+				object-fit: contain;
 			}
 		}
 
