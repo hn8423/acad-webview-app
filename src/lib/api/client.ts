@@ -164,8 +164,8 @@ export function patch<T>(endpoint: string, body?: unknown): Promise<T> {
 	return apiRequest<T>(endpoint, { method: 'PATCH', body });
 }
 
-export function del<T>(endpoint: string): Promise<T> {
-	return apiRequest<T>(endpoint, { method: 'DELETE' });
+export function del<T>(endpoint: string, body?: unknown): Promise<T> {
+	return apiRequest<T>(endpoint, { method: 'DELETE', body });
 }
 
 export function upload<T>(endpoint: string, formData: FormData): Promise<T> {

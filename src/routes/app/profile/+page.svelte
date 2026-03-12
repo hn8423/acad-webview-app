@@ -2,10 +2,19 @@
 	import { goto } from '$app/navigation';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { academyStore } from '$lib/stores/academy.svelte';
+	import { toastStore } from '$lib/stores/toast.svelte';
 	import BackHeader from '$lib/components/layout/BackHeader.svelte';
+	import Modal from '$lib/components/ui/Modal.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
 	import { formatPhone } from '$lib/utils/format';
 
 	let user = $derived(authStore.user);
+
+	let showDeleteModal = $state(false);
+	let deletePassword = $state('');
+	let deleteError = $state('');
+	let deleteLoading = $state(false);
 
 	async function handleLogout() {
 		await authStore.logout();
@@ -16,6 +25,40 @@
 	function handleSwitchAcademy() {
 		academyStore.clear();
 		goto('/auth/select-academy', { replaceState: true });
+	}
+
+	function openDeleteModal() {
+		deletePassword = '';
+		deleteError = '';
+		showDeleteModal = true;
+	}
+
+	function closeDeleteModal() {
+		showDeleteModal = false;
+		deletePassword = '';
+		deleteError = '';
+	}
+
+	async function handleDeleteAccount() {
+		if (!deletePassword.trim()) {
+			deleteError = '비밀번호를 입력해주세요.';
+			return;
+		}
+
+		deleteLoading = true;
+		deleteError = '';
+
+		try {
+			await authStore.deleteAccount(deletePassword);
+			academyStore.clear();
+			toastStore.success('회원 탈퇴가 완료되었습니다.');
+			goto('/auth/login', { replaceState: true });
+		} catch (error) {
+			deleteError =
+				error instanceof Error ? error.message : '회원 탈퇴에 실패했습니다.';
+		} finally {
+			deleteLoading = false;
+		}
 	}
 </script>
 
@@ -75,11 +118,47 @@
 			</button>
 		</div>
 
+		<div class="profile-delete">
+			<button type="button" class="profile-delete__button" onclick={openDeleteModal}>
+				계정 삭제
+			</button>
+		</div>
+
 		<div class="profile-page__footer">
 			<button type="button" class="profile-logout" onclick={handleLogout}> 로그아웃 </button>
 		</div>
 	</div>
 </div>
+
+<Modal isOpen={showDeleteModal} title="계정 삭제" position="center" onclose={closeDeleteModal}>
+	<div class="delete-modal">
+		<p class="delete-modal__warning">
+			탈퇴 시 모든 수강권, 예약, 피드백 등의 데이터가 삭제되며 복구할 수 없습니다.
+		</p>
+
+		<div class="delete-modal__input">
+			<Input
+				type="password"
+				label="비밀번호 확인"
+				placeholder="비밀번호를 입력해주세요"
+				bind:value={deletePassword}
+				error={deleteError}
+			/>
+		</div>
+
+		<div class="delete-modal__actions">
+			<Button variant="secondary" fullWidth onclick={closeDeleteModal}>취소</Button>
+			<Button
+				variant="danger"
+				fullWidth
+				loading={deleteLoading}
+				onclick={handleDeleteAccount}
+			>
+				탈퇴하기
+			</Button>
+		</div>
+	</div>
+</Modal>
 
 <style lang="scss">
 	.profile-page {
@@ -184,6 +263,26 @@
 		}
 	}
 
+	.profile-delete {
+		display: flex;
+		justify-content: center;
+
+		&__button {
+			background: none;
+			border: none;
+			cursor: pointer;
+			font-size: var(--font-size-sm);
+			color: var(--color-text-muted);
+			padding: var(--space-sm) var(--space-md);
+			text-decoration: underline;
+			transition: opacity var(--transition-fast);
+
+			&:active {
+				opacity: 0.6;
+			}
+		}
+	}
+
 	.profile-logout {
 		background: none;
 		border: none;
@@ -195,6 +294,24 @@
 
 		&:active {
 			opacity: 0.6;
+		}
+	}
+
+	.delete-modal {
+		&__warning {
+			font-size: var(--font-size-sm);
+			color: var(--color-danger);
+			line-height: 1.5;
+			margin-bottom: var(--space-lg);
+		}
+
+		&__input {
+			margin-bottom: var(--space-lg);
+		}
+
+		&__actions {
+			display: flex;
+			gap: var(--space-sm);
 		}
 	}
 </style>

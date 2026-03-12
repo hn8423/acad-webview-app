@@ -94,6 +94,17 @@ export function getAuthStore() {
 		removeItem(USER_STORAGE_KEY);
 	}
 
+	async function deleteAccount(password: string): Promise<void> {
+		const res = await authApi.deleteMe(btoa(password));
+		if (!res.status) {
+			throw new Error(res.message || '회원 탈퇴에 실패했습니다.');
+		}
+		user = null;
+		isAuthenticated = false;
+		clearTokens();
+		removeItem(USER_STORAGE_KEY);
+	}
+
 	async function fetchMyAcademies(): Promise<UserAcademy[]> {
 		const res = await authApi.getMyAcademies();
 		if (res.status && res.data) {
@@ -119,6 +130,7 @@ export function getAuthStore() {
 		login,
 		signup,
 		logout,
+		deleteAccount,
 		fetchMyAcademies
 	};
 }
