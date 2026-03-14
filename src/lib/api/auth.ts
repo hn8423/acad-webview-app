@@ -1,4 +1,4 @@
-import { get, post, patch } from './client';
+import { get, post, patch, del } from './client';
 import type { ApiResponse } from '$lib/types/api';
 import type {
 	User,
@@ -47,6 +47,10 @@ export function updateMe(
 	data: Partial<Pick<User, 'user_name' | 'user_birthday' | 'user_gender' | 'profile_img'>>
 ) {
 	return patch<ApiResponse<User>>('/academic/auth/me', data);
+}
+
+export function deleteMe(password: string) {
+	return del<ApiResponse<null>>('/academic/auth/me', { password });
 }
 
 export function getMyAcademies() {
