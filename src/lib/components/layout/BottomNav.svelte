@@ -103,7 +103,7 @@
 			gap: 2px;
 			flex: 1;
 			height: 100%;
-			color: var(--color-text-secondary);
+			color: var(--color-text);
 			text-decoration: none;
 			position: relative;
 			transition: color var(--transition-fast);
@@ -125,7 +125,12 @@
 
 			&--img {
 				object-fit: contain;
+				filter: brightness(0) invert(1);
 			}
+		}
+
+		&__item--active &__icon--img {
+			filter: none;
 		}
 
 		&__label {
