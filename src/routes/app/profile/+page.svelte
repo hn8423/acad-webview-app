@@ -235,6 +235,7 @@
 			font-weight: var(--font-weight-bold);
 			letter-spacing: var(--letter-spacing-tight);
 			margin-bottom: var(--space-2xs);
+			color: white;
 		}
 
 		&__phone {

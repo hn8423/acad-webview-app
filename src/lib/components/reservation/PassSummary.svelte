@@ -5,8 +5,7 @@
 	import {
 		getPassStatusVariant,
 		getPassStatusLabel,
-		getTicketValue,
-		getCapacityWeight
+		getTicketValue
 	} from '$lib/utils/pass';
 	import type { MemberPass } from '$lib/types/member';
 
@@ -62,9 +61,6 @@
 			<div class="pass-summary-card__header">
 				<span class="pass-summary-card__name">
 					{pass.pass_name}
-					{#if getCapacityWeight(pass.pass_category) !== 1}
-						<span class="pass-summary-card__capacity-badge">{getCapacityWeight(pass.pass_category)}인원</span>
-					{/if}
 					{#if getTicketValue(pass.ticket_value) > 1}
 						<span class="pass-summary-card__ticket-badge">{getTicketValue(pass.ticket_value)}회 차감</span>
 					{/if}
@@ -230,14 +226,6 @@
 			border-radius: var(--radius-full);
 		}
 
-		&__capacity-badge {
-			padding: 2px 6px;
-			font-size: var(--font-size-xs);
-			font-weight: var(--font-weight-medium);
-			color: var(--color-info);
-			background: var(--color-info-bg);
-			border-radius: var(--radius-full);
-		}
 
 		&__instructor {
 			font-size: var(--font-size-xs);

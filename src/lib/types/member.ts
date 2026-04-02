@@ -62,7 +62,7 @@ export interface CreatePassRequest {
 	pass_type_id: number;
 	instructor_id: number;
 	start_date: string;
-	total_lessons?: number;
+	end_date: string;
 }
 
 export interface UpdatePassRequest {
@@ -109,6 +109,7 @@ export interface CreateInstructorRequest {
 }
 
 export interface UpdateInstructorRequest {
+	user_name?: string;
 	specialties?: string;
 	introduction?: string;
 	is_admin?: number;

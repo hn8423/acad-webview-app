@@ -5,8 +5,10 @@
 		createInstructor,
 		getMembers,
 		getInstructorDetail,
-		updateInstructor
+		updateInstructor,
+		deleteInstructor
 	} from '$lib/api/member';
+	import { toastStore } from '$lib/stores/toast.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
@@ -34,9 +36,15 @@
 	let loadingDetail = $state(false);
 	let editError = $state('');
 	let saving = $state(false);
+	let editName = $state('');
 	let editSpecialties = $state('');
 	let editIntroduction = $state('');
 	let editIsAdmin = $state(false);
+
+	// Delete modal state
+	let showDeleteModal = $state(false);
+	let deleteTarget = $state<Instructor | null>(null);
+	let deleting = $state(false);
 
 	// Step management: 'select-member' | 'fill-details'
 	let step = $state<'select-member' | 'fill-details'>('select-member');
@@ -165,6 +173,7 @@
 		loadingDetail = true;
 		editError = '';
 		editingInstructor = instructor;
+		editName = instructor.user_name;
 		editSpecialties = instructor.specialties;
 		editIntroduction = instructor.introduction;
 		editIsAdmin = instructor.is_admin === 1;
@@ -173,6 +182,7 @@
 			const res = await getInstructorDetail(academyId, getInstructorId(instructor));
 			if (res.status && res.data) {
 				editingInstructor = res.data;
+				editName = res.data.user_name;
 				editSpecialties = res.data.specialties;
 				editIntroduction = res.data.introduction;
 				editIsAdmin = res.data.is_admin === 1;
@@ -188,6 +198,11 @@
 		editError = '';
 		if (!editingInstructor) return;
 
+		if (!editName.trim()) {
+			editError = '이름을 입력해주세요.';
+			return;
+		}
+
 		if (!editSpecialties.trim()) {
 			editError = '전문분야를 입력해주세요.';
 			return;
@@ -199,6 +214,7 @@
 		saving = true;
 		try {
 			const res = await updateInstructor(academyId, getInstructorId(editingInstructor), {
+				user_name: editName.trim(),
 				specialties: editSpecialties.trim(),
 				introduction: editIntroduction.trim(),
 				is_admin: editIsAdmin ? 1 : 0
@@ -248,6 +264,33 @@
 			error = err instanceof Error ? err.message : '강사 추가에 실패했습니다.';
 		} finally {
 			creating = false;
+		}
+	}
+
+	function confirmWithdraw(event: Event, instructor: Instructor) {
+		event.stopPropagation();
+		deleteTarget = instructor;
+		showDeleteModal = true;
+	}
+
+	async function handleWithdraw() {
+		if (deleting) return;
+		const academyId = academyStore.academyId;
+		if (!academyId || !deleteTarget) return;
+
+		deleting = true;
+		try {
+			const res = await deleteInstructor(academyId, getInstructorId(deleteTarget));
+			if (res.status) {
+				toastStore.success(`${deleteTarget.user_name} 강사가 탈퇴 처리되었습니다.`);
+				showDeleteModal = false;
+				deleteTarget = null;
+				await fetchInstructors();
+			}
+		} catch {
+			// Error toast is handled automatically by client.ts
+		} finally {
+			deleting = false;
 		}
 	}
 </script>
@@ -329,6 +372,29 @@
 							<path d="M18 20V10M12 20V4M6 20v-6" />
 						</svg>
 						<span>통계</span>
+					</button>
+					<button
+						type="button"
+						class="instructor-row__withdraw-btn"
+						onclick={(e) => confirmWithdraw(e, instructor)}
+						aria-label="{instructor.user_name} 강사 탈퇴"
+					>
+						<svg
+							width="18"
+							height="18"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<polyline points="3 6 5 6 21 6" />
+							<path d="M19 6l-1 14H6L5 6" />
+							<path d="M10 11v6M14 11v6" />
+							<path d="M9 6V4h6v2" />
+						</svg>
+						<span>탈퇴</span>
 					</button>
 				</div>
 				{#if i < instructors.length - 1}
@@ -498,8 +564,9 @@
 						</svg>
 					{/if}
 				</div>
-				<h3 class="instructor-info__name">{editingInstructor.user_name}</h3>
 			</div>
+
+			<Input label="이름" placeholder="강사 이름" bind:value={editName} maxlength={50} />
 
 			<Input
 				label="전문분야"
@@ -534,6 +601,14 @@
 			</div>
 		</form>
 	{/if}
+</Modal>
+
+<Modal isOpen={showDeleteModal} title="강사 탈퇴" onclose={() => (showDeleteModal = false)}>
+	<p class="modal-message">"{deleteTarget?.user_name}" 강사를 탈퇴 처리하시겠습니까?</p>
+	<div class="modal-actions">
+		<Button variant="danger" fullWidth onclick={handleWithdraw} loading={deleting}>탈퇴</Button>
+		<Button variant="secondary" fullWidth onclick={() => (showDeleteModal = false)}>취소</Button>
+	</div>
 </Modal>
 
 <InstructorStatsModal
@@ -678,6 +753,28 @@
 
 			&:active {
 				background-color: var(--color-primary-bg);
+				transform: scale(0.95);
+			}
+		}
+
+		&__withdraw-btn {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			gap: 2px;
+			padding: var(--space-xs) var(--space-sm);
+			border-radius: var(--radius-md);
+			color: var(--color-danger);
+			font-size: var(--font-size-xs);
+			font-weight: var(--font-weight-medium);
+			cursor: pointer;
+			transition:
+				background-color var(--transition-fast),
+				transform var(--transition-fast);
+			flex-shrink: 0;
+
+			&:active {
+				background-color: var(--color-danger-bg);
 				transform: scale(0.95);
 			}
 		}
@@ -911,12 +1008,19 @@
 			height: 100%;
 			object-fit: cover;
 		}
+	}
 
-		&__name {
-			font-size: var(--font-size-lg);
-			font-weight: var(--font-weight-bold);
-			color: var(--color-text);
-		}
+	.modal-message {
+		font-size: var(--font-size-base);
+		color: var(--color-text-secondary);
+		line-height: var(--line-height-base);
+	}
+
+	.modal-actions {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-sm);
+		margin-top: var(--space-lg);
 	}
 
 	.load-more-btn {

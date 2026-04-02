@@ -39,10 +39,10 @@
 
 	// Shared form fields
 	let startDate = $state('');
-	let totalLessons = $state('');
+	let endDate = $state('');
 
 	// Edit-only form fields
-	let endDate = $state('');
+	let totalLessons = $state('');
 	let remainingLessons = $state('');
 	let selectedStatus = $state<MemberPass['status']>('ACTIVE');
 
@@ -95,12 +95,25 @@
 		}
 	}
 
+	function addDays(dateStr: string, days: number): string {
+		const date = new Date(dateStr);
+		date.setDate(date.getDate() + days);
+		return date.toISOString().split('T')[0];
+	}
+
+	function calcEndDate(start: string, passTypeId: string): string {
+		if (!start || !passTypeId) return '';
+		const pt = passTypes.find((t) => String(t.id) === String(passTypeId));
+		if (!pt || !pt.duration_days) return '';
+		return addDays(start, pt.duration_days);
+	}
+
 	function openCreateModal() {
 		editTarget = null;
 		selectedPassTypeId = '';
 		selectedInstructorId = '';
 		startDate = new Date().toISOString().split('T')[0];
-		totalLessons = '';
+		endDate = '';
 		error = '';
 		showFormModal = true;
 	}
@@ -117,11 +130,14 @@
 	}
 
 	function handlePassTypeChange() {
-		const pt = passTypes.find((t) => String(t.id) === String(selectedPassTypeId));
-		if (pt) {
-			totalLessons = String(pt.total_lessons);
-		}
+		endDate = calcEndDate(startDate, selectedPassTypeId);
 	}
+
+	$effect(() => {
+		if (!editTarget && selectedPassTypeId && startDate) {
+			endDate = calcEndDate(startDate, selectedPassTypeId);
+		}
+	});
 
 	let selectedPassTypeTicketValue = $derived.by(() => {
 		if (!selectedPassTypeId) return 1;
@@ -160,7 +176,7 @@
 				submitting = false;
 			}
 		} else {
-			if (!selectedPassTypeId || !selectedInstructorId || !startDate || !totalLessons) {
+			if (!selectedPassTypeId || !selectedInstructorId || !startDate || !endDate) {
 				error = '모든 항목을 입력해주세요.';
 				return;
 			}
@@ -171,7 +187,7 @@
 					pass_type_id: Number(selectedPassTypeId),
 					instructor_id: Number(selectedInstructorId),
 					start_date: startDate,
-					total_lessons: Number(totalLessons)
+					end_date: endDate
 				});
 				if (res.status) {
 					toastStore.success('수강권이 부여되었습니다.');
@@ -297,11 +313,11 @@
 
 		<Input type="date" label="시작일" bind:value={startDate} />
 
-		{#if editTarget}
-			<Input type="date" label="종료일" bind:value={endDate} />
-		{/if}
+		<Input type="date" label="종료일" bind:value={endDate} />
 
-		<Input type="number" label="총 수업횟수" bind:value={totalLessons} />
+		{#if editTarget}
+			<Input type="number" label="총 수업횟수" bind:value={totalLessons} />
+		{/if}
 
 		{#if editTarget}
 			<Input type="number" label="잔여 수업횟수" bind:value={remainingLessons} />

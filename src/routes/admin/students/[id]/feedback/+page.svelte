@@ -163,7 +163,9 @@
 	<div class="feedback-page__content">
 		<div class="feedback-page__header">
 			<FeedbackTypeFilter selected={typeFilter} onchange={handleTypeChange} />
-			<Button size="sm" onclick={openCreateFlow}>피드백 작성</Button>
+			{#if academyStore.memberRole !== 'ADMIN'}
+				<Button size="sm" onclick={openCreateFlow}>피드백 작성</Button>
+			{/if}
 		</div>
 
 		{#if loading}

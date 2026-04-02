@@ -8,6 +8,8 @@
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import { getRelativeTime } from '$lib/utils/format';
+	import Modal from '$lib/components/ui/Modal.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
 	import type { Notification, NotificationType } from '$lib/types/notification';
 
 	const LIMIT = 20;
@@ -17,6 +19,8 @@
 	let markingAllRead = $state(false);
 	let currentPage = $state(1);
 	let totalPages = $state(1);
+	let selectedNotification = $state<Notification | null>(null);
+	let isModalOpen = $state(false);
 
 	let hasUnread = $derived(notifications.some((n) => !n.is_read));
 
@@ -62,12 +66,24 @@
 			}
 		}
 
-		if (notification.reference_id && notification.reference_type) {
-			if (notification.reference_type === 'FEEDBACK') {
-				goto(`/app/feedback/${notification.reference_id}`);
-			} else if (notification.reference_type === 'LESSON') {
-				goto('/app/reservation');
-			}
+		selectedNotification = notification;
+		isModalOpen = true;
+	}
+
+	function closeModal() {
+		isModalOpen = false;
+		selectedNotification = null;
+	}
+
+	function handleDetailNavigation() {
+		if (!selectedNotification?.reference_id || !selectedNotification?.reference_type) return;
+
+		const { reference_id, reference_type } = selectedNotification;
+		closeModal();
+		if (reference_type === 'FEEDBACK') {
+			goto(`/app/feedback/${reference_id}`);
+		} else if (reference_type === 'LESSON') {
+			goto('/app/reservation');
 		}
 	}
 
@@ -186,7 +202,43 @@
 	</div>
 </div>
 
+{#if selectedNotification}
+	<Modal isOpen={isModalOpen} title={selectedNotification.title} onclose={closeModal}>
+		<p class="notification-detail__content">{selectedNotification.content}</p>
+		<p class="notification-detail__time">
+			{getRelativeTime(selectedNotification.created_at)}
+		</p>
+		{#if selectedNotification.reference_id && selectedNotification.reference_type}
+			<div class="notification-detail__action">
+				<Button variant="primary" size="md" onclick={handleDetailNavigation}>
+					자세히 보기
+				</Button>
+			</div>
+		{/if}
+	</Modal>
+{/if}
+
 <style lang="scss">
+	.notification-detail {
+		&__content {
+			font-size: var(--font-size-sm);
+			color: var(--color-text);
+			line-height: 1.6;
+			white-space: pre-line;
+			word-break: break-word;
+		}
+
+		&__time {
+			font-size: var(--font-size-xs);
+			color: var(--color-text-muted);
+			margin-top: var(--space-md);
+		}
+
+		&__action {
+			margin-top: var(--space-lg);
+		}
+	}
+
 	.notifications-page {
 		&__content {
 			padding: calc(var(--header-height) + var(--space-md)) var(--space-md) var(--space-md);
@@ -301,6 +353,7 @@
 			font-size: var(--font-size-xs);
 			color: var(--color-text-muted);
 			line-height: 1.4;
+			white-space: pre-line;
 			display: -webkit-box;
 			-webkit-line-clamp: 2;
 			line-clamp: 2;
