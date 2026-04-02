@@ -23,7 +23,7 @@
 		getTodayString,
 		getDaysInMonth
 	} from '$lib/utils/format';
-	import { getTicketValue, getCapacityWeight, getReservationWeight } from '$lib/utils/pass';
+	import { getTicketValue, getReservationWeight } from '$lib/utils/pass';
 	import { isReservationDay } from '$lib/utils/reservation';
 	import type {
 		AvailableSlot,
@@ -437,9 +437,6 @@
 									{#if reservation.pass_name}
 										<span class="reservation-card__pass">
 											{reservation.pass_name}
-											{#if getReservationWeight(reservation.pass_category, reservation.ticket_value) !== 1}
-												<span class="reservation-card__capacity-badge">{getReservationWeight(reservation.pass_category, reservation.ticket_value)}인원</span>
-											{/if}
 											{#if getTicketValue(reservation.ticket_value) > 1}
 												<span class="reservation-card__ticket">({getTicketValue(reservation.ticket_value)}회 차감)</span>
 											{/if}
@@ -498,7 +495,7 @@
 						{@const passWeight = getReservationWeight(pass.pass_category, pass.ticket_value)}
 						{@const fits = !selectedSlot || selectedSlot.remaining_capacity >= passWeight}
 						<option value={pass.id} disabled={!fits}>
-							{pass.pass_name} (잔여 {pass.remaining_lessons}회){passWeight !== 1 ? ` [${passWeight}인원]` : ''}{getTicketValue(pass.ticket_value) > 1 ? ` [${getTicketValue(pass.ticket_value)}회 차감]` : ''}{!fits ? ' (용량 초과)' : ''}
+							{pass.pass_name} (잔여 {pass.remaining_lessons}회){getTicketValue(pass.ticket_value) > 1 ? ` [${getTicketValue(pass.ticket_value)}회 차감]` : ''}{!fits ? ' (용량 초과)' : ''}
 						</option>
 					{/each}
 				</select>
@@ -514,11 +511,6 @@
 				</p>
 			{/if}
 
-			{#if selectedPass && selectedPassWeight !== 1}
-				<div class="booking-sheet__capacity-notice">
-					이 수강권은 {selectedPassWeight}인원으로 차감됩니다.
-				</div>
-			{/if}
 
 			{#if selectedPass && getTicketValue(selectedPass.ticket_value) > 1}
 				<div class="booking-sheet__ticket-notice">
@@ -528,14 +520,12 @@
 
 			{#if exceedsCapacity}
 				<div class="booking-sheet__capacity-warning">
-					잔여 용량({selectedSlot?.remaining_capacity})이 부족하여 예약할 수 없습니다. (필요: {selectedPassWeight}인원)
+					잔여 용량({selectedSlot?.remaining_capacity})이 부족하여 예약할 수 없습니다.
 				</div>
 			{/if}
 
 			<Button fullWidth loading={submitting} disabled={exceedsCapacity} onclick={handleConfirmBooking}>
-				{#if selectedPassWeight !== 1}
-					예약하기 ({selectedPassWeight}인원 차감)
-				{:else if selectedPass && getTicketValue(selectedPass.ticket_value) > 1}
+				{#if selectedPass && getTicketValue(selectedPass.ticket_value) > 1}
 					예약하기 ({getTicketValue(selectedPass.ticket_value)}회 차감)
 				{:else}
 					예약하기
@@ -593,11 +583,6 @@
 				</div>
 			{:else}
 				{@const cancelWeight = getReservationWeight(selectedReservation.pass_category, selectedReservation.ticket_value)}
-				{#if cancelWeight !== 1}
-					<p class="cancel-sheet__refund-notice">
-						취소 시 {cancelWeight}인원이 환원됩니다.
-					</p>
-				{/if}
 				{#if getTicketValue(selectedReservation.ticket_value) > 1}
 					<p class="cancel-sheet__refund-notice">
 						취소 시 {getTicketValue(selectedReservation.ticket_value)}회가 환불됩니다.
@@ -798,15 +783,6 @@
 			font-weight: var(--font-weight-medium);
 		}
 
-		&__capacity-badge {
-			display: inline-block;
-			padding: 2px 6px;
-			font-size: var(--font-size-xs);
-			font-weight: var(--font-weight-medium);
-			color: var(--color-info);
-			background: var(--color-info-bg);
-			border-radius: var(--radius-full);
-		}
 	}
 
 	.booking-sheet {
@@ -873,14 +849,6 @@
 			border-radius: var(--radius-sm);
 		}
 
-		&__capacity-notice {
-			font-size: var(--font-size-sm);
-			color: var(--color-info);
-			font-weight: var(--font-weight-medium);
-			padding: var(--space-sm) var(--space-md);
-			background: var(--color-info-bg);
-			border-radius: var(--radius-sm);
-		}
 
 		&__capacity-warning {
 			font-size: var(--font-size-sm);
