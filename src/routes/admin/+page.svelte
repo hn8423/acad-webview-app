@@ -3,14 +3,11 @@
 	import {
 		getAccessibleFeatures,
 		getFeatureIcon,
-		getSingleFeatureRoute,
-		isIconUrl
+		getSingleFeatureRoute
 	} from '$lib/config/admin-features';
 	import type { NavItem } from '$lib/types/academy';
 	import Card from '$lib/components/ui/Card.svelte';
 	import { goto } from '$app/navigation';
-
-	let iconErrors = $state<Record<number, boolean>>({});
 
 	let navItems = $derived(
 		academyStore
@@ -42,31 +39,18 @@
 			<Card onclick={() => handleCardClick(navItem)}>
 				<div class="dashboard-card">
 					<div class="dashboard-card__icon">
-						{#if navItem.nav_icon && isIconUrl(navItem.nav_icon) && !iconErrors[navItem.nav_id]}
-							<img
-								class="dashboard-card__nav-icon-img"
-								src={navItem.nav_icon}
-								alt=""
-								width="24"
-								height="24"
-								onerror={() => {
-									iconErrors = { ...iconErrors, [navItem.nav_id]: true };
-								}}
-							/>
-						{:else}
-							<svg
-								width="24"
-								height="24"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="var(--color-primary)"
-								stroke-width="2"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-							>
-								<path d={getCardIcon(navItem)} />
-							</svg>
-						{/if}
+						<svg
+							width="24"
+							height="24"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="var(--color-primary)"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path d={getCardIcon(navItem)} />
+						</svg>
 					</div>
 					<span class="dashboard-card__label">{navItem.nav_label}</span>
 				</div>
@@ -112,12 +96,6 @@
 			height: 48px;
 			background: var(--color-primary-bg);
 			border-radius: var(--radius-full);
-		}
-
-		&__nav-icon-img {
-			width: 24px;
-			height: 24px;
-			object-fit: contain;
 		}
 
 		&__label {
