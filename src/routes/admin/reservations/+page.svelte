@@ -577,9 +577,10 @@
 
 					{#if slot.reservations.length > 0}
 						<div class="slot-card__reservations">
-							{#each slot.reservations as rv (rv.reservation_id)}
+							{#each slot.reservations as rv, i (rv.reservation_id)}
 								<div class="reservation-row">
 									<div class="reservation-row__info">
+										<span class="reservation-row__number">{i + 1}</span>
 										<span class="reservation-row__name">{rv.member_name}</span>
 										{#if rv.pass_name}
 											<span class="reservation-row__pass">{rv.pass_name}</span>
@@ -1172,6 +1173,14 @@
 			display: flex;
 			align-items: center;
 			gap: var(--space-sm);
+		}
+
+		&__number {
+			font-size: var(--font-size-sm);
+			font-weight: var(--font-weight-medium);
+			color: var(--color-text-muted);
+			min-width: 18px;
+			text-align: center;
 		}
 
 		&__name {

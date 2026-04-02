@@ -103,7 +103,7 @@
 			gap: 2px;
 			flex: 1;
 			height: 100%;
-			color: var(--color-text-secondary);
+			color: var(--color-text);
 			text-decoration: none;
 			position: relative;
 			transition: color var(--transition-fast);
@@ -125,7 +125,13 @@
 
 			&--img {
 				object-fit: contain;
+				filter: brightness(0) invert(1);
 			}
+		}
+
+		&__item--active &__icon--img {
+			filter: brightness(0) saturate(100%) invert(42%) sepia(93%) saturate(4226%)
+				hue-rotate(240deg) brightness(100%) contrast(96%);
 		}
 
 		&__label {
