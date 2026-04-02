@@ -109,6 +109,7 @@ export interface CreateInstructorRequest {
 }
 
 export interface UpdateInstructorRequest {
+	user_name?: string;
 	specialties?: string;
 	introduction?: string;
 	is_admin?: number;

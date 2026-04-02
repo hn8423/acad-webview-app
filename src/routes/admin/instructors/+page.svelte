@@ -34,6 +34,7 @@
 	let loadingDetail = $state(false);
 	let editError = $state('');
 	let saving = $state(false);
+	let editName = $state('');
 	let editSpecialties = $state('');
 	let editIntroduction = $state('');
 	let editIsAdmin = $state(false);
@@ -165,6 +166,7 @@
 		loadingDetail = true;
 		editError = '';
 		editingInstructor = instructor;
+		editName = instructor.user_name;
 		editSpecialties = instructor.specialties;
 		editIntroduction = instructor.introduction;
 		editIsAdmin = instructor.is_admin === 1;
@@ -173,6 +175,7 @@
 			const res = await getInstructorDetail(academyId, getInstructorId(instructor));
 			if (res.status && res.data) {
 				editingInstructor = res.data;
+				editName = res.data.user_name;
 				editSpecialties = res.data.specialties;
 				editIntroduction = res.data.introduction;
 				editIsAdmin = res.data.is_admin === 1;
@@ -188,6 +191,11 @@
 		editError = '';
 		if (!editingInstructor) return;
 
+		if (!editName.trim()) {
+			editError = '이름을 입력해주세요.';
+			return;
+		}
+
 		if (!editSpecialties.trim()) {
 			editError = '전문분야를 입력해주세요.';
 			return;
@@ -199,6 +207,7 @@
 		saving = true;
 		try {
 			const res = await updateInstructor(academyId, getInstructorId(editingInstructor), {
+				user_name: editName.trim(),
 				specialties: editSpecialties.trim(),
 				introduction: editIntroduction.trim(),
 				is_admin: editIsAdmin ? 1 : 0
@@ -498,8 +507,9 @@
 						</svg>
 					{/if}
 				</div>
-				<h3 class="instructor-info__name">{editingInstructor.user_name}</h3>
 			</div>
+
+			<Input label="이름" placeholder="강사 이름" bind:value={editName} maxlength={50} />
 
 			<Input
 				label="전문분야"
@@ -910,12 +920,6 @@
 			width: 100%;
 			height: 100%;
 			object-fit: cover;
-		}
-
-		&__name {
-			font-size: var(--font-size-lg);
-			font-weight: var(--font-weight-bold);
-			color: var(--color-text);
 		}
 	}
 
