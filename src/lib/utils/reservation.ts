@@ -1,6 +1,33 @@
 import type { DateIndicators, LessonSlot } from '$lib/types/reservation';
 import { getTodayString, toLocalDateString } from '$lib/utils/format';
 
+const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'] as const;
+
+export function countSlotDates(
+	startDate: string,
+	endDate: string,
+	daysOfWeek: number[]
+): number {
+	if (daysOfWeek.length === 0) return 0;
+	const start = new Date(startDate);
+	const end = new Date(endDate);
+	if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) return 0;
+
+	const daySet = new Set(daysOfWeek);
+	let count = 0;
+	const current = new Date(start);
+	while (current <= end) {
+		if (daySet.has(current.getDay())) count++;
+		current.setDate(current.getDate() + 1);
+	}
+	return count;
+}
+
+export function formatDayLabels(daysOfWeek: number[]): string {
+	const sorted = [...daysOfWeek].sort((a, b) => a - b);
+	return sorted.map((d) => DAY_LABELS[d]).join(', ');
+}
+
 export function isReservationDay(slotDate: string): boolean {
 	return toLocalDateString(slotDate) <= getTodayString();
 }

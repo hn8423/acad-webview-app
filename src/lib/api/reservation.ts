@@ -2,6 +2,8 @@ import { get, post, patch, del } from './client';
 import type { ApiResponse } from '$lib/types/api';
 import type {
 	AvailableSlot,
+	BulkCreateSlotRequest,
+	BulkCreateSlotResponse,
 	CreateReservationRequest,
 	CreateReservationResponse,
 	CreateSlotRequest,
@@ -64,6 +66,13 @@ export function getLessonSlots(
 
 export function createLessonSlot(academyId: number, data: CreateSlotRequest) {
 	return post<ApiResponse<LessonSlot>>(`/academic/academies/${academyId}/lesson-slots`, data);
+}
+
+export function createBulkLessonSlots(academyId: number, data: BulkCreateSlotRequest) {
+	return post<ApiResponse<BulkCreateSlotResponse>>(
+		`/academic/academies/${academyId}/lesson-slots/bulk`,
+		data
+	);
 }
 
 export function updateLessonSlot(academyId: number, slotId: number, data: UpdateSlotRequest) {

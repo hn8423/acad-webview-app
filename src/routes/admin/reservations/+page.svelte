@@ -6,6 +6,7 @@
 	import {
 		getLessonSlots,
 		createLessonSlot,
+		createBulkLessonSlots,
 		updateLessonSlot,
 		deleteLessonSlot,
 		updateReservationStatus
@@ -19,7 +20,7 @@
 		getReservationWeight,
 		isActiveReservationStatus
 	} from '$lib/utils/pass';
-	import { buildDateIndicators } from '$lib/utils/reservation';
+	import { buildDateIndicators, countSlotDates, formatDayLabels } from '$lib/utils/reservation';
 	import type {
 		LessonSlot,
 		SlotStatus,
@@ -27,6 +28,7 @@
 		SlotType,
 		ReservationStatus,
 		CreateSlotRequest,
+		BulkCreateSlotRequest,
 		UpdateSlotRequest,
 		DateIndicators
 	} from '$lib/types/reservation';
@@ -50,6 +52,7 @@
 
 	// Create slot modal
 	let showCreateModal = $state(false);
+	let createMode = $state<'single' | 'bulk'>('single');
 	let createForm = $state<CreateSlotRequest>({
 		slot_date: getTodayString(),
 		start_time: '10:00',
@@ -57,6 +60,62 @@
 		max_capacity: 2,
 		slot_type: 'REGULAR'
 	});
+
+	// Bulk create form
+	function getDefaultEndDate(startDate: string): string {
+		const d = new Date(startDate);
+		d.setMonth(d.getMonth() + 3);
+		return d.toISOString().split('T')[0];
+	}
+
+	let bulkForm = $state<BulkCreateSlotRequest>({
+		start_date: getTodayString(),
+		end_date: getDefaultEndDate(getTodayString()),
+		days_of_week: [],
+		start_time: '10:00',
+		end_time: '11:00',
+		max_capacity: 2,
+		slot_type: 'REGULAR'
+	});
+
+	let bulkSlotCount = $derived(
+		countSlotDates(bulkForm.start_date, bulkForm.end_date, bulkForm.days_of_week)
+	);
+
+	const DAY_OPTIONS = [
+		{ value: 1, label: '월' },
+		{ value: 2, label: '화' },
+		{ value: 3, label: '수' },
+		{ value: 4, label: '목' },
+		{ value: 5, label: '금' },
+		{ value: 6, label: '토' },
+		{ value: 0, label: '일' }
+	] as const;
+
+	function toggleDay(day: number) {
+		const idx = bulkForm.days_of_week.indexOf(day);
+		bulkForm = {
+			...bulkForm,
+			days_of_week:
+				idx >= 0
+					? bulkForm.days_of_week.filter((d) => d !== day)
+					: [...bulkForm.days_of_week, day]
+		};
+	}
+
+	function handleBulkSlotTypeChange(type: SlotType) {
+		const hours = type === 'ENSEMBLE' ? 2 : 1;
+		const [h, m] = bulkForm.start_time.split(':').map(Number);
+		const endH = String(Math.min(h + hours, 23)).padStart(2, '0');
+		const endTime = `${endH}:${String(m).padStart(2, '0')}`;
+		if (type === 'ENSEMBLE') {
+			const { max_capacity: _, ...rest } = bulkForm;
+			bulkForm = { ...rest, slot_type: type, min_capacity: 4, end_time: endTime };
+		} else {
+			const { min_capacity: _, ...rest } = bulkForm;
+			bulkForm = { ...rest, slot_type: type, max_capacity: 2, end_time: endTime };
+		}
+	}
 
 	// Edit slot modal
 	let showEditModal = $state(false);
@@ -193,11 +252,22 @@
 			academyStore.isAdmin && instructors.length > 0
 				? getInstructorId(instructors[0])
 				: undefined;
+		createMode = 'single';
 		createForm = {
 			slot_date: selectedDate,
 			start_time: '10:00',
 			end_time: '11:00',
 			max_capacity: 1,
+			slot_type: 'REGULAR',
+			instructor_id: firstInstructorId
+		};
+		bulkForm = {
+			start_date: selectedDate,
+			end_date: getDefaultEndDate(selectedDate),
+			days_of_week: [],
+			start_time: '10:00',
+			end_time: '11:00',
+			max_capacity: 2,
 			slot_type: 'REGULAR',
 			instructor_id: firstInstructorId
 		};
@@ -242,6 +312,30 @@
 			}
 		} catch (error) {
 			toastStore.error('슬롯 생성에 실패했습니다');
+		} finally {
+			actionLoading = false;
+		}
+	}
+
+	async function handleBulkCreateSlots() {
+		const academyId = academyStore.academyId;
+		if (!academyId || bulkForm.days_of_week.length === 0) return;
+		actionLoading = true;
+		try {
+			const res = await createBulkLessonSlots(academyId, bulkForm);
+			if (res.status) {
+				const { created_count, skipped_count } = res.data;
+				const msg =
+					skipped_count > 0
+						? `${created_count}개 슬롯 생성, ${skipped_count}개 스킵`
+						: `${created_count}개 슬롯이 생성되었습니다`;
+				toastStore.success(msg);
+				showCreateModal = false;
+				await fetchSlots(selectedDate);
+				invalidateMonthCache(selectedDate);
+			}
+		} catch (error) {
+			toastStore.error('일괄 슬롯 생성에 실패했습니다');
 		} finally {
 			actionLoading = false;
 		}
@@ -574,76 +668,203 @@
 	onclose={() => (showCreateModal = false)}
 >
 	<div class="modal-form">
-		<div class="modal-form__field">
-			<span class="modal-form__label">수업 유형</span>
-			<div class="slot-type-toggle">
-				<button
-					type="button"
-					class="slot-type-toggle__btn"
-					class:slot-type-toggle__btn--active={createForm.slot_type !== 'ENSEMBLE'}
-					onclick={() => handleSlotTypeChange('REGULAR')}
-				>
-					일반 수업
-				</button>
-				<button
-					type="button"
-					class="slot-type-toggle__btn"
-					class:slot-type-toggle__btn--active={createForm.slot_type === 'ENSEMBLE'}
-					onclick={() => handleSlotTypeChange('ENSEMBLE')}
-				>
-					합주 수업
-				</button>
-			</div>
+		<!-- Mode Toggle -->
+		<div class="slot-type-toggle">
+			<button
+				type="button"
+				class="slot-type-toggle__btn"
+				class:slot-type-toggle__btn--active={createMode === 'single'}
+				onclick={() => (createMode = 'single')}
+			>
+				단건 생성
+			</button>
+			<button
+				type="button"
+				class="slot-type-toggle__btn"
+				class:slot-type-toggle__btn--active={createMode === 'bulk'}
+				onclick={() => (createMode = 'bulk')}
+			>
+				반복 생성
+			</button>
 		</div>
-		<div class="modal-form__field">
-			<span class="modal-form__label">날짜</span>
-			<span class="modal-form__value">{createForm.slot_date}</span>
-		</div>
-		<div class="modal-form__row">
-			<label class="modal-form__field">
-				<span class="modal-form__label">시작 시간</span>
-				<input type="time" class="modal-form__input" bind:value={createForm.start_time} />
-			</label>
-			<label class="modal-form__field">
-				<span class="modal-form__label">종료 시간</span>
-				<input type="time" class="modal-form__input" bind:value={createForm.end_time} />
-			</label>
-		</div>
-		{#if academyStore.isAdmin}
+
+		{#if createMode === 'single'}
+			<!-- Single Create Form -->
 			<div class="modal-form__field">
-				<span class="modal-form__label">담당 강사</span>
-				{#if instructors.length === 0}
-					<div class="modal-form__notice">
-						강사가 없습니다. 강사를 추가해주세요.
-					</div>
+				<span class="modal-form__label">수업 유형</span>
+				<div class="slot-type-toggle">
+					<button
+						type="button"
+						class="slot-type-toggle__btn"
+						class:slot-type-toggle__btn--active={createForm.slot_type !== 'ENSEMBLE'}
+						onclick={() => handleSlotTypeChange('REGULAR')}
+					>
+						일반 수업
+					</button>
+					<button
+						type="button"
+						class="slot-type-toggle__btn"
+						class:slot-type-toggle__btn--active={createForm.slot_type === 'ENSEMBLE'}
+						onclick={() => handleSlotTypeChange('ENSEMBLE')}
+					>
+						합주 수업
+					</button>
+				</div>
+			</div>
+			<div class="modal-form__field">
+				<span class="modal-form__label">날짜</span>
+				<span class="modal-form__value">{createForm.slot_date}</span>
+			</div>
+			<div class="modal-form__row">
+				<label class="modal-form__field">
+					<span class="modal-form__label">시작 시간</span>
+					<input type="time" class="modal-form__input" bind:value={createForm.start_time} />
+				</label>
+				<label class="modal-form__field">
+					<span class="modal-form__label">종료 시간</span>
+					<input type="time" class="modal-form__input" bind:value={createForm.end_time} />
+				</label>
+			</div>
+			{#if academyStore.isAdmin}
+				<div class="modal-form__field">
+					<span class="modal-form__label">담당 강사</span>
+					{#if instructors.length === 0}
+						<div class="modal-form__notice">
+							강사가 없습니다. 강사를 추가해주세요.
+						</div>
+					{:else}
+						<select class="modal-form__input" bind:value={createForm.instructor_id}>
+							{#each instructors as inst}
+								<option value={getInstructorId(inst)}>{inst.user_name}</option>
+							{/each}
+						</select>
+					{/if}
+				</div>
+			{/if}
+			<label class="modal-form__field">
+				<span class="modal-form__label">{createForm.slot_type === 'ENSEMBLE' ? '최소 인원' : '최대 인원'}</span>
+				{#if createForm.slot_type === 'ENSEMBLE'}
+					<input type="number" class="modal-form__input" min="1" bind:value={createForm.min_capacity} />
 				{:else}
-					<select class="modal-form__input" bind:value={createForm.instructor_id}>
-						{#each instructors as inst}
-							<option value={getInstructorId(inst)}>{inst.user_name}</option>
-						{/each}
-					</select>
+					<input type="number" class="modal-form__input" min="1" bind:value={createForm.max_capacity} />
 				{/if}
+			</label>
+			<div class="modal-form__actions">
+				<Button
+					fullWidth
+					loading={actionLoading}
+					disabled={academyStore.isAdmin && instructors.length === 0}
+					onclick={handleCreateSlot}
+				>
+					생성
+				</Button>
+				<Button variant="secondary" fullWidth onclick={() => (showCreateModal = false)}>취소</Button>
+			</div>
+		{:else}
+			<!-- Bulk Create Form -->
+			<div class="modal-form__field">
+				<span class="modal-form__label">수업 유형</span>
+				<div class="slot-type-toggle">
+					<button
+						type="button"
+						class="slot-type-toggle__btn"
+						class:slot-type-toggle__btn--active={bulkForm.slot_type !== 'ENSEMBLE'}
+						onclick={() => handleBulkSlotTypeChange('REGULAR')}
+					>
+						일반 수업
+					</button>
+					<button
+						type="button"
+						class="slot-type-toggle__btn"
+						class:slot-type-toggle__btn--active={bulkForm.slot_type === 'ENSEMBLE'}
+						onclick={() => handleBulkSlotTypeChange('ENSEMBLE')}
+					>
+						합주 수업
+					</button>
+				</div>
+			</div>
+			<div class="modal-form__field">
+				<span class="modal-form__label">반복 요일</span>
+				<div class="day-chips" role="group" aria-label="요일 선택">
+					{#each DAY_OPTIONS as { value, label }}
+						<button
+							type="button"
+							class="day-chip"
+							class:day-chip--active={bulkForm.days_of_week.includes(value)}
+							onclick={() => toggleDay(value)}
+							aria-pressed={bulkForm.days_of_week.includes(value)}
+						>
+							{label}
+						</button>
+					{/each}
+				</div>
+			</div>
+			<div class="modal-form__row">
+				<label class="modal-form__field">
+					<span class="modal-form__label">시작일</span>
+					<input type="date" class="modal-form__input" bind:value={bulkForm.start_date} />
+				</label>
+				<label class="modal-form__field">
+					<span class="modal-form__label">종료일</span>
+					<input type="date" class="modal-form__input" bind:value={bulkForm.end_date} />
+				</label>
+			</div>
+			<div class="modal-form__row">
+				<label class="modal-form__field">
+					<span class="modal-form__label">시작 시간</span>
+					<input type="time" class="modal-form__input" bind:value={bulkForm.start_time} />
+				</label>
+				<label class="modal-form__field">
+					<span class="modal-form__label">종료 시간</span>
+					<input type="time" class="modal-form__input" bind:value={bulkForm.end_time} />
+				</label>
+			</div>
+			{#if academyStore.isAdmin}
+				<div class="modal-form__field">
+					<span class="modal-form__label">담당 강사</span>
+					{#if instructors.length === 0}
+						<div class="modal-form__notice">
+							강사가 없습니다. 강사를 추가해주세요.
+						</div>
+					{:else}
+						<select class="modal-form__input" bind:value={bulkForm.instructor_id}>
+							{#each instructors as inst}
+								<option value={getInstructorId(inst)}>{inst.user_name}</option>
+							{/each}
+						</select>
+					{/if}
+				</div>
+			{/if}
+			<label class="modal-form__field">
+				<span class="modal-form__label">{bulkForm.slot_type === 'ENSEMBLE' ? '최소 인원' : '최대 인원'}</span>
+				{#if bulkForm.slot_type === 'ENSEMBLE'}
+					<input type="number" class="modal-form__input" min="1" bind:value={bulkForm.min_capacity} />
+				{:else}
+					<input type="number" class="modal-form__input" min="1" bind:value={bulkForm.max_capacity} />
+				{/if}
+			</label>
+			{#if bulkForm.days_of_week.length > 0 && bulkSlotCount > 0}
+				<div class="bulk-preview">
+					<span class="bulk-preview__label">
+						매주 {formatDayLabels(bulkForm.days_of_week)} | {bulkForm.start_date} ~ {bulkForm.end_date}
+					</span>
+					<span class="bulk-preview__count">
+						총 <strong>{bulkSlotCount}</strong>개 슬롯 생성 예정
+					</span>
+				</div>
+			{/if}
+			<div class="modal-form__actions">
+				<Button
+					fullWidth
+					loading={actionLoading}
+					disabled={(academyStore.isAdmin && instructors.length === 0) || bulkForm.days_of_week.length === 0 || bulkSlotCount === 0}
+					onclick={handleBulkCreateSlots}
+				>
+					일괄 생성 ({bulkSlotCount}개)
+				</Button>
+				<Button variant="secondary" fullWidth onclick={() => (showCreateModal = false)}>취소</Button>
 			</div>
 		{/if}
-		<label class="modal-form__field">
-			<span class="modal-form__label">{createForm.slot_type === 'ENSEMBLE' ? '최소 인원' : '최대 인원'}</span>
-			{#if createForm.slot_type === 'ENSEMBLE'}
-				<input type="number" class="modal-form__input" min="1" bind:value={createForm.min_capacity} />
-			{:else}
-				<input type="number" class="modal-form__input" min="1" bind:value={createForm.max_capacity} />
-			{/if}
-		</label>
-		<div class="modal-form__actions">
-			<Button
-				fullWidth
-				loading={actionLoading}
-				disabled={academyStore.isAdmin && instructors.length === 0}
-				onclick={handleCreateSlot}
-			>
-				생성
-			</Button>
-			<Button variant="secondary" fullWidth onclick={() => (showCreateModal = false)}>취소</Button>
-		</div>
 	</div>
 </Modal>
 
@@ -1123,6 +1344,63 @@
 				background: var(--color-white);
 				color: var(--color-text);
 				box-shadow: var(--shadow-sm);
+			}
+		}
+	}
+
+	.day-chips {
+		display: flex;
+		gap: var(--space-sm);
+		justify-content: center;
+	}
+
+	.day-chip {
+		width: 40px;
+		height: 40px;
+		border-radius: var(--radius-full);
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-medium);
+		color: var(--color-text-secondary);
+		background: var(--color-bg);
+		border: 1.5px solid var(--color-border);
+		cursor: pointer;
+		transition:
+			background-color var(--transition-fast),
+			color var(--transition-fast),
+			border-color var(--transition-fast),
+			transform 150ms;
+
+		&:active {
+			transform: scale(0.95);
+		}
+
+		&--active {
+			background: var(--color-primary);
+			color: var(--color-on-primary);
+			border-color: var(--color-primary);
+			font-weight: var(--font-weight-semibold);
+		}
+	}
+
+	.bulk-preview {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-xs);
+		padding: var(--space-sm) var(--space-md);
+		background: var(--color-primary-bg);
+		border-radius: var(--radius-sm);
+
+		&__label {
+			font-size: var(--font-size-xs);
+			color: var(--color-text-secondary);
+		}
+
+		&__count {
+			font-size: var(--font-size-sm);
+			color: var(--color-primary);
+
+			:global(strong) {
+				font-weight: var(--font-weight-bold);
 			}
 		}
 	}
