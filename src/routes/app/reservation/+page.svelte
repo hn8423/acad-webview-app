@@ -495,7 +495,7 @@
 						{@const passWeight = getReservationWeight(pass.pass_category, pass.ticket_value)}
 						{@const fits = !selectedSlot || selectedSlot.remaining_capacity >= passWeight}
 						<option value={pass.id} disabled={!fits}>
-							{pass.pass_name} (잔여 {pass.remaining_lessons}회){getTicketValue(pass.ticket_value) > 1 ? ` [${getTicketValue(pass.ticket_value)}회 차감]` : ''}{!fits ? ' (용량 초과)' : ''}
+							{pass.pass_name} (잔여 {pass.remaining_lessons}회){getTicketValue(pass.ticket_value) > 1 ? ` [${getTicketValue(pass.ticket_value)}회 차감]` : ''}{!fits ? ' (마감)' : ''}
 						</option>
 					{/each}
 				</select>
@@ -520,7 +520,7 @@
 
 			{#if exceedsCapacity}
 				<div class="booking-sheet__capacity-warning">
-					잔여 용량({selectedSlot?.remaining_capacity})이 부족하여 예약할 수 없습니다.
+					해당 시간은 예약이 마감되었습니다.
 				</div>
 			{/if}
 
