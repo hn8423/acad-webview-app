@@ -85,6 +85,24 @@ export interface UpdateReservationStatusRequest {
 	status: 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW';
 }
 
+export interface BulkCreateSlotRequest {
+	start_date: string;
+	end_date: string;
+	days_of_week: number[];
+	start_time: string;
+	end_time: string;
+	slot_type?: SlotType;
+	max_capacity?: number;
+	min_capacity?: number;
+	instructor_id?: number;
+}
+
+export interface BulkCreateSlotResponse {
+	created_count: number;
+	skipped_count: number;
+	skipped_dates: string[];
+}
+
 export interface DateIndicators {
 	has_confirmed: boolean;
 	has_pending: boolean;
