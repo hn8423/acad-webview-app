@@ -80,6 +80,10 @@ export function updateInstructor(
 	);
 }
 
+export function deleteInstructor(academyId: number, instructorId: number) {
+	return del<ApiResponse<null>>(`/academic/academies/${academyId}/instructors/${instructorId}`);
+}
+
 export function getInstructorStats(
 	academyId: number,
 	instructorId: number,
