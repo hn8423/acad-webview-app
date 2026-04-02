@@ -377,6 +377,7 @@
 			font-size: var(--font-size-xs);
 			color: var(--color-text-muted);
 			line-height: 1.4;
+			white-space: pre-line;
 			display: -webkit-box;
 			-webkit-line-clamp: 2;
 			line-clamp: 2;
