@@ -13,8 +13,8 @@ describe('getCapacityWeight', () => {
 		expect(getCapacityWeight('ROTATION')).toBe(0.5);
 	});
 
-	it('should return 2 for FULL', () => {
-		expect(getCapacityWeight('FULL')).toBe(2);
+	it('should return 1 for FULL', () => {
+		expect(getCapacityWeight('FULL')).toBe(1);
 	});
 
 	it('should return 1 for ENSEMBLE', () => {
@@ -79,12 +79,12 @@ describe('getTicketValue', () => {
 });
 
 describe('getReservationWeight', () => {
-	it('should return 2.0 for FULL with ticket_value 1', () => {
-		expect(getReservationWeight('FULL', 1)).toBe(2);
+	it('should return 1.0 for FULL with ticket_value 1', () => {
+		expect(getReservationWeight('FULL', 1)).toBe(1);
 	});
 
-	it('should return 4.0 for FULL with ticket_value 2', () => {
-		expect(getReservationWeight('FULL', 2)).toBe(4);
+	it('should return 2.0 for FULL with ticket_value 2', () => {
+		expect(getReservationWeight('FULL', 2)).toBe(2);
 	});
 
 	it('should return 0.5 for ROTATION with ticket_value 1', () => {
@@ -103,12 +103,12 @@ describe('getReservationWeight', () => {
 		expect(getReservationWeight(undefined, undefined)).toBe(1);
 	});
 
-	it('should return 2.0 for FULL with ticket_value 0', () => {
-		expect(getReservationWeight('FULL', 0)).toBe(2);
+	it('should return 1.0 for FULL with ticket_value 0', () => {
+		expect(getReservationWeight('FULL', 0)).toBe(1);
 	});
 
-	it('should return 2.0 for FULL with negative ticket_value', () => {
-		expect(getReservationWeight('FULL', -1)).toBe(2);
+	it('should return 1.0 for FULL with negative ticket_value', () => {
+		expect(getReservationWeight('FULL', -1)).toBe(1);
 	});
 });
 
