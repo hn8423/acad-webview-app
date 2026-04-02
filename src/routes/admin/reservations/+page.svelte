@@ -1010,6 +1010,8 @@
 </Modal>
 
 <style lang="scss">
+	@use '$lib/styles/mixins' as *;
+
 	.reservations {
 		&__header {
 			display: flex;
@@ -1102,6 +1104,12 @@
 			align-items: flex-start;
 			justify-content: space-between;
 			padding: var(--space-md) var(--space-lg);
+
+			@include mobile-only {
+				flex-wrap: wrap;
+				gap: var(--space-xs);
+				padding: var(--space-sm) var(--space-md);
+			}
 		}
 
 		&__info {
@@ -1141,6 +1149,10 @@
 		&__reservations {
 			border-top: 1px solid var(--color-divider);
 			padding: var(--space-sm) var(--space-lg);
+
+			@include mobile-only {
+				padding: var(--space-sm) var(--space-md);
+			}
 		}
 
 		&__no-reservations {
@@ -1148,6 +1160,10 @@
 			font-size: var(--font-size-sm);
 			color: var(--color-text-muted);
 			border-top: 1px solid var(--color-divider);
+
+			@include mobile-only {
+				padding: var(--space-sm) var(--space-md);
+			}
 		}
 
 		&__footer {
@@ -1156,6 +1172,10 @@
 			gap: var(--space-sm);
 			padding: var(--space-sm) var(--space-lg);
 			border-top: 1px solid var(--color-divider);
+
+			@include mobile-only {
+				padding: var(--space-sm) var(--space-md);
+			}
 		}
 	}
 
@@ -1169,10 +1189,22 @@
 			border-top: 1px solid var(--color-divider);
 		}
 
+		@include mobile-only {
+			flex-wrap: wrap;
+			gap: var(--space-xs);
+		}
+
 		&__info {
 			display: flex;
 			align-items: center;
 			gap: var(--space-sm);
+
+			@include mobile-only {
+				flex-wrap: wrap;
+				gap: var(--space-2xs) var(--space-xs);
+				min-width: 0;
+				flex: 1;
+			}
 		}
 
 		&__number {
@@ -1187,11 +1219,21 @@
 			font-size: var(--font-size-sm);
 			font-weight: var(--font-weight-medium);
 			color: var(--color-text);
+
+			@include mobile-only {
+				@include text-truncate;
+				max-width: 80px;
+			}
 		}
 
 		&__pass {
 			font-size: var(--font-size-xs);
 			color: var(--color-text-muted);
+
+			@include mobile-only {
+				@include text-truncate;
+				max-width: 60px;
+			}
 		}
 
 		&__weight {
@@ -1203,6 +1245,10 @@
 		&__actions {
 			display: flex;
 			gap: var(--space-xs);
+
+			@include mobile-only {
+				flex-shrink: 0;
+			}
 		}
 	}
 
@@ -1211,6 +1257,11 @@
 		font-weight: var(--font-weight-medium);
 		padding: 4px 10px;
 		border-radius: var(--radius-sm);
+		white-space: nowrap;
+
+		@include mobile-only {
+			padding: 4px 8px;
+		}
 		transition:
 			background-color var(--transition-fast),
 			opacity var(--transition-fast);
@@ -1361,11 +1412,21 @@
 		display: flex;
 		gap: var(--space-sm);
 		justify-content: center;
+
+		@include mobile-only {
+			flex-wrap: wrap;
+			gap: var(--space-xs);
+		}
 	}
 
 	.day-chip {
 		width: 40px;
 		height: 40px;
+
+		@include mobile-only {
+			width: 36px;
+			height: 36px;
+		}
 		border-radius: var(--radius-full);
 		font-size: var(--font-size-sm);
 		font-weight: var(--font-weight-medium);
