@@ -84,3 +84,9 @@ export interface UpdateSlotRequest {
 export interface UpdateReservationStatusRequest {
 	status: 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW';
 }
+
+export interface DateIndicators {
+	has_confirmed: boolean;
+	has_pending: boolean;
+	has_available: boolean;
+}
