@@ -19,7 +19,7 @@
 		getReservationWeight,
 		isActiveReservationStatus
 	} from '$lib/utils/pass';
-	import { filterActionDates } from '$lib/utils/reservation';
+	import { buildDateIndicators } from '$lib/utils/reservation';
 	import type {
 		LessonSlot,
 		SlotStatus,
@@ -27,7 +27,8 @@
 		SlotType,
 		ReservationStatus,
 		CreateSlotRequest,
-		UpdateSlotRequest
+		UpdateSlotRequest,
+		DateIndicators
 	} from '$lib/types/reservation';
 	import Modal from '$lib/components/ui/Modal.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -43,9 +44,9 @@
 	// Instructor list for admin slot creation
 	let instructors = $state<Instructor[]>([]);
 
-	// Marked dates for calendar dot indicators
-	let markedDates = $state<Set<string>>(new Set());
-	const markedDatesCache = new Map<string, Set<string>>();
+	// Date indicators for calendar lesson status shapes
+	let dateIndicators = $state<Map<string, DateIndicators>>(new Map());
+	const dateIndicatorsCache = new Map<string, Map<string, DateIndicators>>();
 
 	// Create slot modal
 	let showCreateModal = $state(false);
@@ -99,49 +100,37 @@
 		fetchSlots(selectedDate);
 	});
 
-	// Fetch action-needed dates for calendar dot indicators
-	let actionDateRequestId = 0;
+	// Fetch date indicators for calendar lesson status shapes
+	let indicatorRequestId = 0;
 
-	async function fetchActionDates(year: number, month: number) {
+	async function fetchDateIndicators(year: number, month: number) {
 		const academyId = academyStore.academyId;
 		if (!academyId) return;
 
 		const cacheKey = `${year}-${String(month).padStart(2, '0')}`;
-		const cached = markedDatesCache.get(cacheKey);
+		const cached = dateIndicatorsCache.get(cacheKey);
 		if (cached) {
-			markedDates = cached;
+			dateIndicators = cached;
 			return;
 		}
 
-		const today = getTodayString();
-		const todayMonth = today.substring(0, 7);
 		const daysInMonth = getDaysInMonth(year, month);
 
-		let lastDay: number;
-		if (cacheKey < todayMonth) {
-			lastDay = daysInMonth;
-		} else if (cacheKey === todayMonth) {
-			lastDay = parseInt(today.substring(8, 10), 10);
-		} else {
-			markedDates = new Set();
-			return;
-		}
-
 		const datesToFetch: string[] = [];
-		for (let d = 1; d <= lastDay; d++) {
+		for (let d = 1; d <= daysInMonth; d++) {
 			datesToFetch.push(
 				`${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`
 			);
 		}
 
-		const requestId = ++actionDateRequestId;
+		const requestId = ++indicatorRequestId;
 
 		try {
 			const BATCH_SIZE = 5;
 			const slotsByDate = new Map<string, LessonSlot[]>();
 
 			for (let i = 0; i < datesToFetch.length; i += BATCH_SIZE) {
-				if (requestId !== actionDateRequestId) return;
+				if (requestId !== indicatorRequestId) return;
 				const batch = datesToFetch.slice(i, i + BATCH_SIZE);
 				const results = await Promise.allSettled(
 					batch.map((date) => getLessonSlots(academyId, date))
@@ -153,30 +142,30 @@
 				});
 			}
 
-			if (requestId !== actionDateRequestId) return;
+			if (requestId !== indicatorRequestId) return;
 
-			const actionDates = filterActionDates(slotsByDate, today);
-			markedDates = actionDates;
-			markedDatesCache.set(cacheKey, actionDates);
+			const indicators = buildDateIndicators(slotsByDate);
+			dateIndicators = indicators;
+			dateIndicatorsCache.set(cacheKey, indicators);
 		} catch {
-			// Dots are non-critical; silently fail
+			// Indicators are non-critical; silently fail
 		}
 	}
 
 	function invalidateMonthCache(date: string) {
 		const cacheKey = date.substring(0, 7);
-		markedDatesCache.delete(cacheKey);
+		dateIndicatorsCache.delete(cacheKey);
 		const [y, m] = cacheKey.split('-').map(Number);
-		fetchActionDates(y, m);
+		fetchDateIndicators(y, m);
 	}
 
 	function handleMonthChange(year: number, month: number) {
-		fetchActionDates(year, month);
+		fetchDateIndicators(year, month);
 	}
 
 	onMount(async () => {
 		const now = new Date();
-		fetchActionDates(now.getFullYear(), now.getMonth() + 1);
+		fetchDateIndicators(now.getFullYear(), now.getMonth() + 1);
 
 		if (academyStore.isAdmin) {
 			const academyId = academyStore.academyId;
@@ -440,10 +429,25 @@
 
 	<DateCalendar
 		{selectedDate}
-		{markedDates}
+		{dateIndicators}
 		onselect={(date) => (selectedDate = date)}
 		onmonthchange={handleMonthChange}
 	/>
+
+	<div class="reservations__legend">
+		<span class="reservations__legend-item">
+			<span class="reservations__legend-circle"></span>
+			확정
+		</span>
+		<span class="reservations__legend-item">
+			<span class="reservations__legend-triangle"></span>
+			신청
+		</span>
+		<span class="reservations__legend-item">
+			<span class="reservations__legend-square"></span>
+			열림
+		</span>
+	</div>
 
 	{#if loading}
 		<div class="reservations__loading"><Spinner /></div>
@@ -819,6 +823,43 @@
 		&__empty-text {
 			font-size: var(--font-size-base);
 			color: var(--color-text-secondary);
+		}
+
+		&__legend {
+			display: flex;
+			justify-content: center;
+			gap: var(--space-md);
+			padding: var(--space-xs) 0 var(--space-sm);
+		}
+
+		&__legend-item {
+			display: flex;
+			align-items: center;
+			gap: var(--space-2xs);
+			font-size: var(--font-size-xs);
+			color: var(--color-text-secondary);
+		}
+
+		&__legend-circle {
+			width: 6px;
+			height: 6px;
+			border-radius: 50%;
+			background-color: var(--color-success);
+		}
+
+		&__legend-triangle {
+			width: 0;
+			height: 0;
+			border-left: 3.5px solid transparent;
+			border-right: 3.5px solid transparent;
+			border-bottom: 6px solid var(--color-warning);
+		}
+
+		&__legend-square {
+			width: 6px;
+			height: 6px;
+			border-radius: 0;
+			background-color: var(--color-danger);
 		}
 	}
 

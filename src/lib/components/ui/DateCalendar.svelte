@@ -5,15 +5,17 @@
 		formatMonth,
 		getTodayString
 	} from '$lib/utils/format';
+	import type { DateIndicators } from '$lib/types/reservation';
 
 	interface Props {
 		selectedDate: string;
 		onselect: (date: string) => void;
 		onmonthchange?: (year: number, month: number) => void;
 		markedDates?: Set<string>;
+		dateIndicators?: Map<string, DateIndicators>;
 	}
 
-	let { selectedDate, onselect, onmonthchange, markedDates }: Props = $props();
+	let { selectedDate, onselect, onmonthchange, markedDates, dateIndicators }: Props = $props();
 
 	const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
 	const today = getTodayString();
@@ -199,7 +201,23 @@
 					aria-label="{cell.date}일"
 				>
 					<span class="date-calendar__date">{cell.date}</span>
-					{#if markedDates?.has(cell.fullDate)}
+					{#if dateIndicators?.has(cell.fullDate)}
+						{@const indicators = dateIndicators.get(cell.fullDate)!}
+						<span class="date-calendar__indicators">
+							{#if indicators.has_confirmed}
+								<span class="date-calendar__indicator date-calendar__indicator--confirmed"
+								></span>
+							{/if}
+							{#if indicators.has_pending}
+								<span class="date-calendar__indicator date-calendar__indicator--pending"
+								></span>
+							{/if}
+							{#if indicators.has_available}
+								<span class="date-calendar__indicator date-calendar__indicator--open"
+								></span>
+							{/if}
+						</span>
+					{:else if markedDates?.has(cell.fullDate)}
 						<span class="date-calendar__dot"></span>
 					{/if}
 				</button>
@@ -318,6 +336,18 @@
 				.date-calendar__dot {
 					background-color: var(--color-on-primary);
 				}
+
+				.date-calendar__indicator--confirmed {
+					background-color: var(--color-on-primary);
+				}
+
+				.date-calendar__indicator--pending {
+					border-bottom-color: var(--color-on-primary);
+				}
+
+				.date-calendar__indicator--open {
+					background-color: var(--color-on-primary);
+				}
 			}
 		}
 
@@ -334,6 +364,39 @@
 			background-color: var(--color-warning);
 			margin-top: 2px;
 			flex-shrink: 0;
+		}
+
+		&__indicators {
+			display: flex;
+			gap: 2px;
+			margin-top: 2px;
+			flex-shrink: 0;
+		}
+
+		&__indicator {
+			flex-shrink: 0;
+
+			&--confirmed {
+				width: 5px;
+				height: 5px;
+				border-radius: 50%;
+				background-color: var(--color-success);
+			}
+
+			&--pending {
+				width: 0;
+				height: 0;
+				border-left: 3px solid transparent;
+				border-right: 3px solid transparent;
+				border-bottom: 5px solid var(--color-warning);
+			}
+
+			&--open {
+				width: 5px;
+				height: 5px;
+				border-radius: 0;
+				background-color: var(--color-danger);
+			}
 		}
 	}
 </style>

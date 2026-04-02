@@ -103,7 +103,7 @@
 			gap: 2px;
 			flex: 1;
 			height: 100%;
-			color: var(--color-text-muted);
+			color: var(--color-text-secondary);
 			text-decoration: none;
 			position: relative;
 			transition: color var(--transition-fast);
