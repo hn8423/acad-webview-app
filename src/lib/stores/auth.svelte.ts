@@ -105,6 +105,17 @@ export function getAuthStore() {
 		removeItem(USER_STORAGE_KEY);
 	}
 
+	async function updateProfile(
+		data: Partial<Pick<User, 'user_name' | 'user_birthday' | 'user_gender' | 'profile_img'>>
+	): Promise<void> {
+		const res = await authApi.updateMe(data);
+		if (!res.status || !res.data) {
+			throw new Error(res.message || '프로필 수정에 실패했습니다.');
+		}
+		user = res.data;
+		setJson(USER_STORAGE_KEY, res.data);
+	}
+
 	async function fetchMyAcademies(): Promise<UserAcademy[]> {
 		const res = await authApi.getMyAcademies();
 		if (res.status && res.data) {
@@ -131,6 +142,7 @@ export function getAuthStore() {
 		signup,
 		logout,
 		deleteAccount,
+		updateProfile,
 		fetchMyAcademies
 	};
 }

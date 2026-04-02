@@ -67,7 +67,11 @@
 
 	<div class="profile-page__content">
 		{#if user}
-			<div class="profile-header">
+			<button
+				type="button"
+				class="profile-header"
+				onclick={() => goto('/app/profile/edit')}
+			>
 				<div class="profile-header__avatar">
 					{#if user.profile_img}
 						<img src={user.profile_img} alt={user.user_name} />
@@ -79,7 +83,8 @@
 				</div>
 				<h2 class="profile-header__name">{user.user_name}</h2>
 				<p class="profile-header__phone">{formatPhone(user.user_phone)}</p>
-			</div>
+				<span class="profile-header__edit-hint">프로필 수정 ›</span>
+			</button>
 		{/if}
 
 		<div class="profile-menu">
@@ -177,6 +182,7 @@
 	}
 
 	.profile-header {
+		width: 100%;
 		background: var(--color-white);
 		border-radius: var(--radius-lg);
 		padding: var(--space-2xl) var(--space-lg);
@@ -184,6 +190,18 @@
 		flex-direction: column;
 		align-items: center;
 		text-align: center;
+		border: none;
+		cursor: pointer;
+		transition: opacity var(--transition-fast);
+
+		&:active {
+			opacity: 0.8;
+		}
+
+		&:focus-visible {
+			outline: 2px solid var(--color-primary);
+			outline-offset: 2px;
+		}
 
 		&__avatar {
 			width: 80px;
@@ -222,6 +240,12 @@
 		&__phone {
 			font-size: var(--font-size-sm);
 			color: var(--color-text-secondary);
+		}
+
+		&__edit-hint {
+			font-size: var(--font-size-xs);
+			color: var(--color-text-muted);
+			margin-top: var(--space-sm);
 		}
 	}
 
