@@ -44,7 +44,7 @@
 		display: flex;
 		align-items: center;
 		padding: 0 var(--space-xs);
-		z-index: var(--z-header);
+		z-index: calc(var(--z-header) + 1);
 
 		&__btn {
 			display: flex;
