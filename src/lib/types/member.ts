@@ -124,6 +124,9 @@ export interface InstructorStats {
 	cancelled_lessons: number;
 	no_show_count: number;
 	total_students: number;
+	lessons_by_category?: Partial<
+		Record<'ROTATION' | 'FULL' | 'ENSEMBLE' | 'PT' | 'GROUP', number>
+	>;
 }
 
 export interface CreatePassTypeRequest {
