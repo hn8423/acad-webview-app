@@ -51,7 +51,7 @@ export function isActiveReservationStatus(status: string): boolean {
 	return status === 'PENDING' || status === 'CONFIRMED';
 }
 
-type PassCategory = 'ROTATION' | 'FULL' | 'ENSEMBLE' | 'PT' | 'GROUP';
+export type PassCategory = 'ROTATION' | 'FULL' | 'ENSEMBLE' | 'PT' | 'GROUP';
 type BadgeVariant = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
 
 const CATEGORY_LABELS: Record<PassCategory, string> = {

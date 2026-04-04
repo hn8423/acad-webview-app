@@ -2,6 +2,8 @@
 	import { academyStore } from '$lib/stores/academy.svelte';
 	import { getInstructorStats } from '$lib/api/member';
 	import { formatMonth } from '$lib/utils/format';
+	import { getPassCategoryLabel } from '$lib/utils/pass';
+	import type { PassCategory } from '$lib/utils/pass';
 	import type { InstructorStats } from '$lib/types/member';
 	import Modal from '$lib/components/ui/Modal.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
@@ -93,17 +95,46 @@
 		color: string;
 	}
 
-	let statItems = $derived<StatItem[]>(
-		stats
-			? [
-					{ label: '전체 레슨', value: stats.total_lessons, color: 'primary' },
-					{ label: '완료', value: stats.completed_lessons, color: 'success' },
-					{ label: '취소', value: stats.cancelled_lessons, color: 'danger' },
-					{ label: '노쇼', value: stats.no_show_count, color: 'warning' },
-					{ label: '수강생', value: stats.total_students, color: 'info' }
-				]
-			: []
-	);
+	const CATEGORY_COLORS: Record<PassCategory, string> = {
+		ROTATION: 'info',
+		FULL: 'success',
+		ENSEMBLE: 'warning',
+		PT: 'danger',
+		GROUP: 'primary'
+	};
+
+	const CATEGORY_ORDER: PassCategory[] = ['ROTATION', 'FULL', 'ENSEMBLE', 'PT', 'GROUP'];
+
+	let statItems = $derived.by<StatItem[]>(() => {
+		if (!stats) return [];
+
+		const categoryItems: StatItem[] = [];
+
+		if (stats.lessons_by_category) {
+			for (const cat of CATEGORY_ORDER) {
+				const count = stats.lessons_by_category[cat];
+				if (count !== undefined && count > 0) {
+					categoryItems.push({
+						label: getPassCategoryLabel(cat),
+						value: count,
+						color: CATEGORY_COLORS[cat]
+					});
+				}
+			}
+		}
+
+		if (categoryItems.length === 0 && stats.total_lessons > 0) {
+			categoryItems.push({ label: '전체 레슨', value: stats.total_lessons, color: 'primary' });
+		}
+
+		return [
+			...categoryItems,
+			{ label: '완료', value: stats.completed_lessons, color: 'success' },
+			{ label: '취소', value: stats.cancelled_lessons, color: 'danger' },
+			{ label: '노쇼', value: stats.no_show_count, color: 'warning' },
+			{ label: '수강생', value: stats.total_students, color: 'info' }
+		];
+	});
 </script>
 
 <Modal {isOpen} title="{instructor?.name ?? ''} 강사 통계" {onclose}>
