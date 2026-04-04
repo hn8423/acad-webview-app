@@ -25,6 +25,7 @@ export interface MyReservation {
 	ticket_value?: number;
 	pass_name?: string;
 	pass_category?: string;
+	cancel_reason?: string | null;
 	created_at: string;
 }
 

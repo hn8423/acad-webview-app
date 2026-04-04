@@ -442,6 +442,11 @@
 											{/if}
 										</span>
 									{/if}
+									{#if (reservation.status === 'CANCELLED' || reservation.status === 'NO_SHOW') && reservation.cancel_reason}
+										<span class="reservation-card__reason">
+											취소 사유: {reservation.cancel_reason}
+										</span>
+									{/if}
 								</div>
 							</div>
 						</Card>
@@ -783,6 +788,10 @@
 			font-weight: var(--font-weight-medium);
 		}
 
+		&__reason {
+			font-size: var(--font-size-xs);
+			color: var(--color-text-muted);
+		}
 	}
 
 	.booking-sheet {
