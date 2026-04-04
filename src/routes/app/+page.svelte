@@ -4,7 +4,6 @@
 	import { getMyPasses, getMyDrinkTickets, useDrinkTicket } from '$lib/api/member';
 	import { getRecentNotices } from '$lib/api/academy';
 	import { getMyReservations, cancelReservation, cancelReservationAsNoShow } from '$lib/api/reservation';
-	import { createHolding } from '$lib/api/holding';
 	import { login } from '$lib/api/auth';
 	import { apiRequest } from '$lib/api/client';
 	import Badge from '$lib/components/ui/Badge.svelte';
@@ -12,7 +11,6 @@
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import CalendarSection from '$lib/components/ui/CalendarSection.svelte';
 	import BottomSheet from '$lib/components/ui/BottomSheet.svelte';
-	import HoldingRequestModal from '$lib/components/holding/HoldingRequestModal.svelte';
 	import DrinkRedeemModal from '$lib/components/drink/DrinkRedeemModal.svelte';
 	import { formatDate, formatTimeRange, getDayOfWeek } from '$lib/utils/format';
 	import { isReservationDay } from '$lib/utils/reservation';
@@ -44,11 +42,6 @@
 		cancelTarget ? isReservationDay(cancelTarget.slot_date) : false
 	);
 
-	let showHoldingModal = $state(false);
-	let holdingTargetPass = $state<MemberPass | null>(null);
-	let holdingSubmitting = $state(false);
-	let holdingError = $state('');
-	let holdingRequestedPassIds = $state(new Set<number>());
 
 	let showDrinkRedeemModal = $state(false);
 	let drinkRedeemSubmitting = $state(false);
@@ -86,43 +79,6 @@
 	});
 
 	let totalDrinks = $derived(drinkTickets.reduce((sum, t) => sum + t.remaining_count, 0));
-
-	function openHoldingModal(pass: MemberPass) {
-		holdingTargetPass = pass;
-		holdingError = '';
-		showHoldingModal = true;
-	}
-
-	async function handleHoldingSubmit(data: {
-		holding_start: string;
-		holding_end: string;
-		reason?: string;
-	}) {
-		const academyId = academyStore.academyId;
-		if (!academyId || !holdingTargetPass) return;
-
-		holdingSubmitting = true;
-		holdingError = '';
-		try {
-			const res = await createHolding(academyId, holdingTargetPass.id, {
-				holding_start: data.holding_start,
-				holding_end: data.holding_end,
-				reason: data.reason
-			});
-			if (res.status) {
-				toastStore.success('홀딩 신청이 완료되었습니다.');
-				holdingRequestedPassIds = new Set([...holdingRequestedPassIds, holdingTargetPass.id]);
-				showHoldingModal = false;
-				holdingTargetPass = null;
-			} else {
-				holdingError = res.message || '홀딩 신청에 실패했습니다.';
-			}
-		} catch (err) {
-			holdingError = err instanceof Error ? err.message : '홀딩 신청에 실패했습니다.';
-		} finally {
-			holdingSubmitting = false;
-		}
-	}
 
 	function openDrinkRedeemModal() {
 		if (totalDrinks <= 0) return;
@@ -323,13 +279,6 @@
 									<div class="pass-card__date">
 										{formatDate(pass.start_date)} ~ {formatDate(pass.end_date)}
 									</div>
-									{#if holdingRequestedPassIds.has(pass.id)}
-										<span class="pass-card__holding-status">홀딩 신청중</span>
-									{:else if pass.status === 'ACTIVE'}
-										<button class="pass-card__holding-btn" onclick={() => openHoldingModal(pass)}>
-											홀딩 신청
-										</button>
-									{/if}
 								</div>
 							</div>
 							{#if passes.indexOf(pass) < passes.length - 1}
@@ -382,18 +331,6 @@
 		</section>
 	{/if}
 </div>
-
-<HoldingRequestModal
-	isOpen={showHoldingModal}
-	passName={holdingTargetPass?.pass_name ?? ''}
-	onclose={() => {
-		showHoldingModal = false;
-		holdingError = '';
-	}}
-	onsubmit={handleHoldingSubmit}
-	submitting={holdingSubmitting}
-	error={holdingError}
-/>
 
 <DrinkRedeemModal
 	isOpen={showDrinkRedeemModal}
@@ -658,39 +595,6 @@
 		&__date {
 			font-size: var(--font-size-xs);
 			color: var(--color-text-muted);
-		}
-
-		&__holding-btn {
-			margin-top: var(--space-sm);
-			padding: 6px 12px;
-			font-size: var(--font-size-sm);
-			font-weight: var(--font-weight-medium);
-			color: var(--color-primary);
-			background: var(--color-primary-bg);
-			border: none;
-			border-radius: var(--radius-sm);
-			cursor: pointer;
-			transition: all var(--transition-fast);
-			align-self: flex-start;
-
-			&:hover {
-				background: var(--color-primary-light);
-			}
-
-			&:active {
-				opacity: 0.7;
-			}
-		}
-
-		&__holding-status {
-			margin-top: var(--space-sm);
-			padding: 6px 12px;
-			font-size: var(--font-size-sm);
-			font-weight: var(--font-weight-medium);
-			color: var(--color-warning);
-			background: var(--color-warning-bg);
-			border-radius: var(--radius-sm);
-			align-self: flex-start;
 		}
 	}
 
