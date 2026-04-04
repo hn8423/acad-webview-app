@@ -83,6 +83,7 @@ export interface UpdateSlotRequest {
 
 export interface UpdateReservationStatusRequest {
 	status: 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW';
+	cancel_reason?: string;
 }
 
 export interface BulkCreateSlotRequest {
