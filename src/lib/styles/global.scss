@@ -1,6 +1,11 @@
 @use 'variables';
 @use 'reset';
 
+// iOS 더블탭 줌 방지
+html {
+	touch-action: manipulation;
+}
+
 // Toss-style global animations
 @keyframes shimmer {
 	0% {
