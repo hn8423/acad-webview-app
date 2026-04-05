@@ -25,6 +25,7 @@ export interface MyReservation {
 	ticket_value?: number;
 	pass_name?: string;
 	pass_category?: string;
+	cancel_reason?: string | null;
 	created_at: string;
 }
 
@@ -83,6 +84,7 @@ export interface UpdateSlotRequest {
 
 export interface UpdateReservationStatusRequest {
 	status: 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW';
+	cancel_reason?: string;
 }
 
 export interface BulkCreateSlotRequest {

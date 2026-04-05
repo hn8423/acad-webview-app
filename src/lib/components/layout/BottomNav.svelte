@@ -86,14 +86,14 @@
 		bottom: 0;
 		left: 0;
 		right: 0;
-		height: var(--bottom-nav-height);
+		height: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
 		background-color: var(--color-white);
 		border-top: 1px solid var(--color-border);
 		display: flex;
 		align-items: center;
 		justify-content: space-around;
 		z-index: var(--z-bottom-nav);
-		padding-bottom: env(safe-area-inset-bottom, 0);
+		padding-bottom: env(safe-area-inset-bottom, 0px);
 
 		&__item {
 			display: flex;

@@ -53,7 +53,7 @@
 
 		&__content {
 			padding-top: var(--header-height);
-			padding-bottom: var(--bottom-nav-height);
+			padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
 			min-height: 100dvh;
 			background-color: var(--color-bg);
 		}
