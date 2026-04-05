@@ -128,6 +128,7 @@
 
 	// Reservation status confirmation modal
 	let showStatusConfirmModal = $state(false);
+	let cancelReason = $state('');
 	let statusConfirmTarget = $state<{
 		reservationId: number;
 		memberName: string;
@@ -427,6 +428,7 @@
 			currentStatus: rv.status,
 			newStatus
 		};
+		cancelReason = '';
 		showStatusConfirmModal = true;
 	}
 
@@ -446,22 +448,26 @@
 
 		await handleReservationStatus(
 			statusConfirmTarget.reservationId,
-			statusConfirmTarget.newStatus
+			statusConfirmTarget.newStatus,
+			statusConfirmTarget.newStatus === 'CANCELLED' ? cancelReason.trim() : undefined
 		);
+		cancelReason = '';
 		showStatusConfirmModal = false;
 		statusConfirmTarget = null;
 	}
 
 	async function handleReservationStatus(
 		reservationId: number,
-		status: ReservationStatus
+		status: ReservationStatus,
+		cancelReason?: string
 	) {
 		const academyId = academyStore.academyId;
 		if (!academyId || status === 'PENDING') return;
 		actionLoading = true;
 		try {
 			const res = await updateReservationStatus(academyId, reservationId, {
-				status: status as 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW'
+				status: status as 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW',
+				...(cancelReason ? { cancel_reason: cancelReason } : {})
 			});
 			if (res.status) {
 				toastStore.success(`예약이 ${getStatusLabel(status)} 처리되었습니다`);
@@ -947,6 +953,7 @@
 	onclose={() => {
 		showStatusConfirmModal = false;
 		statusConfirmTarget = null;
+		cancelReason = '';
 	}}
 >
 	{#if statusConfirmTarget}
@@ -985,10 +992,26 @@
 					{/if}
 				</div>
 			{/if}
+			{#if statusConfirmTarget.newStatus === 'CANCELLED'}
+				<div class="status-confirm__field">
+					<label class="status-confirm__label" for="cancel-reason">
+						취소 사유 <span class="status-confirm__required">*</span>
+					</label>
+					<textarea
+						id="cancel-reason"
+						class="status-confirm__textarea"
+						bind:value={cancelReason}
+						placeholder="취소 사유를 입력해주세요"
+						rows="3"
+						maxlength="500"
+					></textarea>
+				</div>
+			{/if}
 			<div class="status-confirm__actions">
 				<Button
 					fullWidth
 					loading={actionLoading}
+					disabled={statusConfirmTarget.newStatus === 'CANCELLED' && cancelReason.trim().length === 0}
 					variant={statusConfirmTarget.newStatus === 'CANCELLED' || statusConfirmTarget.newStatus === 'NO_SHOW' ? 'danger' : 'primary'}
 					onclick={handleConfirmStatusChange}
 				>
@@ -1000,6 +1023,7 @@
 					onclick={() => {
 						showStatusConfirmModal = false;
 						statusConfirmTarget = null;
+						cancelReason = '';
 					}}
 				>
 					닫기
@@ -1539,6 +1563,45 @@
 			padding: var(--space-sm) var(--space-md);
 			background: var(--color-primary-bg);
 			border-radius: var(--radius-sm);
+		}
+
+		&__field {
+			display: flex;
+			flex-direction: column;
+			gap: var(--space-xs);
+		}
+
+		&__label {
+			font-size: var(--font-size-sm);
+			color: var(--color-text-secondary);
+			font-weight: var(--font-weight-medium);
+		}
+
+		&__required {
+			color: var(--color-danger);
+		}
+
+		&__textarea {
+			width: 100%;
+			padding: 14px 16px;
+			border: none;
+			background: var(--color-bg);
+			border-radius: var(--radius-md);
+			font-size: var(--font-size-base);
+			color: var(--color-text);
+			outline: none;
+			resize: vertical;
+			font-family: inherit;
+			line-height: var(--line-height-base);
+			transition: box-shadow var(--transition-fast);
+
+			&::placeholder {
+				color: var(--color-text-muted);
+			}
+
+			&:focus {
+				box-shadow: 0 0 0 2px var(--color-primary);
+			}
 		}
 
 		&__actions {
