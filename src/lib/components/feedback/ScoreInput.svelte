@@ -1,12 +1,5 @@
 <script lang="ts">
-	import {
-		SCORE_LEVELS,
-		SUB_LEVELS,
-		getLevelInfo,
-		getFullLevelLabel,
-		scoreToIndices,
-		indicesToScore
-	} from '$lib/utils/feedback';
+	import { SCORE_LEVELS, getLevelInfo, getFullLevelLabel } from '$lib/utils/feedback';
 
 	interface Props {
 		categoryName: string;
@@ -18,48 +11,27 @@
 
 	let { categoryName, score, comment, onscorechange, oncommentchange }: Props = $props();
 
-	let indices = $derived(scoreToIndices(score));
 	let levelInfo = $derived(getLevelInfo(score));
 	let fullLabel = $derived(getFullLevelLabel(score));
 
-	function handleLevelTap(levelIndex: number) {
-		onscorechange(indicesToScore(levelIndex, indices.subIndex));
+	function handleLevelTap(levelScore: number) {
+		onscorechange(levelScore);
 	}
 
-	function handleSubTap(subIndex: number) {
-		onscorechange(indicesToScore(indices.levelIndex, subIndex));
-	}
-
-	function handleLevelKeydown(e: KeyboardEvent, currentIndex: number) {
-		let nextIndex = currentIndex;
+	function handleLevelKeydown(e: KeyboardEvent, currentScore: number) {
+		let nextScore = currentScore;
 		if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-			nextIndex = currentIndex < SCORE_LEVELS.length - 1 ? currentIndex + 1 : 0;
+			nextScore = currentScore < 5 ? currentScore + 1 : 1;
 		} else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-			nextIndex = currentIndex > 0 ? currentIndex - 1 : SCORE_LEVELS.length - 1;
+			nextScore = currentScore > 1 ? currentScore - 1 : 5;
 		} else {
 			return;
 		}
 		e.preventDefault();
-		handleLevelTap(nextIndex);
+		handleLevelTap(nextScore);
 		const group = (e.currentTarget as HTMLElement).parentElement;
 		const buttons = group?.querySelectorAll<HTMLButtonElement>('button');
-		buttons?.[nextIndex]?.focus();
-	}
-
-	function handleSubKeydown(e: KeyboardEvent, currentIndex: number) {
-		let nextIndex = currentIndex;
-		if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-			nextIndex = currentIndex < SUB_LEVELS.length - 1 ? currentIndex + 1 : 0;
-		} else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-			nextIndex = currentIndex > 0 ? currentIndex - 1 : SUB_LEVELS.length - 1;
-		} else {
-			return;
-		}
-		e.preventDefault();
-		handleSubTap(nextIndex);
-		const group = (e.currentTarget as HTMLElement).parentElement;
-		const buttons = group?.querySelectorAll<HTMLButtonElement>('button');
-		buttons?.[nextIndex]?.focus();
+		buttons?.[nextScore - 1]?.focus();
 	}
 </script>
 
@@ -75,39 +47,20 @@
 	</div>
 
 	<div class="score-input__levels" role="radiogroup" aria-label="{categoryName} 레벨 선택">
-		{#each SCORE_LEVELS as level, i}
+		{#each SCORE_LEVELS as level}
 			<button
 				type="button"
 				class="score-input__chip"
-				class:score-input__chip--active={indices.levelIndex === i}
+				class:score-input__chip--active={score === level.score}
 				style="--chip-color: {level.color}"
 				role="radio"
-				aria-checked={indices.levelIndex === i}
+				aria-checked={score === level.score}
 				aria-label={level.group}
-				tabindex={indices.levelIndex === i ? 0 : -1}
-				onclick={() => handleLevelTap(i)}
-				onkeydown={(e) => handleLevelKeydown(e, i)}
+				tabindex={score === level.score ? 0 : -1}
+				onclick={() => handleLevelTap(level.score)}
+				onkeydown={(e) => handleLevelKeydown(e, level.score)}
 			>
 				{level.shortLabel}
-			</button>
-		{/each}
-	</div>
-
-	<div class="score-input__subs" role="radiogroup" aria-label="{categoryName} 세부 레벨 선택">
-		{#each SUB_LEVELS as sub, i}
-			<button
-				type="button"
-				class="score-input__chip score-input__chip--sub"
-				class:score-input__chip--active={indices.subIndex === i}
-				style="--chip-color: {levelInfo.color}"
-				role="radio"
-				aria-checked={indices.subIndex === i}
-				aria-label={sub}
-				tabindex={indices.subIndex === i ? 0 : -1}
-				onclick={() => handleSubTap(i)}
-				onkeydown={(e) => handleSubKeydown(e, i)}
-			>
-				{sub}
 			</button>
 		{/each}
 	</div>
@@ -151,8 +104,7 @@
 				color var(--transition-fast);
 		}
 
-		&__levels,
-		&__subs {
+		&__levels {
 			display: flex;
 			gap: 6px;
 			margin-bottom: var(--space-sm);
@@ -187,10 +139,6 @@
 				border-color: var(--chip-color);
 				font-weight: var(--font-weight-semibold);
 				box-shadow: var(--shadow-md);
-			}
-
-			&--sub {
-				min-height: 36px;
 			}
 		}
 

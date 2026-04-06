@@ -154,7 +154,7 @@
 
 		const skillDetails = categories.map((cat) => ({
 			category_id: cat.id,
-			score: editScores[cat.id] ?? 10,
+			score: editScores[cat.id] ?? 3,
 			comment: editComments[cat.id]?.trim() || undefined
 		}));
 
@@ -424,7 +424,7 @@
 				{#each categories as cat (cat.id)}
 					<ScoreInput
 						categoryName={cat.category_name}
-						score={editScores[cat.id] ?? 10}
+						score={editScores[cat.id] ?? 3}
 						comment={editComments[cat.id] ?? ''}
 						onscorechange={(s) => (editScores = { ...editScores, [cat.id]: s })}
 						oncommentchange={(c) => (editComments = { ...editComments, [cat.id]: c })}
