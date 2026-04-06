@@ -605,7 +605,11 @@
 						</div>
 						<div class="slot-card__meta">
 							<span class="slot-card__capacity">
-								예약 {computeWeightedCount(slot.reservations)}/{slot.max_capacity}
+								{#if slot.slot_type === 'ENSEMBLE'}
+									예약 {computeWeightedCount(slot.reservations)}명
+								{:else}
+									예약 {computeWeightedCount(slot.reservations)}/{slot.max_capacity}
+								{/if}
 							</span>
 							<Badge variant={getSlotBadgeVariant(slot.status)}>
 								{getStatusLabel(slot.status)}
