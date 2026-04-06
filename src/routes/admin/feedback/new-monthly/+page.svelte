@@ -93,7 +93,7 @@
 			}
 			if (catRes.status === 'fulfilled' && catRes.value.status) {
 				categories = [...catRes.value.data].sort((a, b) => a.sort_order - b.sort_order);
-				scores = Object.fromEntries(categories.map((cat) => [cat.id, 10]));
+				scores = Object.fromEntries(categories.map((cat) => [cat.id, 3]));
 				comments = Object.fromEntries(categories.map((cat) => [cat.id, '']));
 			}
 		} catch {
@@ -139,7 +139,7 @@
 
 		const skillDetails = categories.map((cat) => ({
 			category_id: cat.id,
-			score: scores[cat.id] ?? 10,
+			score: scores[cat.id] ?? 3,
 			comment: comments[cat.id]?.trim() || undefined
 		}));
 
@@ -313,7 +313,7 @@
 						{#each categories as cat (cat.id)}
 							<ScoreInput
 								categoryName={cat.category_name}
-								score={scores[cat.id] ?? 10}
+								score={scores[cat.id] ?? 3}
 								comment={comments[cat.id] ?? ''}
 								onscorechange={(s) => (scores = { ...scores, [cat.id]: s })}
 								oncommentchange={(c) => (comments = { ...comments, [cat.id]: c })}
