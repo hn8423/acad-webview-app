@@ -326,7 +326,7 @@
 				<label class="create-form__label" for="pass-status">상태</label>
 				<select id="pass-status" class="create-form__select" bind:value={selectedStatus}>
 					<option value="ACTIVE">이용중</option>
-					<option value="HOLDING">홀딩</option>
+					<option value="HOLDING">환불</option>
 					<option value="EXPIRED">만료</option>
 					<option value="USED_UP">소진</option>
 				</select>
