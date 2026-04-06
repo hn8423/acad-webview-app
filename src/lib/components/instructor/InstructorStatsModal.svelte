@@ -97,13 +97,10 @@
 
 	const CATEGORY_COLORS: Record<PassCategory, string> = {
 		ROTATION: 'info',
-		FULL: 'success',
-		ENSEMBLE: 'warning',
-		PT: 'danger',
-		GROUP: 'primary'
+		FULL: 'success'
 	};
 
-	const CATEGORY_ORDER: PassCategory[] = ['ROTATION', 'FULL', 'ENSEMBLE', 'PT', 'GROUP'];
+	const CATEGORY_ORDER: PassCategory[] = ['ROTATION', 'FULL'];
 
 	let statItems = $derived.by<StatItem[]>(() => {
 		if (!stats) return [];
