@@ -41,13 +41,18 @@
 		try {
 			const cursor = append ? (nextCursor ?? undefined) : undefined;
 			const passStatus = activeTab === 'ALL' ? undefined : activeTab;
+			const instructorId =
+				academyStore.memberRole === 'INSTRUCTOR'
+					? (academyStore.instructorId ?? undefined)
+					: undefined;
 			const res = await getMembers(
 				academyId,
 				cursor,
 				20,
 				search || undefined,
 				'STUDENT',
-				passStatus
+				passStatus,
+				instructorId
 			);
 			if (res.status && res.data) {
 				// 프론트엔드 안전장치: 백엔드가 role 파라미터 미지원 시 대비
