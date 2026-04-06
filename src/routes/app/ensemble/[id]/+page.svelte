@@ -100,6 +100,8 @@
 				toastStore.success('참가 신청이 완료되었습니다.');
 				showApplyModal = false;
 				await fetchData();
+			} else {
+				toastStore.error(res.message || '참가 신청에 실패했습니다.');
 			}
 		} catch {
 			// API client handles toast
