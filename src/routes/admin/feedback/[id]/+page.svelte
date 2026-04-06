@@ -105,10 +105,13 @@
 				notes: editNotes.trim() || undefined,
 				video_url: editVideoUrl.trim() || undefined
 			});
-			if (res.status && res.data) {
-				feedback = res.data;
+			if (res.status) {
 				toastStore.success('피드백이 수정되었습니다.');
 				showEditWeeklyModal = false;
+				const detailRes = await getFeedbackDetail(academyId, feedbackId);
+				if (detailRes.status && detailRes.data) {
+					feedback = detailRes.data;
+				}
 			} else {
 				editError = res.message || '피드백 수정에 실패했습니다.';
 			}
@@ -166,10 +169,14 @@
 				instructor_message: editMessage.trim() || undefined,
 				video_url: editMonthlyVideoUrl.trim() || undefined
 			});
-			if (res.status && res.data) {
-				feedback = res.data;
+			if (res.status) {
 				toastStore.success('피드백이 수정되었습니다.');
 				showEditMonthlyModal = false;
+				// 수정 응답은 flat DB row이므로, 상세 데이터를 다시 조회
+				const detailRes = await getFeedbackDetail(academyId, feedbackId);
+				if (detailRes.status && detailRes.data) {
+					feedback = detailRes.data;
+				}
 			} else {
 				editError = res.message || '피드백 수정에 실패했습니다.';
 			}
