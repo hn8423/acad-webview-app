@@ -1,5 +1,5 @@
 import * as academyApi from '$lib/api/academy';
-import { getMyMembership } from '$lib/api/member';
+import { getMyMembership, getInstructors } from '$lib/api/member';
 import { getJson, setJson, removeItem } from '$lib/utils/storage';
 import type { Academy, AppConfig, NavItem } from '$lib/types/academy';
 import type { MemberRole } from '$lib/types/auth';
@@ -8,12 +8,14 @@ const ACADEMY_STORAGE_KEY = 'current_academy';
 const APP_CONFIG_STORAGE_KEY = 'app_config';
 const MEMBER_ROLE_STORAGE_KEY = 'member_role';
 const MEMBER_ID_STORAGE_KEY = 'member_id';
+const INSTRUCTOR_ID_STORAGE_KEY = 'instructor_id';
 
 let currentAcademy = $state<Academy | null>(null);
 let userAppConfig = $state<AppConfig | null>(null);
 let adminAppConfig = $state<AppConfig | null>(null);
 let memberRole = $state<MemberRole | null>(null);
 let currentMemberId = $state<number | null>(null);
+let currentInstructorId = $state<number | null>(null);
 let isInitialized = $state(false);
 
 export function getAcademyStore() {
@@ -41,6 +43,11 @@ export function getAcademyStore() {
 		const storedMemberId = getJson<number>(MEMBER_ID_STORAGE_KEY);
 		if (storedMemberId) {
 			currentMemberId = storedMemberId;
+		}
+
+		const storedInstructorId = getJson<number>(INSTRUCTOR_ID_STORAGE_KEY);
+		if (storedInstructorId) {
+			currentInstructorId = storedInstructorId;
 		}
 
 		isInitialized = true;
@@ -76,6 +83,30 @@ export function getAcademyStore() {
 		}
 
 		await loadAppConfig(academyId, role);
+
+		if (role === 'INSTRUCTOR' && currentMemberId) {
+			try {
+				const instructorsRes = await getInstructors(academyId);
+				if (instructorsRes.status && instructorsRes.data) {
+					const list = Array.isArray(instructorsRes.data)
+						? instructorsRes.data
+						: (instructorsRes.data.instructors ?? []);
+					const self = list.find((inst) => inst.member_id === currentMemberId);
+					if (self) {
+						const resolvedId = self.instructor_id ?? self.id ?? null;
+						currentInstructorId = resolvedId;
+						if (resolvedId !== null) {
+							setJson(INSTRUCTOR_ID_STORAGE_KEY, resolvedId);
+						}
+					}
+				}
+			} catch {
+				// instructor_id 조회 실패 시 전체 학생 표시 (graceful degradation)
+			}
+		} else {
+			currentInstructorId = null;
+			removeItem(INSTRUCTOR_ID_STORAGE_KEY);
+		}
 	}
 
 	async function loadAppConfig(academyId: number, role: MemberRole): Promise<void> {
@@ -119,10 +150,12 @@ export function getAcademyStore() {
 		adminAppConfig = null;
 		memberRole = null;
 		currentMemberId = null;
+		currentInstructorId = null;
 		removeItem(ACADEMY_STORAGE_KEY);
 		removeItem(APP_CONFIG_STORAGE_KEY);
 		removeItem(MEMBER_ROLE_STORAGE_KEY);
 		removeItem(MEMBER_ID_STORAGE_KEY);
+		removeItem(INSTRUCTOR_ID_STORAGE_KEY);
 	}
 
 	return {
@@ -143,6 +176,9 @@ export function getAcademyStore() {
 		},
 		get memberId() {
 			return currentMemberId;
+		},
+		get instructorId() {
+			return currentInstructorId;
 		},
 		get isAdmin() {
 			return memberRole === 'ADMIN';
