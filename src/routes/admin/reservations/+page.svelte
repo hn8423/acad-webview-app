@@ -105,15 +105,28 @@
 
 	function handleBulkSlotTypeChange(type: SlotType) {
 		const hours = type === 'ENSEMBLE' ? 2 : 1;
-		const [h, m] = bulkForm.start_time.split(':').map(Number);
-		const endH = String(Math.min(h + hours, 23)).padStart(2, '0');
-		const endTime = `${endH}:${String(m).padStart(2, '0')}`;
+		const endTime = addHours(bulkForm.start_time, hours);
 		if (type === 'ENSEMBLE') {
 			const { max_capacity: _, ...rest } = bulkForm;
 			bulkForm = { ...rest, slot_type: type, min_capacity: 4, end_time: endTime };
 		} else {
 			const { min_capacity: _, ...rest } = bulkForm;
 			bulkForm = { ...rest, slot_type: type, max_capacity: 2, end_time: endTime };
+		}
+	}
+
+	function handleBulkStartTimeChange(newStartTime: string) {
+		const hours = bulkForm.slot_type === 'ENSEMBLE' ? 2 : 1;
+		bulkForm = { ...bulkForm, start_time: newStartTime, end_time: addHours(newStartTime, hours) };
+	}
+
+	function handleBulkEndTimeChange(newEndTime: string) {
+		const minHours = bulkForm.slot_type === 'ENSEMBLE' ? 2 : 0;
+		const minEndTime = addHours(bulkForm.start_time, minHours);
+		if (newEndTime <= bulkForm.start_time || (minHours > 0 && newEndTime < minEndTime)) {
+			bulkForm = { ...bulkForm, end_time: minEndTime };
+		} else {
+			bulkForm = { ...bulkForm, end_time: newEndTime };
 		}
 	}
 
@@ -275,17 +288,36 @@
 		showCreateModal = true;
 	}
 
+	function addHours(time: string, hours: number): string {
+		const [h, m] = time.split(':').map(Number);
+		const endH = String(Math.min(h + hours, 23)).padStart(2, '0');
+		return `${endH}:${String(m).padStart(2, '0')}`;
+	}
+
 	function handleSlotTypeChange(type: SlotType) {
 		const hours = type === 'ENSEMBLE' ? 2 : 1;
-		const [h, m] = createForm.start_time.split(':').map(Number);
-		const endH = String(Math.min(h + hours, 23)).padStart(2, '0');
-		const endTime = `${endH}:${String(m).padStart(2, '0')}`;
+		const endTime = addHours(createForm.start_time, hours);
 		if (type === 'ENSEMBLE') {
 			const { max_capacity: _, ...rest } = createForm;
 			createForm = { ...rest, slot_type: type, min_capacity: 4, end_time: endTime };
 		} else {
 			const { min_capacity: _, ...rest } = createForm;
 			createForm = { ...rest, slot_type: type, max_capacity: 2, end_time: endTime };
+		}
+	}
+
+	function handleStartTimeChange(newStartTime: string) {
+		const hours = createForm.slot_type === 'ENSEMBLE' ? 2 : 1;
+		createForm = { ...createForm, start_time: newStartTime, end_time: addHours(newStartTime, hours) };
+	}
+
+	function handleEndTimeChange(newEndTime: string) {
+		const minHours = createForm.slot_type === 'ENSEMBLE' ? 2 : 0;
+		const minEndTime = addHours(createForm.start_time, minHours);
+		if (newEndTime <= createForm.start_time || (minHours > 0 && newEndTime < minEndTime)) {
+			createForm = { ...createForm, end_time: minEndTime };
+		} else {
+			createForm = { ...createForm, end_time: newEndTime };
 		}
 	}
 
@@ -725,11 +757,22 @@
 			<div class="modal-form__row">
 				<label class="modal-form__field">
 					<span class="modal-form__label">시작 시간</span>
-					<input type="time" class="modal-form__input" bind:value={createForm.start_time} />
+					<input
+						type="time"
+						class="modal-form__input"
+						value={createForm.start_time}
+						oninput={(e) => handleStartTimeChange(e.currentTarget.value)}
+					/>
 				</label>
 				<label class="modal-form__field">
 					<span class="modal-form__label">종료 시간</span>
-					<input type="time" class="modal-form__input" bind:value={createForm.end_time} />
+					<input
+						type="time"
+						class="modal-form__input"
+						value={createForm.end_time}
+						min={createForm.start_time}
+						oninput={(e) => handleEndTimeChange(e.currentTarget.value)}
+					/>
 				</label>
 			</div>
 			{#if academyStore.isAdmin}
@@ -819,11 +862,22 @@
 			<div class="modal-form__row">
 				<label class="modal-form__field">
 					<span class="modal-form__label">시작 시간</span>
-					<input type="time" class="modal-form__input" bind:value={bulkForm.start_time} />
+					<input
+						type="time"
+						class="modal-form__input"
+						value={bulkForm.start_time}
+						oninput={(e) => handleBulkStartTimeChange(e.currentTarget.value)}
+					/>
 				</label>
 				<label class="modal-form__field">
 					<span class="modal-form__label">종료 시간</span>
-					<input type="time" class="modal-form__input" bind:value={bulkForm.end_time} />
+					<input
+						type="time"
+						class="modal-form__input"
+						value={bulkForm.end_time}
+						min={bulkForm.start_time}
+						oninput={(e) => handleBulkEndTimeChange(e.currentTarget.value)}
+					/>
 				</label>
 			</div>
 			{#if academyStore.isAdmin}
