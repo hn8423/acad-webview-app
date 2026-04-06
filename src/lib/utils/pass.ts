@@ -18,7 +18,7 @@ export function getPassStatusLabel(status: string): string {
 		case 'ACTIVE':
 			return '이용중';
 		case 'HOLDING':
-			return '홀딩';
+			return '환불';
 		case 'USED_UP':
 			return '소진';
 		case 'EXPIRED':
