@@ -4,7 +4,7 @@
 	import { z } from 'zod';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
-	import BackHeader from '$lib/components/layout/BackHeader.svelte';
+	import { headerStore } from '$lib/stores/header.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { formatPhone } from '$lib/utils/format';
@@ -26,6 +26,11 @@
 	let loading = $state(false);
 
 	let user = $derived(authStore.user);
+
+	$effect(() => {
+		headerStore.showBackHeader({ title: '내 정보 수정', onback: () => goto('/app/profile') });
+		return () => headerStore.hideBackHeader();
+	});
 
 	onMount(() => {
 		const currentUser = authStore.user;
@@ -116,8 +121,6 @@
 </script>
 
 <div class="profile-edit">
-	<BackHeader title="내 정보 수정" onback={() => goto('/app/profile')} />
-
 	<div class="profile-edit__content">
 		{#if user}
 			<form

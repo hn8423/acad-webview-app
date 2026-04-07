@@ -1,15 +1,20 @@
-let mainHeaderHidden = $state(false);
+interface BackHeaderConfig {
+	title: string;
+	onback?: () => void;
+}
+
+let backHeader = $state<BackHeaderConfig | null>(null);
 
 function getHeaderStore() {
 	return {
-		get hidden() {
-			return mainHeaderHidden;
+		get backHeader() {
+			return backHeader;
 		},
-		hide() {
-			mainHeaderHidden = true;
+		showBackHeader(config: BackHeaderConfig) {
+			backHeader = config;
 		},
-		show() {
-			mainHeaderHidden = false;
+		hideBackHeader() {
+			backHeader = null;
 		}
 	};
 }
