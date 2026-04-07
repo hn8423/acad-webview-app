@@ -140,8 +140,7 @@
 	</div>
 	<div
 		class="ptr__content"
-		style:transform={pullDistance > 0 ? `translateY(${pullDistance}px)` : undefined}
-		style:will-change={pullDistance > 0 ? 'transform' : undefined}
+		style:transform="translateY({pullDistance}px)"
 		style:transition={isPulling ? 'none' : undefined}
 	>
 		{@render children()}
@@ -178,6 +177,7 @@
 		}
 
 		&__content {
+			will-change: transform;
 			transition: transform var(--transition-spring);
 		}
 	}
