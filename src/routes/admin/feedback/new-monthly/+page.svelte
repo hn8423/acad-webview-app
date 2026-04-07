@@ -57,7 +57,19 @@
 
 		searchLoading = true;
 		try {
-			const res = await getMembers(academyId, undefined, 20, search || undefined);
+			const instructorId =
+				academyStore.memberRole === 'INSTRUCTOR'
+					? (academyStore.instructorId ?? undefined)
+					: undefined;
+			const res = await getMembers(
+				academyId,
+				undefined,
+				20,
+				search || undefined,
+				'STUDENT',
+				undefined,
+				instructorId
+			);
 			if (res.status && res.data) {
 				members = res.data.list;
 			}
