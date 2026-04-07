@@ -152,6 +152,7 @@
 
 	.ptr {
 		position: relative;
+		flex: 1;
 
 		&__indicator {
 			position: absolute;
