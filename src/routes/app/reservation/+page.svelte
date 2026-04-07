@@ -88,7 +88,8 @@
 	);
 	let exceedsCapacity = $derived(
 		selectedSlot && selectedPass
-			? selectedSlot.remaining_capacity < selectedPassWeight
+			? selectedSlot.slot_type !== 'ENSEMBLE' &&
+				selectedSlot.remaining_capacity < selectedPassWeight
 			: false
 	);
 
@@ -498,7 +499,7 @@
 				>
 					{#each filteredPasses as pass}
 						{@const passWeight = getReservationWeight(pass.pass_category, pass.ticket_value)}
-						{@const fits = !selectedSlot || selectedSlot.remaining_capacity >= passWeight}
+						{@const fits = !selectedSlot || selectedSlot.slot_type === 'ENSEMBLE' || selectedSlot.remaining_capacity >= passWeight}
 						<option value={pass.id} disabled={!fits}>
 							{pass.pass_name} (잔여 {pass.remaining_lessons}회){getTicketValue(pass.ticket_value) > 1 ? ` [${getTicketValue(pass.ticket_value)}회 차감]` : ''}{!fits ? ' (마감)' : ''}
 						</option>

@@ -35,7 +35,7 @@ export interface MemberDetail {
 export interface PassType {
 	id: number;
 	pass_name: string;
-	pass_category: 'ROTATION' | 'FULL' | 'ENSEMBLE' | 'PT' | 'GROUP';
+	pass_category: 'ROTATION' | 'FULL';
 	ticket_value: number;
 	max_capacity?: number;
 	duration_days: number;
@@ -125,13 +125,13 @@ export interface InstructorStats {
 	no_show_count: number;
 	total_students: number;
 	lessons_by_category?: Partial<
-		Record<'ROTATION' | 'FULL' | 'ENSEMBLE' | 'PT' | 'GROUP', number>
+		Record<'ROTATION' | 'FULL', number>
 	>;
 }
 
 export interface CreatePassTypeRequest {
 	pass_name: string;
-	pass_category: 'ROTATION' | 'FULL' | 'ENSEMBLE' | 'PT' | 'GROUP';
+	pass_category: 'ROTATION' | 'FULL';
 	ticket_value?: number;
 	duration_days?: number;
 	total_lessons?: number;
@@ -141,7 +141,7 @@ export interface CreatePassTypeRequest {
 
 export interface UpdatePassTypeRequest {
 	pass_name?: string;
-	pass_category?: 'ROTATION' | 'FULL' | 'ENSEMBLE' | 'PT' | 'GROUP';
+	pass_category?: 'ROTATION' | 'FULL';
 	ticket_value?: number;
 	duration_days?: number;
 	total_lessons?: number;

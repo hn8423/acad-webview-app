@@ -11,14 +11,14 @@
 	let { categoryName, score, level, comment }: Props = $props();
 
 	let color = $derived(getLevelColor(score));
-	let percentage = $derived((score / 20) * 100);
+	let percentage = $derived((score / 5) * 100);
 </script>
 
 <div class="score-display">
 	<div class="score-display__header">
 		<span class="score-display__category">{categoryName}</span>
 		<span class="score-display__level" style="color: {color}">
-			{level ?? `${score}/20`}
+			{level ?? `${score}/5`}
 		</span>
 	</div>
 	<div class="score-display__bar">

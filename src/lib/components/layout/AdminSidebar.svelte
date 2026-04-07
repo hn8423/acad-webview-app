@@ -155,6 +155,27 @@
 	</nav>
 
 	<div class="sidebar__footer">
+		<a
+			href="/admin/profile"
+			class="sidebar__item"
+			class:sidebar__item--active={isActive('/admin/profile')}
+			onclick={onclose}
+		>
+			<svg
+				width="20"
+				height="20"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+			>
+				<path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+				<circle cx="12" cy="7" r="4" />
+			</svg>
+			<span>내 정보 관리</span>
+		</a>
 		<button type="button" class="sidebar__logout" onclick={handleLogout}>
 			<svg
 				width="20"

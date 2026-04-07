@@ -18,7 +18,7 @@ export function getPassStatusLabel(status: string): string {
 		case 'ACTIVE':
 			return '이용중';
 		case 'HOLDING':
-			return '홀딩';
+			return '환불';
 		case 'USED_UP':
 			return '소진';
 		case 'EXPIRED':
@@ -51,23 +51,17 @@ export function isActiveReservationStatus(status: string): boolean {
 	return status === 'PENDING' || status === 'CONFIRMED';
 }
 
-export type PassCategory = 'ROTATION' | 'FULL' | 'ENSEMBLE' | 'PT' | 'GROUP';
+export type PassCategory = 'ROTATION' | 'FULL';
 type BadgeVariant = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
 
 const CATEGORY_LABELS: Record<PassCategory, string> = {
 	ROTATION: '로테이션',
-	FULL: '풀타임',
-	ENSEMBLE: '앙상블',
-	PT: '개인레슨',
-	GROUP: '그룹'
+	FULL: '풀타임'
 };
 
 const CATEGORY_VARIANTS: Record<PassCategory, BadgeVariant> = {
 	ROTATION: 'info',
-	FULL: 'success',
-	ENSEMBLE: 'warning',
-	PT: 'danger',
-	GROUP: 'neutral'
+	FULL: 'success'
 };
 
 export function getPassCategoryLabel(category: string): string {
