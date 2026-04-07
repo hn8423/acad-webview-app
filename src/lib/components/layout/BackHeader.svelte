@@ -1,17 +1,10 @@
 <script lang="ts">
-	import { headerStore } from '$lib/stores/header.svelte';
-
 	interface Props {
 		title: string;
 		onback?: () => void;
 	}
 
 	let { title, onback }: Props = $props();
-
-	$effect(() => {
-		headerStore.hide();
-		return () => headerStore.show();
-	});
 
 	function handleBack() {
 		if (onback) {
@@ -51,7 +44,7 @@
 		display: flex;
 		align-items: center;
 		padding: 0 var(--space-xs);
-		z-index: calc(var(--z-header) + 1);
+		z-index: var(--z-header);
 
 		&__btn {
 			display: flex;

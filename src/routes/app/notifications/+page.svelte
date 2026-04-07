@@ -4,7 +4,7 @@
 	import { academyStore } from '$lib/stores/academy.svelte';
 	import { notificationStore } from '$lib/stores/notification.svelte';
 	import { getNotifications, markAsRead, markAllAsRead } from '$lib/api/notification';
-	import BackHeader from '$lib/components/layout/BackHeader.svelte';
+	import { headerStore } from '$lib/stores/header.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import { getRelativeTime } from '$lib/utils/format';
@@ -23,6 +23,11 @@
 	let isModalOpen = $state(false);
 
 	let hasUnread = $derived(notifications.some((n) => !n.is_read));
+
+	$effect(() => {
+		headerStore.showBackHeader({ title: '알림' });
+		return () => headerStore.hideBackHeader();
+	});
 
 	onMount(() => {
 		fetchNotifications();
@@ -134,8 +139,6 @@
 </script>
 
 <div class="notifications-page">
-	<BackHeader title="알림" />
-
 	<div class="notifications-page__content">
 		{#if loading}
 			<div class="notifications-page__loading">

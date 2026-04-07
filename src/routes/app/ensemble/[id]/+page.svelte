@@ -12,7 +12,7 @@
 		leaveEnsemble
 	} from '$lib/api/ensemble';
 	import { sendNotification } from '$lib/api/notification';
-	import BackHeader from '$lib/components/layout/BackHeader.svelte';
+	import { headerStore } from '$lib/stores/header.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
@@ -57,6 +57,11 @@
 	let activeMembers = $derived(
 		ensemble?.members.filter((m) => m.member_status !== 'PENDING') ?? []
 	);
+
+	$effect(() => {
+		headerStore.showBackHeader({ title: ensemble?.group_name ?? '합주조' });
+		return () => headerStore.hideBackHeader();
+	});
 
 	onMount(() => {
 		fetchData();
@@ -261,8 +266,6 @@
 </script>
 
 <div class="ensemble-detail-page">
-	<BackHeader title={ensemble?.group_name ?? '합주조'} />
-
 	<div class="ensemble-detail-page__content">
 		{#if loading}
 			<div class="ensemble-detail-page__loading">

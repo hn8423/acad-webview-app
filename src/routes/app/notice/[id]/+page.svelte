@@ -2,7 +2,7 @@
 	import { page } from '$app/state';
 	import { academyStore } from '$lib/stores/academy.svelte';
 	import { getNoticeDetail } from '$lib/api/academy';
-	import BackHeader from '$lib/components/layout/BackHeader.svelte';
+	import { headerStore } from '$lib/stores/header.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import { formatDateTime, formatFileSize } from '$lib/utils/format';
 	import { processNoticeContent } from '$lib/utils/link';
@@ -13,6 +13,11 @@
 	let loading = $state(true);
 
 	let processedContent = $derived(notice ? processNoticeContent(notice.content) : '');
+
+	$effect(() => {
+		headerStore.showBackHeader({ title: '공지사항' });
+		return () => headerStore.hideBackHeader();
+	});
 
 	onMount(async () => {
 		const academyId = academyStore.academyId;
@@ -33,8 +38,6 @@
 </script>
 
 <div class="notice-detail">
-	<BackHeader title="공지사항" />
-
 	<div class="notice-detail__content">
 		{#if loading}
 			<div class="notice-detail__loading">
