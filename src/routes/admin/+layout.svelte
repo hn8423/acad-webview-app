@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Header from '$lib/components/layout/Header.svelte';
 	import AdminSidebar from '$lib/components/layout/AdminSidebar.svelte';
+	import PullToRefresh from '$lib/components/ui/PullToRefresh.svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { authStore } from '$lib/stores/auth.svelte';
@@ -65,7 +66,9 @@
 	/>
 	<AdminSidebar bind:isOpen={sidebarOpen} onclose={handleSidebarClose} />
 	<main class="admin-layout__content">
-		{@render children()}
+		<PullToRefresh>
+			{@render children()}
+		</PullToRefresh>
 	</main>
 </div>
 
@@ -75,9 +78,11 @@
 		background-color: var(--color-bg);
 
 		&__content {
-			padding-top: var(--header-height);
 			padding: calc(var(--header-height) + var(--space-md)) var(--space-md) var(--space-md);
+			min-height: 100dvh;
 			background-color: var(--color-bg);
+			display: flex;
+			flex-direction: column;
 		}
 	}
 </style>

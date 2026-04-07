@@ -31,7 +31,8 @@ export function getMembers(
 	limit = 20,
 	search?: string,
 	role?: 'STUDENT' | 'INSTRUCTOR' | 'ADMIN',
-	passStatus?: 'ACTIVE' | 'EXPIRED'
+	passStatus?: 'ACTIVE' | 'EXPIRED',
+	instructorId?: number
 ) {
 	const params = new URLSearchParams();
 	if (cursor) params.set('cursor', String(cursor));
@@ -39,6 +40,7 @@ export function getMembers(
 	if (search) params.set('search', search);
 	if (role) params.set('role', role);
 	if (passStatus) params.set('pass_status', passStatus);
+	if (instructorId) params.set('instructor_id', String(instructorId));
 	return get<ApiResponse<CursorPaginatedList<MemberListItem>>>(
 		`/academic/academies/${academyId}/members?${params.toString()}`
 	);

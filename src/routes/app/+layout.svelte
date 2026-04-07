@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Header from '$lib/components/layout/Header.svelte';
 	import BottomNav from '$lib/components/layout/BottomNav.svelte';
+	import PullToRefresh from '$lib/components/ui/PullToRefresh.svelte';
 	import { goto } from '$app/navigation';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { academyStore } from '$lib/stores/academy.svelte';
@@ -42,7 +43,9 @@
 		unreadCount={notificationStore.unreadCount}
 	/>
 	<main class="app-layout__content">
-		{@render children()}
+		<PullToRefresh>
+			{@render children()}
+		</PullToRefresh>
 	</main>
 	<BottomNav />
 </div>
@@ -56,6 +59,8 @@
 			padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
 			min-height: 100dvh;
 			background-color: var(--color-bg);
+			display: flex;
+			flex-direction: column;
 		}
 	}
 </style>

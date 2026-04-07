@@ -139,8 +139,8 @@ describe('getPassStatusLabel', () => {
 		expect(getPassStatusLabel('ACTIVE')).toBe('이용중');
 	});
 
-	it('should return 홀딩 for HOLDING', () => {
-		expect(getPassStatusLabel('HOLDING')).toBe('홀딩');
+	it('should return 환불 for HOLDING', () => {
+		expect(getPassStatusLabel('HOLDING')).toBe('환불');
 	});
 
 	it('should return 소진 for USED_UP', () => {

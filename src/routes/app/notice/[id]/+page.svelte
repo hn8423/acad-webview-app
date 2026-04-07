@@ -137,6 +137,7 @@
 			font-size: var(--font-size-base);
 			line-height: var(--line-height-base);
 			word-break: break-word;
+			white-space: pre-line;
 
 			:global(p) {
 				margin-bottom: var(--space-sm);

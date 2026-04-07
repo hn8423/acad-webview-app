@@ -223,9 +223,6 @@
 				<option value="">선택하세요</option>
 				<option value="ROTATION">로테이션</option>
 				<option value="FULL">풀타임</option>
-				<option value="ENSEMBLE">앙상블</option>
-				<option value="PT">개인레슨</option>
-				<option value="GROUP">그룹</option>
 			</select>
 		</div>
 
