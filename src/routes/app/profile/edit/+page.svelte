@@ -28,8 +28,11 @@
 	let user = $derived(authStore.user);
 
 	$effect(() => {
-		headerStore.showBackHeader({ title: '내 정보 수정', onback: () => goto('/app/profile') });
-		return () => headerStore.hideBackHeader();
+		const token = headerStore.showBackHeader({
+			title: '내 정보 수정',
+			onback: () => goto('/app/profile')
+		});
+		return () => headerStore.hideBackHeader(token);
 	});
 
 	onMount(() => {

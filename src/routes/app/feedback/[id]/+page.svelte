@@ -24,8 +24,8 @@
 	const monthly = $derived(feedback as MonthlyFeedbackDetail | null);
 
 	$effect(() => {
-		headerStore.showBackHeader({ title: '피드백 상세' });
-		return () => headerStore.hideBackHeader();
+		const token = headerStore.showBackHeader({ title: '피드백 상세' });
+		return () => headerStore.hideBackHeader(token);
 	});
 
 	onMount(async () => {

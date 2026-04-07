@@ -16,8 +16,8 @@
 	const LIMIT = 10;
 
 	$effect(() => {
-		headerStore.showBackHeader({ title: '공지사항', onback: () => goto('/app') });
-		return () => headerStore.hideBackHeader();
+		const token = headerStore.showBackHeader({ title: '공지사항', onback: () => goto('/app') });
+		return () => headerStore.hideBackHeader(token);
 	});
 
 	onMount(() => {

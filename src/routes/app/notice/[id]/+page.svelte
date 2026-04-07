@@ -15,8 +15,8 @@
 	let processedContent = $derived(notice ? processNoticeContent(notice.content) : '');
 
 	$effect(() => {
-		headerStore.showBackHeader({ title: '공지사항' });
-		return () => headerStore.hideBackHeader();
+		const token = headerStore.showBackHeader({ title: '공지사항' });
+		return () => headerStore.hideBackHeader(token);
 	});
 
 	onMount(async () => {
