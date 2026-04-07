@@ -59,6 +59,8 @@
 			padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
 			min-height: 100dvh;
 			background-color: var(--color-bg);
+			display: flex;
+			flex-direction: column;
 		}
 	}
 </style>
