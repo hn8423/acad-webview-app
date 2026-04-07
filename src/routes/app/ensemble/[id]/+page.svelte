@@ -428,7 +428,7 @@
 <style lang="scss">
 	.ensemble-detail-page {
 		&__content {
-			padding: calc(var(--header-height) + var(--space-md)) var(--space-md)
+			padding: var(--space-md) var(--space-md)
 				calc(var(--bottom-nav-height) + var(--space-lg));
 		}
 

@@ -6,6 +6,7 @@
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { academyStore } from '$lib/stores/academy.svelte';
 	import { notificationStore } from '$lib/stores/notification.svelte';
+	import { headerStore } from '$lib/stores/header.svelte';
 
 	let { children } = $props();
 
@@ -37,11 +38,13 @@
 </script>
 
 <div class="app-layout">
-	<Header
-		onMenuClick={handleMenuClick}
-		onNotificationClick={handleNotificationClick}
-		unreadCount={notificationStore.unreadCount}
-	/>
+	{#if !headerStore.hidden}
+		<Header
+			onMenuClick={handleMenuClick}
+			onNotificationClick={handleNotificationClick}
+			unreadCount={notificationStore.unreadCount}
+		/>
+	{/if}
 	<main class="app-layout__content">
 		<PullToRefresh>
 			{@render children()}

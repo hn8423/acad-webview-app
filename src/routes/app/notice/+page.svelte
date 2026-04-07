@@ -93,7 +93,7 @@
 <style lang="scss">
 	.notice-page {
 		&__content {
-			padding: calc(var(--header-height) + var(--space-md)) var(--space-md) var(--space-md);
+			padding: var(--space-md);
 		}
 
 		&__loading {
