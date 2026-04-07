@@ -25,8 +25,8 @@
 	let hasUnread = $derived(notifications.some((n) => !n.is_read));
 
 	$effect(() => {
-		headerStore.showBackHeader({ title: '알림' });
-		return () => headerStore.hideBackHeader();
+		const token = headerStore.showBackHeader({ title: '알림' });
+		return () => headerStore.hideBackHeader(token);
 	});
 
 	onMount(() => {

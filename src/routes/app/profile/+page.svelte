@@ -12,8 +12,8 @@
 	let user = $derived(authStore.user);
 
 	$effect(() => {
-		headerStore.showBackHeader({ title: '내 정보', onback: () => goto('/app') });
-		return () => headerStore.hideBackHeader();
+		const token = headerStore.showBackHeader({ title: '내 정보', onback: () => goto('/app') });
+		return () => headerStore.hideBackHeader(token);
 	});
 
 	let showDeleteModal = $state(false);

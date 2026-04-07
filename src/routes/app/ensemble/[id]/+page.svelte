@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { academyStore } from '$lib/stores/academy.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import {
@@ -59,8 +59,16 @@
 	);
 
 	$effect(() => {
-		headerStore.showBackHeader({ title: ensemble?.group_name ?? '합주조' });
-		return () => headerStore.hideBackHeader();
+		const token = headerStore.showBackHeader({
+			title: untrack(() => ensemble?.group_name) ?? '합주조'
+		});
+		return () => headerStore.hideBackHeader(token);
+	});
+
+	$effect(() => {
+		if (ensemble?.group_name) {
+			headerStore.showBackHeader({ title: ensemble.group_name });
+		}
 	});
 
 	onMount(() => {
