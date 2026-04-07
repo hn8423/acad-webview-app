@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { academyStore } from '$lib/stores/academy.svelte';
 	import { getNotices } from '$lib/api/academy';
-	import BackHeader from '$lib/components/layout/BackHeader.svelte';
+	import { headerStore } from '$lib/stores/header.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import { formatDate } from '$lib/utils/format';
@@ -14,6 +14,11 @@
 	let currentPage = $state(1);
 	let totalPages = $state(1);
 	const LIMIT = 10;
+
+	$effect(() => {
+		const token = headerStore.showBackHeader({ title: '공지사항', onback: () => goto('/app') });
+		return () => headerStore.hideBackHeader(token);
+	});
 
 	onMount(() => {
 		fetchNotices();
@@ -44,8 +49,6 @@
 </script>
 
 <div class="notice-page">
-	<BackHeader title="공지사항" onback={() => goto('/app')} />
-
 	<div class="notice-page__content">
 		{#if loading}
 			<div class="notice-page__loading">
@@ -93,7 +96,7 @@
 <style lang="scss">
 	.notice-page {
 		&__content {
-			padding: calc(var(--header-height) + var(--space-md)) var(--space-md) var(--space-md);
+			padding: var(--space-md);
 		}
 
 		&__loading {

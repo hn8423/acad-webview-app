@@ -106,7 +106,10 @@ export function getAuthStore() {
 	}
 
 	async function updateProfile(
-		data: Partial<Pick<User, 'user_name' | 'user_birthday' | 'user_gender' | 'profile_img'>>
+		data: Partial<Pick<User, 'user_name' | 'user_birthday' | 'user_gender' | 'profile_img'>> & {
+			current_password?: string;
+			new_password?: string;
+		}
 	): Promise<void> {
 		const res = await authApi.updateMe(data);
 		if (!res.status || !res.data) {

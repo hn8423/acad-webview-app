@@ -1,11 +1,13 @@
 <script lang="ts">
 	import Header from '$lib/components/layout/Header.svelte';
+	import BackHeader from '$lib/components/layout/BackHeader.svelte';
 	import BottomNav from '$lib/components/layout/BottomNav.svelte';
 	import PullToRefresh from '$lib/components/ui/PullToRefresh.svelte';
 	import { goto } from '$app/navigation';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { academyStore } from '$lib/stores/academy.svelte';
 	import { notificationStore } from '$lib/stores/notification.svelte';
+	import { headerStore } from '$lib/stores/header.svelte';
 
 	let { children } = $props();
 
@@ -37,11 +39,18 @@
 </script>
 
 <div class="app-layout">
-	<Header
-		onMenuClick={handleMenuClick}
-		onNotificationClick={handleNotificationClick}
-		unreadCount={notificationStore.unreadCount}
-	/>
+	{#if headerStore.backHeader}
+		<BackHeader
+			title={headerStore.backHeader.title}
+			onback={headerStore.backHeader.onback}
+		/>
+	{:else}
+		<Header
+			onMenuClick={handleMenuClick}
+			onNotificationClick={handleNotificationClick}
+			unreadCount={notificationStore.unreadCount}
+		/>
+	{/if}
 	<main class="app-layout__content">
 		<PullToRefresh>
 			{@render children()}

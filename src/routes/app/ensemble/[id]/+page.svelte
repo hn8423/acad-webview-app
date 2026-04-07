@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { academyStore } from '$lib/stores/academy.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import {
@@ -12,7 +12,7 @@
 		leaveEnsemble
 	} from '$lib/api/ensemble';
 	import { sendNotification } from '$lib/api/notification';
-	import BackHeader from '$lib/components/layout/BackHeader.svelte';
+	import { headerStore } from '$lib/stores/header.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
@@ -57,6 +57,19 @@
 	let activeMembers = $derived(
 		ensemble?.members.filter((m) => m.member_status !== 'PENDING') ?? []
 	);
+
+	$effect(() => {
+		const token = headerStore.showBackHeader({
+			title: untrack(() => ensemble?.group_name) ?? '합주조'
+		});
+		return () => headerStore.hideBackHeader(token);
+	});
+
+	$effect(() => {
+		if (ensemble?.group_name) {
+			headerStore.showBackHeader({ title: ensemble.group_name });
+		}
+	});
 
 	onMount(() => {
 		fetchData();
@@ -261,8 +274,6 @@
 </script>
 
 <div class="ensemble-detail-page">
-	<BackHeader title={ensemble?.group_name ?? '합주조'} />
-
 	<div class="ensemble-detail-page__content">
 		{#if loading}
 			<div class="ensemble-detail-page__loading">
@@ -428,7 +439,7 @@
 <style lang="scss">
 	.ensemble-detail-page {
 		&__content {
-			padding: calc(var(--header-height) + var(--space-md)) var(--space-md)
+			padding: var(--space-md) var(--space-md)
 				calc(var(--bottom-nav-height) + var(--space-lg));
 		}
 

@@ -3,13 +3,18 @@
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { academyStore } from '$lib/stores/academy.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
-	import BackHeader from '$lib/components/layout/BackHeader.svelte';
+	import { headerStore } from '$lib/stores/header.svelte';
 	import Modal from '$lib/components/ui/Modal.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { formatPhone } from '$lib/utils/format';
 
 	let user = $derived(authStore.user);
+
+	$effect(() => {
+		const token = headerStore.showBackHeader({ title: '내 정보', onback: () => goto('/app') });
+		return () => headerStore.hideBackHeader(token);
+	});
 
 	let showDeleteModal = $state(false);
 	let deletePassword = $state('');
@@ -63,8 +68,6 @@
 </script>
 
 <div class="profile-page">
-	<BackHeader title="내 정보" onback={() => goto('/app')} />
-
 	<div class="profile-page__content">
 		{#if user}
 			<button
@@ -168,7 +171,7 @@
 <style lang="scss">
 	.profile-page {
 		&__content {
-			padding: calc(var(--header-height) + var(--space-md)) var(--space-md) var(--space-md);
+			padding: var(--space-md);
 			display: flex;
 			flex-direction: column;
 			gap: var(--space-section);
