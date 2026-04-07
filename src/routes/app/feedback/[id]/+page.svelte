@@ -2,7 +2,7 @@
 	import { page } from '$app/state';
 	import { academyStore } from '$lib/stores/academy.svelte';
 	import { getFeedbackDetail } from '$lib/api/feedback';
-	import BackHeader from '$lib/components/layout/BackHeader.svelte';
+	import { headerStore } from '$lib/stores/header.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import ScoreDisplay from '$lib/components/feedback/ScoreDisplay.svelte';
@@ -23,6 +23,11 @@
 	const weekly = $derived(feedback as WeeklyFeedbackDetail | null);
 	const monthly = $derived(feedback as MonthlyFeedbackDetail | null);
 
+	$effect(() => {
+		const token = headerStore.showBackHeader({ title: '피드백 상세' });
+		return () => headerStore.hideBackHeader(token);
+	});
+
 	onMount(async () => {
 		const academyId = academyStore.academyId;
 		if (!academyId) return;
@@ -41,8 +46,6 @@
 </script>
 
 <div class="detail-page">
-	<BackHeader title="피드백 상세" onback={() => history.back()} />
-
 	<div class="detail-page__content">
 		{#if loading}
 			<div class="detail-page__loading">
@@ -158,7 +161,7 @@
 <style lang="scss">
 	.detail-page {
 		&__content {
-			padding: calc(var(--header-height) + var(--space-md)) var(--space-md)
+			padding: var(--space-md) var(--space-md)
 				calc(var(--bottom-nav-height) + var(--space-lg));
 		}
 
