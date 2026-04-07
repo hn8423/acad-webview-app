@@ -70,6 +70,24 @@
 		memberPasses.filter((p) => p.status === 'ACTIVE' && p.remaining_lessons > 0)
 	);
 
+	const ACTIVE_STATUSES: ReadonlySet<ReservationStatus> = new Set(['PENDING', 'CONFIRMED']);
+
+	let activeReservationKeys = $derived(
+		new Set(
+			myReservations
+				.filter((r) => ACTIVE_STATUSES.has(r.status))
+				.map(
+					(r) =>
+						`${r.slot_date}|${r.start_time}|${r.end_time}|${r.slot_type}|${r.instructor_name ?? ''}`
+				)
+		)
+	);
+
+	function isSlotAlreadyBooked(slot: AvailableSlot): boolean {
+		const key = `${slot.slot_date}|${slot.start_time}|${slot.end_time}|${slot.slot_type}|${slot.instructor_name ?? ''}`;
+		return activeReservationKeys.has(key);
+	}
+
 	function getPassesForSlot(slot: AvailableSlot | null): MemberPass[] {
 		if (!slot) return activePasses;
 		if (slot.slot_type === 'ENSEMBLE') return activePasses;
@@ -213,6 +231,10 @@
 	}
 
 	function handleSlotClick(slot: AvailableSlot) {
+		if (isSlotAlreadyBooked(slot)) {
+			toastStore.error('이미 예약된 시간입니다.');
+			return;
+		}
 		const passesForSlot = getPassesForSlot(slot);
 		if (passesForSlot.length === 0) {
 			const message =
@@ -374,8 +396,9 @@
 			{:else}
 				<div class="slot-list">
 					{#each availableSlots as slot}
+						{@const alreadyBooked = isSlotAlreadyBooked(slot)}
 						<Card padding="sm" onclick={() => handleSlotClick(slot)}>
-							<div class="slot-card">
+							<div class="slot-card" class:slot-card--booked={alreadyBooked}>
 								<div class="slot-card__info">
 									<span class="slot-card__time">
 										{formatTimeRange(slot.start_time, slot.end_time)}
@@ -387,6 +410,9 @@
 										<span class="slot-card__tag">모든 수강권 가능</span>
 									{/if}
 								</div>
+								{#if alreadyBooked}
+									<Badge variant="info">예약됨</Badge>
+								{/if}
 							</div>
 						</Card>
 					{/each}
@@ -683,6 +709,10 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
+
+		&--booked {
+			opacity: 0.6;
+		}
 
 		&__info {
 			display: flex;
