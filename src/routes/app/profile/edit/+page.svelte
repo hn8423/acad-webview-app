@@ -18,6 +18,10 @@
 	let userName = $state('');
 	let userBirthday = $state('');
 	let userGender = $state('');
+	let showPasswordChange = $state(false);
+	let currentPassword = $state('');
+	let newPassword = $state('');
+	let confirmPassword = $state('');
 	let errors = $state<Record<string, string>>({});
 	let loading = $state(false);
 
@@ -32,11 +36,16 @@
 		}
 	});
 
+	let hasPasswordInput = $derived(
+		currentPassword.length > 0 || newPassword.length > 0 || confirmPassword.length > 0
+	);
+
 	let hasChanges = $derived(
 		user != null &&
 			(userName !== user.user_name ||
 				userBirthday !== (user.user_birthday ?? '') ||
-				userGender !== (user.user_gender ?? ''))
+				userGender !== (user.user_gender ?? '') ||
+				hasPasswordInput)
 	);
 
 	async function handleSave() {
@@ -60,14 +69,41 @@
 			return;
 		}
 
+		if (hasPasswordInput) {
+			if (!currentPassword) {
+				errors = { current_password: '현재 비밀번호를 입력해주세요' };
+				return;
+			}
+			if (newPassword.length < 4) {
+				errors = { new_password: '새 비밀번호는 4자 이상 입력해주세요' };
+				return;
+			}
+			if (newPassword !== confirmPassword) {
+				errors = { confirm_password: '새 비밀번호가 일치하지 않습니다' };
+				return;
+			}
+		}
+
 		loading = true;
 		try {
-			await authStore.updateProfile({
+			const updateData: Record<string, string | undefined> = {
 				user_name: parsed.data.user_name,
 				user_birthday: parsed.data.user_birthday,
 				user_gender: parsed.data.user_gender
-			});
-			toastStore.success('프로필이 수정되었습니다.');
+			};
+
+			if (hasPasswordInput) {
+				updateData.current_password = btoa(currentPassword);
+				updateData.new_password = btoa(newPassword);
+			}
+
+			await authStore.updateProfile(updateData);
+
+			if (hasPasswordInput) {
+				toastStore.success('비밀번호가 변경되었습니다.');
+			} else {
+				toastStore.success('프로필이 수정되었습니다.');
+			}
 			await goto('/app/profile');
 		} catch (err) {
 			errors = {
@@ -152,6 +188,68 @@
 							여성
 						</button>
 					</div>
+				</div>
+
+				<div class="profile-edit__divider"></div>
+
+				<div class="profile-edit__password-section">
+					<button
+						type="button"
+						class="profile-edit__password-toggle"
+						onclick={() => {
+							showPasswordChange = !showPasswordChange;
+							if (!showPasswordChange) {
+								currentPassword = '';
+								newPassword = '';
+								confirmPassword = '';
+								errors = {};
+							}
+						}}
+					>
+						<span>비밀번호 변경</span>
+						<svg
+							class="profile-edit__password-arrow"
+							class:profile-edit__password-arrow--open={showPasswordChange}
+							width="20"
+							height="20"
+							viewBox="0 0 20 20"
+							fill="none"
+						>
+							<path
+								d="M5 7.5L10 12.5L15 7.5"
+								stroke="currentColor"
+								stroke-width="1.5"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							/>
+						</svg>
+					</button>
+
+					{#if showPasswordChange}
+						<div class="profile-edit__password-fields">
+							<Input
+								type="password"
+								label="현재 비밀번호"
+								placeholder="현재 비밀번호를 입력하세요"
+								bind:value={currentPassword}
+								error={errors['current_password'] ?? ''}
+							/>
+							<Input
+								type="password"
+								label="새 비밀번호"
+								placeholder="새 비밀번호를 입력하세요 (4자 이상)"
+								bind:value={newPassword}
+								error={errors['new_password'] ?? ''}
+							/>
+							<Input
+								type="password"
+								label="새 비밀번호 확인"
+								placeholder="새 비밀번호를 다시 입력하세요"
+								bind:value={confirmPassword}
+								error={errors['confirm_password'] ?? ''}
+							/>
+						</div>
+					{/if}
 				</div>
 
 				{#if errors['form']}
@@ -275,6 +373,47 @@
 				color: var(--color-on-primary);
 				border-color: transparent;
 			}
+		}
+
+		&__divider {
+			height: 1px;
+			background: var(--color-divider);
+			margin: var(--space-xs) 0;
+		}
+
+		&__password-section {
+			display: flex;
+			flex-direction: column;
+			gap: var(--space-md);
+		}
+
+		&__password-toggle {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			width: 100%;
+			padding: var(--space-sm) 0;
+			border: none;
+			background: none;
+			font-size: var(--font-size-base);
+			font-weight: var(--font-weight-medium);
+			color: var(--color-text);
+			cursor: pointer;
+		}
+
+		&__password-arrow {
+			transition: transform var(--transition-fast);
+			color: var(--color-text-muted);
+
+			&--open {
+				transform: rotate(180deg);
+			}
+		}
+
+		&__password-fields {
+			display: flex;
+			flex-direction: column;
+			gap: var(--space-lg);
 		}
 
 		&__error {

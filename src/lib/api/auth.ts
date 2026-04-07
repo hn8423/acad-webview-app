@@ -44,7 +44,10 @@ export function getMe() {
 }
 
 export function updateMe(
-	data: Partial<Pick<User, 'user_name' | 'user_birthday' | 'user_gender' | 'profile_img'>>
+	data: Partial<Pick<User, 'user_name' | 'user_birthday' | 'user_gender' | 'profile_img'>> & {
+		current_password?: string;
+		new_password?: string;
+	}
 ) {
 	return patch<ApiResponse<User>>('/academic/auth/me', data);
 }
