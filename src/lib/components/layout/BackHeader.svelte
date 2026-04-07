@@ -1,10 +1,17 @@
 <script lang="ts">
+	import { headerStore } from '$lib/stores/header.svelte';
+
 	interface Props {
 		title: string;
 		onback?: () => void;
 	}
 
 	let { title, onback }: Props = $props();
+
+	$effect(() => {
+		headerStore.hide();
+		return () => headerStore.show();
+	});
 
 	function handleBack() {
 		if (onback) {
