@@ -45,7 +45,13 @@
 	const MAX_EVENT_DOTS = 3;
 	const today = getTodayString();
 	const now = new Date();
-	const VISIBLE_STATUSES: ReservationStatus[] = ['PENDING', 'CONFIRMED', 'COMPLETED'];
+	const VISIBLE_STATUSES: ReservationStatus[] = [
+		'PENDING',
+		'CONFIRMED',
+		'COMPLETED',
+		'CANCELLED',
+		'NO_SHOW'
+	];
 
 	let currentYear = $state(now.getFullYear());
 	let currentMonth = $state(now.getMonth() + 1);
@@ -57,7 +63,9 @@
 	const RESERVATION_STATUS_COLORS: Record<string, string> = {
 		PENDING: '#fbbf24',
 		CONFIRMED: '#34d399',
-		COMPLETED: '#60a5fa'
+		COMPLETED: '#60a5fa',
+		CANCELLED: '#9ca3af',
+		NO_SHOW: '#9ca3af'
 	};
 
 	function reservationToCalendarEvent(r: MyReservation): CalendarEvent {
@@ -89,6 +97,10 @@
 				return '확정';
 			case 'COMPLETED':
 				return '완료';
+			case 'CANCELLED':
+				return '취소됨';
+			case 'NO_SHOW':
+				return '노쇼';
 			default:
 				return status;
 		}
@@ -372,6 +384,8 @@
 									class:reservation-card__badge--pending={reservation.status === 'PENDING'}
 									class:reservation-card__badge--confirmed={reservation.status === 'CONFIRMED'}
 									class:reservation-card__badge--completed={reservation.status === 'COMPLETED'}
+									class:reservation-card__badge--cancelled={reservation.status === 'CANCELLED'}
+									class:reservation-card__badge--noshow={reservation.status === 'NO_SHOW'}
 								>
 									{getStatusLabel(reservation.status)}
 								</span>
@@ -394,6 +408,11 @@
 							{#if reservation.pass_name}
 								<div class="reservation-card__pass">
 									{reservation.pass_name}
+								</div>
+							{/if}
+							{#if reservation.cancel_reason}
+								<div class="reservation-card__reason">
+									취소 사유: {reservation.cancel_reason}
 								</div>
 							{/if}
 						</div>
@@ -636,6 +655,12 @@
 				background: var(--color-info-bg);
 				color: var(--color-info);
 			}
+
+			&--cancelled,
+			&--noshow {
+				background: var(--color-bg);
+				color: var(--color-text-muted);
+			}
 		}
 
 		&__cancel {
@@ -668,6 +693,12 @@
 			font-size: var(--font-size-xs);
 			color: var(--color-text-muted);
 			margin-top: 2px;
+		}
+
+		&__reason {
+			font-size: var(--font-size-xs);
+			color: var(--color-danger);
+			margin-top: var(--space-xs);
 		}
 	}
 
