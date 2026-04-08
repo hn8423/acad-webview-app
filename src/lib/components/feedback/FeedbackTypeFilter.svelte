@@ -11,7 +11,7 @@
 	const tabs: { label: string; value: FeedbackType | undefined }[] = [
 		{ label: '전체', value: undefined },
 		{ label: '위클리', value: 'WEEKLY' },
-		{ label: '먼슬리', value: 'MONTHLY' }
+		{ label: '레벨테스트', value: 'MONTHLY' }
 	];
 </script>
 

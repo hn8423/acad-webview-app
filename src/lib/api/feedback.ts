@@ -10,8 +10,8 @@ import type {
 	FeedbackType,
 	CreateWeeklyRequest,
 	UpdateWeeklyRequest,
-	CreateMonthlyRequest,
-	UpdateMonthlyRequest
+	CreateLevelTestRequest,
+	UpdateLevelTestRequest
 } from '$lib/types/feedback';
 
 const BASE = (academyId: number) => `/academic/academies/${academyId}/feedback`;
@@ -53,15 +53,15 @@ export function updateWeeklyFeedback(
 	return patch<ApiResponse<FeedbackDetail>>(`${BASE(academyId)}/weekly/${feedbackId}`, data);
 }
 
-// Monthly Feedback
-export function createMonthlyFeedback(academyId: number, data: CreateMonthlyRequest) {
+// Level Test Feedback
+export function createLevelTestFeedback(academyId: number, data: CreateLevelTestRequest) {
 	return post<ApiResponse<FeedbackDetail>>(`${BASE(academyId)}/monthly`, data);
 }
 
-export function updateMonthlyFeedback(
+export function updateLevelTestFeedback(
 	academyId: number,
 	feedbackId: number,
-	data: UpdateMonthlyRequest
+	data: UpdateLevelTestRequest
 ) {
 	return patch<ApiResponse<FeedbackDetail>>(`${BASE(academyId)}/monthly/${feedbackId}`, data);
 }
