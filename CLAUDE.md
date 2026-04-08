@@ -131,11 +131,11 @@ static/                     # Static files
 - `/admin/students/[id]/passes` — Student pass management
 - `/admin/students/[id]/drinks` — Student drink ticket management
 - `/admin/students/[id]/feedback` — Student feedback list
-- `/admin/students/[id]/feedback/new-monthly` — Create monthly feedback
+- `/admin/students/[id]/feedback/new-level-test` — Create level test feedback
 - `/admin/feedback` — All feedback `[ADMIN, INSTRUCTOR]`
 - `/admin/feedback/[id]` — Feedback detail
 - `/admin/feedback/categories` — Feedback categories
-- `/admin/feedback/new-monthly` — Create monthly feedback
+- `/admin/feedback/new-level-test` — Create level test feedback
 - `/admin/feedback/new-weekly` — Create weekly feedback
 
 ## Architecture

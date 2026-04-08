@@ -107,9 +107,9 @@
 		showWeeklyModal = true;
 	}
 
-	function selectMonthly() {
+	function selectLevelTest() {
 		showTypeModal = false;
-		goto(`/admin/students/${memberId}/feedback/new-monthly`);
+		goto(`/admin/students/${memberId}/feedback/new-level-test`);
 	}
 
 	async function handleCreateWeekly() {
@@ -191,7 +191,7 @@
 					>
 						<div class="feedback-row__left">
 							<Badge variant={item.feedback_type === 'WEEKLY' ? 'info' : 'success'}>
-								{item.feedback_type === 'WEEKLY' ? '위클리' : '먼슬리'}
+								{item.feedback_type === 'WEEKLY' ? '위클리' : '레벨테스트'}
 							</Badge>
 							<div class="feedback-row__info">
 								<span class="feedback-row__date">{formatDate(item.feedback_date)}</span>
@@ -258,11 +258,11 @@
 				<span>주간 레슨 내용, 잘한 점, 개선점</span>
 			</div>
 		</button>
-		<button class="type-select__option" onclick={selectMonthly}>
-			<div class="type-select__icon type-select__icon--monthly">M</div>
+		<button class="type-select__option" onclick={selectLevelTest}>
+			<div class="type-select__icon type-select__icon--level-test">L</div>
 			<div class="type-select__text">
-				<strong>먼슬리 피드백</strong>
-				<span>월간 종합 평가, 카테고리별 점수</span>
+				<strong>레벨테스트 피드백</strong>
+				<span>레벨테스트 종합 평가, 카테고리별 점수</span>
 			</div>
 		</button>
 	</div>
@@ -481,7 +481,7 @@
 				background: var(--color-info);
 			}
 
-			&--monthly {
+			&--level-test {
 				background: var(--color-success);
 			}
 		}

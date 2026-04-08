@@ -3,7 +3,7 @@
 	import { academyStore } from '$lib/stores/academy.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import { getMembers, getMemberPasses } from '$lib/api/member';
-	import { getCategories, createMonthlyFeedback } from '$lib/api/feedback';
+	import { getCategories, createLevelTestFeedback } from '$lib/api/feedback';
 	import BackHeader from '$lib/components/layout/BackHeader.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
@@ -157,7 +157,7 @@
 
 		creating = true;
 		try {
-			const res = await createMonthlyFeedback(academyId, {
+			const res = await createLevelTestFeedback(academyId, {
 				member_id: selectedMember.member_id,
 				member_pass_id: Number(selectedPassId),
 				feedback_date: feedbackDate,
@@ -181,7 +181,7 @@
 				instructor_message: instructorMessage.trim() || undefined
 			});
 			if (res.status) {
-				toastStore.success('먼슬리 피드백이 작성되었습니다.');
+				toastStore.success('레벨테스트 피드백이 작성되었습니다.');
 				goto('/admin/feedback');
 			}
 		} catch (err) {
@@ -192,10 +192,10 @@
 	}
 </script>
 
-<div class="monthly-page">
-	<BackHeader title="먼슬리 피드백 작성" onback={goBack} />
+<div class="level-test-page">
+	<BackHeader title="레벨테스트 피드백 작성" onback={goBack} />
 
-	<div class="monthly-page__content">
+	<div class="level-test-page__content">
 		<!-- 스텝 인디케이터 -->
 		<div class="step-indicator">
 			<span class="step-indicator__text">
@@ -218,11 +218,11 @@
 				</div>
 
 				{#if searchLoading}
-					<div class="monthly-page__loading">
+					<div class="level-test-page__loading">
 						<Spinner />
 					</div>
 				{:else if members.length === 0}
-					<p class="monthly-page__empty">
+					<p class="level-test-page__empty">
 						{search ? '검색 결과가 없습니다.' : '등록된 수강생이 없습니다.'}
 					</p>
 				{:else}
@@ -263,11 +263,11 @@
 				</div>
 
 				{#if dataLoading}
-					<div class="monthly-page__loading">
+					<div class="level-test-page__loading">
 						<Spinner />
 					</div>
 				{:else if activePasses.length === 0}
-					<p class="monthly-page__empty">이 학생은 활성화된 수강권이 없습니다.</p>
+					<p class="level-test-page__empty">이 학생은 활성화된 수강권이 없습니다.</p>
 					<Button variant="secondary" fullWidth onclick={() => (step = 1)}>다른 학생 선택</Button>
 				{:else}
 					<h2 class="step-section__title">기본 정보</h2>
@@ -317,7 +317,7 @@
 				<h2 class="step-section__title">카테고리별 평가</h2>
 
 				{#if categories.length === 0}
-					<p class="monthly-page__empty">
+					<p class="level-test-page__empty">
 						등록된 평가 카테고리가 없습니다. 먼저 카테고리를 추가해주세요.
 					</p>
 				{:else}
@@ -402,7 +402,7 @@
 </div>
 
 <style lang="scss">
-	.monthly-page {
+	.level-test-page {
 		&__content {
 			padding: calc(var(--header-height) + var(--space-md)) var(--space-md) var(--space-2xl);
 		}

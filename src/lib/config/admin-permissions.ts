@@ -12,7 +12,7 @@ const ROUTE_ROLES: Record<string, readonly MemberRole[]> = {
 	'/admin/students': ['ADMIN', 'INSTRUCTOR'],
 	'/admin/feedback': ['ADMIN', 'INSTRUCTOR'],
 	'/admin/feedback/new-weekly': ['INSTRUCTOR'],
-	'/admin/feedback/new-monthly': ['INSTRUCTOR'],
+	'/admin/feedback/new-level-test': ['INSTRUCTOR'],
 	'/admin/ensembles': ['ADMIN', 'INSTRUCTOR'],
 	'/admin/reservations': ['INSTRUCTOR'],
 	'/admin/pass-types': ['ADMIN'],

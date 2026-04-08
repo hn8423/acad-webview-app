@@ -64,7 +64,7 @@
 			class:tab--active={typeFilter === 'MONTHLY'}
 			onclick={() => handleTypeChange('MONTHLY')}
 		>
-			먼슬리
+			레벨테스트
 		</button>
 	</div>
 
@@ -92,7 +92,7 @@
 					>
 						<div class="feedback-row__left">
 							<Badge variant={item.feedback_type === 'WEEKLY' ? 'info' : 'success'}>
-								{item.feedback_type === 'WEEKLY' ? '위클리' : '먼슬리'}
+								{item.feedback_type === 'WEEKLY' ? '위클리' : '레벨테스트'}
 							</Badge>
 							<div class="feedback-row__info">
 								<span class="feedback-row__date">{formatDate(item.feedback_date)}</span>
