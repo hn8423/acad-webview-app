@@ -57,7 +57,7 @@
 		slot_date: getTodayString(),
 		start_time: '10:00',
 		end_time: '11:00',
-		max_capacity: 2,
+		max_capacity: 1,
 		slot_type: 'REGULAR'
 	});
 
@@ -74,7 +74,7 @@
 		days_of_week: [],
 		start_time: '10:00',
 		end_time: '11:00',
-		max_capacity: 2,
+		max_capacity: 1,
 		slot_type: 'REGULAR'
 	});
 
@@ -111,7 +111,7 @@
 			bulkForm = { ...rest, slot_type: type, min_capacity: 4, end_time: endTime };
 		} else {
 			const { min_capacity: _, ...rest } = bulkForm;
-			bulkForm = { ...rest, slot_type: type, max_capacity: 2, end_time: endTime };
+			bulkForm = { ...rest, slot_type: type, max_capacity: 1, end_time: endTime };
 		}
 	}
 
@@ -281,7 +281,7 @@
 			days_of_week: [],
 			start_time: '10:00',
 			end_time: '11:00',
-			max_capacity: 2,
+			max_capacity: 1,
 			slot_type: 'REGULAR',
 			instructor_id: firstInstructorId
 		};
@@ -302,7 +302,7 @@
 			createForm = { ...rest, slot_type: type, min_capacity: 4, end_time: endTime };
 		} else {
 			const { min_capacity: _, ...rest } = createForm;
-			createForm = { ...rest, slot_type: type, max_capacity: 2, end_time: endTime };
+			createForm = { ...rest, slot_type: type, max_capacity: 1, end_time: endTime };
 		}
 	}
 
