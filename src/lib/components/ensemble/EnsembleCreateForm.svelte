@@ -16,8 +16,6 @@
 	let role = $state('');
 	let description = $state('');
 	let maxMembers = $state('5');
-	let practiceDate = $state('');
-	let practiceTime = $state('');
 	let errors = $state<Record<string, string>>({});
 	let submitting = $state(false);
 
@@ -25,9 +23,7 @@
 		group_name: z.string().min(1, '그룹명을 입력해주세요').max(50, '50자 이내로 입력해주세요'),
 		role: z.string().min(1, '파트를 입력해주세요').max(20, '20자 이내로 입력해주세요'),
 		description: z.string().max(500, '500자 이내로 입력해주세요').optional(),
-		max_members: z.number().int().min(2, '최소 2명 이상').max(20, '최대 20명'),
-		practice_date: z.string().optional(),
-		practice_time: z.string().optional()
+		max_members: z.number().int().min(2, '최소 2명 이상').max(20, '최대 20명')
 	});
 
 	async function handleSubmit() {
@@ -39,9 +35,7 @@
 			group_name: groupName.trim(),
 			role: role.trim(),
 			description: description.trim() || undefined,
-			max_members: parseInt(maxMembers) || 5,
-			practice_date: practiceDate || undefined,
-			practice_time: practiceTime || undefined
+			max_members: parseInt(maxMembers) || 5
 		});
 
 		if (!parsed.success) {
@@ -108,12 +102,6 @@
 		bind:value={maxMembers}
 		error={errors.max_members}
 	/>
-	<Input label="연습 날짜 (선택)" type="date" bind:value={practiceDate} />
-	<div class="create-form__field">
-		<!-- svelte-ignore a11y_label_has_associated_control -->
-		<label class="create-form__label">연습 시간 (선택)</label>
-		<input class="create-form__time-input" type="time" bind:value={practiceTime} />
-	</div>
 	<div class="create-form__actions">
 		<Button type="submit" fullWidth loading={submitting}>만들기</Button>
 	</div>
@@ -165,25 +153,6 @@
 			&--error {
 				background-color: var(--color-danger-bg);
 				box-shadow: 0 0 0 2px var(--color-danger);
-			}
-		}
-
-		&__time-input {
-			width: 100%;
-			padding: 14px 16px;
-			border: none;
-			border-radius: var(--radius-md);
-			font-size: var(--font-size-base);
-			color: var(--color-text);
-			background-color: var(--color-bg);
-			outline: none;
-			transition:
-				background-color var(--transition-fast),
-				box-shadow var(--transition-fast);
-
-			&:focus {
-				background-color: var(--color-primary-bg);
-				box-shadow: 0 0 0 2px var(--color-primary-light);
 			}
 		}
 
