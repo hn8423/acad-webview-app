@@ -11,6 +11,7 @@ import type {
 	MyReservation,
 	ReservationStatus,
 	SlotType,
+	MonthlySummaryData,
 	UpdateReservationStatusRequest,
 	UpdateSlotRequest
 } from '$lib/types/reservation';
@@ -46,6 +47,24 @@ export function cancelReservationAsNoShow(academyId: number, reservationId: numb
 	return patch<ApiResponse<void>>(`/academic/academies/${academyId}/reservations/${reservationId}`, {
 		status: 'NO_SHOW'
 	});
+}
+
+// Admin: Lesson Slot Monthly Summary
+
+export function getLessonSlotsMonthlySummary(
+	academyId: number,
+	year: number,
+	month: number,
+	instructorId?: number
+) {
+	const params = new URLSearchParams({
+		year: String(year),
+		month: String(month)
+	});
+	if (instructorId) params.set('instructor_id', String(instructorId));
+	return get<ApiResponse<MonthlySummaryData>>(
+		`/academic/academies/${academyId}/lesson-slots/monthly-summary?${params.toString()}`
+	);
 }
 
 // Admin: Lesson Slot CRUD
