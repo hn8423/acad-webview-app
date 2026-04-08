@@ -126,8 +126,6 @@
 
 		return [
 			...categoryItems,
-			{ label: '완료', value: stats.completed_lessons, color: 'success' },
-			{ label: '취소', value: stats.cancelled_lessons, color: 'danger' },
 			{ label: '노쇼', value: stats.no_show_count, color: 'warning' },
 			{ label: '수강생', value: stats.total_students, color: 'info' }
 		];

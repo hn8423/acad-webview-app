@@ -350,6 +350,7 @@
 			width: 20px;
 			height: 20px;
 			object-fit: contain;
+			filter: brightness(0) invert(1);
 		}
 	}
 </style>

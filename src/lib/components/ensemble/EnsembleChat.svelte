@@ -132,8 +132,10 @@
 	$effect(() => {
 		const signal = { cancelled: false };
 
-		if (ensembleId) {
+		if (ensembleId && isMember) {
 			initializeChat(signal);
+		} else {
+			loading = false;
 		}
 
 		return () => {
@@ -158,19 +160,24 @@
 			<span class="ensemble-chat__status">연결 끊김</span>
 		{/if}
 	</div>
-	<ChatMessageList
-		{messages}
-		{legacyComments}
-		currentMemberId={academyStore.memberId ?? 0}
-		{loading}
-		{loadingMore}
-		{hasMore}
-		onloadmore={handleLoadMore}
-	/>
+	<div class="ensemble-chat__body" class:ensemble-chat__body--blurred={!isMember}>
+		<ChatMessageList
+			{messages}
+			{legacyComments}
+			currentMemberId={academyStore.memberId ?? 0}
+			{loading}
+			{loadingMore}
+			{hasMore}
+			onloadmore={handleLoadMore}
+		/>
+		{#if !isMember}
+			<div class="ensemble-chat__blur-overlay">
+				<p>멤버만 채팅을 볼 수 있습니다</p>
+			</div>
+		{/if}
+	</div>
 	{#if isMember}
 		<ChatInput onsend={handleSend} disabled={!connected} />
-	{:else}
-		<p class="ensemble-chat__readonly">멤버만 채팅에 참여할 수 있습니다.</p>
 	{/if}
 </section>
 
@@ -203,13 +210,34 @@
 			color: var(--color-danger);
 		}
 
-		&__readonly {
-			font-size: var(--font-size-sm);
-			color: var(--color-text-muted);
-			text-align: center;
-			padding: var(--space-md);
-			background-color: var(--color-bg);
-			border-top: 1px solid var(--color-divider);
+		&__body {
+			position: relative;
+
+			&--blurred {
+				:global(.message-list) {
+					filter: blur(8px);
+					pointer-events: none;
+					user-select: none;
+				}
+			}
+		}
+
+		&__blur-overlay {
+			position: absolute;
+			inset: 0;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			z-index: 1;
+
+			p {
+				font-size: var(--font-size-sm);
+				color: var(--color-text-secondary);
+				background-color: var(--color-bg-card);
+				padding: var(--space-sm) var(--space-md);
+				border-radius: var(--radius-md);
+				box-shadow: var(--shadow-sm);
+			}
 		}
 	}
 </style>

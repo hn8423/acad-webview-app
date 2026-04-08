@@ -18,7 +18,7 @@
 		getTicketValue,
 		getCapacityWeight,
 		getReservationWeight,
-		isActiveReservationStatus
+		isCapacityOccupyingStatus
 	} from '$lib/utils/pass';
 	import { buildDateIndicators, countSlotDates, formatDayLabels } from '$lib/utils/reservation';
 	import type {
@@ -442,7 +442,7 @@
 
 	function computeWeightedCount(reservations: SlotReservation[]): number {
 		return reservations
-			.filter((rv) => isActiveReservationStatus(rv.status))
+			.filter((rv) => isCapacityOccupyingStatus(rv.status))
 			.reduce((sum, rv) => sum + getReservationWeight(rv.pass_category, rv.ticket_value), 0);
 	}
 
