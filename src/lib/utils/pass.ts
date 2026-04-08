@@ -51,6 +51,10 @@ export function isActiveReservationStatus(status: string): boolean {
 	return status === 'PENDING' || status === 'CONFIRMED';
 }
 
+export function isCapacityOccupyingStatus(status: string): boolean {
+	return status === 'PENDING' || status === 'CONFIRMED' || status === 'COMPLETED';
+}
+
 export type PassCategory = 'ROTATION' | 'FULL';
 type BadgeVariant = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
 
