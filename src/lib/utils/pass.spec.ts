@@ -5,7 +5,8 @@ import {
 	getTicketValue,
 	getCapacityWeight,
 	getReservationWeight,
-	isActiveReservationStatus
+	isActiveReservationStatus,
+	isCapacityOccupyingStatus
 } from './pass';
 
 describe('getCapacityWeight', () => {
@@ -57,6 +58,28 @@ describe('isActiveReservationStatus', () => {
 
 	it('should return false for NO_SHOW', () => {
 		expect(isActiveReservationStatus('NO_SHOW')).toBe(false);
+	});
+});
+
+describe('isCapacityOccupyingStatus', () => {
+	it('should return true for PENDING', () => {
+		expect(isCapacityOccupyingStatus('PENDING')).toBe(true);
+	});
+
+	it('should return true for CONFIRMED', () => {
+		expect(isCapacityOccupyingStatus('CONFIRMED')).toBe(true);
+	});
+
+	it('should return true for COMPLETED', () => {
+		expect(isCapacityOccupyingStatus('COMPLETED')).toBe(true);
+	});
+
+	it('should return false for CANCELLED', () => {
+		expect(isCapacityOccupyingStatus('CANCELLED')).toBe(false);
+	});
+
+	it('should return false for NO_SHOW', () => {
+		expect(isCapacityOccupyingStatus('NO_SHOW')).toBe(false);
 	});
 });
 
