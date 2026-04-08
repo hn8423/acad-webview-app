@@ -1,24 +1,24 @@
 <script lang="ts">
-	import { getLevelColor } from '$lib/utils/feedback';
+	import { getLevelColor, getFullLevelLabel } from '$lib/utils/feedback';
 
 	interface Props {
 		categoryName: string;
 		score: number;
-		level?: string;
 		comment?: string;
 	}
 
-	let { categoryName, score, level, comment }: Props = $props();
+	let { categoryName, score, comment }: Props = $props();
 
 	let color = $derived(getLevelColor(score));
 	let percentage = $derived((score / 5) * 100);
+	let levelLabel = $derived(getFullLevelLabel(score));
 </script>
 
 <div class="score-display">
 	<div class="score-display__header">
 		<span class="score-display__category">{categoryName}</span>
 		<span class="score-display__level" style="color: {color}">
-			{level ?? `${score}/5`}
+			{levelLabel}
 		</span>
 	</div>
 	<div class="score-display__bar">

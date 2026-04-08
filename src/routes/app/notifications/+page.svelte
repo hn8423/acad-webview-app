@@ -8,6 +8,7 @@
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import { getRelativeTime } from '$lib/utils/format';
+	import { processNoticeContent } from '$lib/utils/link';
 	import Modal from '$lib/components/ui/Modal.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import type { Notification, NotificationType } from '$lib/types/notification';
@@ -180,7 +181,7 @@
 							</span>
 						</div>
 						<h3 class="notification-row__title">{notification.title}</h3>
-						<p class="notification-row__body">{notification.content}</p>
+						<div class="notification-row__body">{@html processNoticeContent(notification.content)}</div>
 					</button>
 					{#if i < notifications.length - 1}
 						<div class="notification-list__divider"></div>
@@ -207,7 +208,7 @@
 
 {#if selectedNotification}
 	<Modal isOpen={isModalOpen} title={selectedNotification.title} onclose={closeModal}>
-		<p class="notification-detail__content">{selectedNotification.content}</p>
+		<div class="notification-detail__content">{@html processNoticeContent(selectedNotification.content)}</div>
 		<p class="notification-detail__time">
 			{getRelativeTime(selectedNotification.created_at)}
 		</p>
@@ -229,6 +230,11 @@
 			line-height: 1.6;
 			white-space: pre-line;
 			word-break: break-word;
+
+			:global(a) {
+				color: var(--color-primary);
+				text-decoration: underline;
+			}
 		}
 
 		&__time {
@@ -362,6 +368,11 @@
 			line-clamp: 2;
 			-webkit-box-orient: vertical;
 			overflow: hidden;
+
+			:global(a) {
+				color: var(--color-primary);
+				text-decoration: underline;
+			}
 		}
 	}
 

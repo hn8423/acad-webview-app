@@ -270,7 +270,6 @@
 								<ScoreDisplay
 									categoryName={detail.category_name ?? ''}
 									score={detail.score}
-									level={detail.level}
 									comment={detail.comment}
 								/>
 							{/each}
