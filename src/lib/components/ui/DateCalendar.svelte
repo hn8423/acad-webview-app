@@ -23,7 +23,7 @@
 
 	let currentYear = $state(now.getFullYear());
 	let currentMonth = $state(now.getMonth() + 1);
-	let initialized = false;
+	let prevSelectedDate = '';
 
 	let monthLabel = $derived(formatMonth(currentYear, currentMonth));
 
@@ -124,15 +124,13 @@
 		onselect(cell.fullDate);
 	}
 
-	// Sync calendar view with selectedDate (also handles initialization)
+	// Sync calendar view when selectedDate changes (from parent or cell click)
 	$effect(() => {
-		const d = new Date(selectedDate);
-		const y = d.getFullYear();
-		const m = d.getMonth() + 1;
-		if (!initialized || y !== currentYear || m !== currentMonth) {
-			currentYear = y;
-			currentMonth = m;
-			initialized = true;
+		if (selectedDate !== prevSelectedDate) {
+			prevSelectedDate = selectedDate;
+			const d = new Date(selectedDate);
+			currentYear = d.getFullYear();
+			currentMonth = d.getMonth() + 1;
 		}
 	});
 </script>
