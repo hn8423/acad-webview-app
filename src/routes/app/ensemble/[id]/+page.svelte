@@ -45,12 +45,9 @@
 	let isLeader = $derived(
 		ensemble !== null && ensemble.creator.member_id === academyStore.memberId
 	);
-	let myMembership = $derived(ensemble?.members.find((m) => m.member_id === academyStore.memberId));
-	let isPending = $derived(myMembership?.member_status === 'PENDING');
-	let isMember = $derived(
-		myMembership?.member_status === 'MEMBER' || myMembership?.member_status === 'LEADER'
-	);
-	let canApply = $derived(!myMembership && ensemble?.status === 'RECRUITING');
+	let isPending = $derived(ensemble?.my_status === 'PENDING_APPROVAL');
+	let isMember = $derived(ensemble?.my_status === 'JOINED');
+	let canApply = $derived(!ensemble?.my_status && ensemble?.status === 'RECRUITING');
 	let pendingMembers = $derived(
 		ensemble?.members.filter((m) => m.member_status === 'PENDING') ?? []
 	);

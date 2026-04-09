@@ -17,8 +17,7 @@
 	import {
 		getPassStatusVariant,
 		getPassStatusLabel,
-		getTicketValue,
-		getReservationWeight
+		getTicketValue
 	} from '$lib/utils/pass';
 	import type { MemberPass, DrinkTicket } from '$lib/types/member';
 	import type { MyReservation } from '$lib/types/reservation';
@@ -391,12 +390,6 @@
 					수강권이 차감되며 환불되지 않습니다.
 				</div>
 			{:else}
-				{@const cancelWeight = getReservationWeight(cancelTarget.pass_category, cancelTarget.ticket_value)}
-				{#if cancelWeight !== 1}
-					<p class="cancel-sheet__refund-notice">
-						취소 시 {cancelWeight}인원이 환원됩니다.
-					</p>
-				{/if}
 				{#if getTicketValue(cancelTarget.ticket_value) > 1}
 					<p class="cancel-sheet__refund-notice">
 						취소 시 {getTicketValue(cancelTarget.ticket_value)}회가 환불됩니다.
