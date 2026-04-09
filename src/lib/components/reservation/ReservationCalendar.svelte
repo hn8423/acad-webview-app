@@ -5,19 +5,20 @@
 		formatMonth,
 		getTodayString
 	} from '$lib/utils/format';
+	import type { DateIndicators } from '$lib/types/reservation';
 
 	interface Props {
 		selectedDate: string;
-		slotCountMap: Record<string, number>;
-		countsLoading?: boolean;
+		dateIndicators: Map<string, DateIndicators>;
+		indicatorsLoading?: boolean;
 		onselect: (date: string) => void;
 		onmonthchange: (year: number, month: number) => void;
 	}
 
 	let {
 		selectedDate,
-		slotCountMap,
-		countsLoading = false,
+		dateIndicators,
+		indicatorsLoading = false,
 		onselect,
 		onmonthchange
 	}: Props = $props();
@@ -182,7 +183,8 @@
 
 		{#each calendarCells as row}
 			{#each row as cell}
-				{@const count = slotCountMap[cell.fullDate] ?? 0}
+				{@const indicators = dateIndicators.get(cell.fullDate)}
+				{@const hasAvailable = indicators?.has_available ?? false}
 				{@const isSelected = cell.fullDate === selectedDate}
 				<button
 					type="button"
@@ -193,16 +195,11 @@
 					class:reservation-calendar__cell--past={cell.isPast}
 					disabled={cell.isPast}
 					onclick={() => handleCellClick(cell)}
-					aria-label="{cell.date}일{count > 0 ? `, ${count}개 예약 가능` : ''}"
+					aria-label="{cell.date}일{hasAvailable ? ', 예약 가능' : ''}"
 				>
 					<span class="reservation-calendar__date">{cell.date}</span>
-					{#if count > 0 && !cell.isPast}
-						<span
-							class="reservation-calendar__count"
-							class:reservation-calendar__count--selected={isSelected}
-						>
-							{count}건
-						</span>
+					{#if hasAvailable && !cell.isPast}
+						<span class="reservation-calendar__dot"></span>
 					{/if}
 				</button>
 			{/each}
@@ -297,6 +294,10 @@
 					color: var(--color-on-primary);
 					font-weight: var(--font-weight-bold);
 				}
+
+				.reservation-calendar__dot {
+					background-color: var(--color-on-primary);
+				}
 			}
 
 			&--past {
@@ -312,16 +313,13 @@
 			color: var(--color-text);
 		}
 
-		&__count {
-			font-size: 10px;
-			font-weight: var(--font-weight-semibold);
-			color: var(--color-primary);
+		&__dot {
+			width: 5px;
+			height: 5px;
+			border-radius: 50%;
+			background-color: var(--color-primary);
 			margin-top: 2px;
-			line-height: 1;
-
-			&--selected {
-				color: var(--color-on-primary);
-			}
+			flex-shrink: 0;
 		}
 	}
 </style>

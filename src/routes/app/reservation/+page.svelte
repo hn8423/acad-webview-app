@@ -6,7 +6,8 @@
 		getMyReservations,
 		createReservation,
 		cancelReservation,
-		cancelReservationAsNoShow
+		cancelReservationAsNoShow,
+		getLessonSlotsMonthlySummary
 	} from '$lib/api/reservation';
 	import { getMyPasses } from '$lib/api/member';
 	import Card from '$lib/components/ui/Card.svelte';
@@ -16,17 +17,12 @@
 	import BottomSheet from '$lib/components/ui/BottomSheet.svelte';
 	import PassSummary from '$lib/components/reservation/PassSummary.svelte';
 	import ReservationCalendar from '$lib/components/reservation/ReservationCalendar.svelte';
-	import {
-		formatDate,
-		formatTimeRange,
-		getDayOfWeek,
-		getTodayString,
-		getDaysInMonth
-	} from '$lib/utils/format';
+	import { formatDate, formatTimeRange, getDayOfWeek, getTodayString } from '$lib/utils/format';
 	import { getTicketValue, getReservationWeight } from '$lib/utils/pass';
 	import { isReservationDay } from '$lib/utils/reservation';
 	import type {
 		AvailableSlot,
+		DateIndicators,
 		MyReservation,
 		ReservationStatus,
 		SlotType
@@ -40,8 +36,8 @@
 	let selectedDate = $state(getTodayString());
 	let availableSlots = $state<AvailableSlot[]>([]);
 	let slotsLoading = $state(true);
-	let slotCountMap = $state<Record<string, number>>({});
-	let countsLoading = $state(false);
+	let dateIndicators = $state<Map<string, DateIndicators>>(new Map());
+	let indicatorsLoading = $state(false);
 
 	// My reservations tab state
 	let myReservations = $state<MyReservation[]>([]);
@@ -111,12 +107,13 @@
 			: false
 	);
 
-	onMount(() => {
-		const now = new Date();
-		loadMonthSlotCounts(now.getFullYear(), now.getMonth() + 1);
-		loadAvailableSlots(selectedDate);
-		loadMemberPasses();
-		loadMyReservations();
+	let indicatorRequestId = 0;
+	let currentCalendarYear = new Date().getFullYear();
+	let currentCalendarMonth = new Date().getMonth() + 1;
+
+	onMount(async () => {
+		await Promise.all([loadMemberPasses(), loadAvailableSlots(selectedDate), loadMyReservations()]);
+		loadMonthIndicators(currentCalendarYear, currentCalendarMonth);
 	});
 
 	async function loadAvailableSlots(date: string) {
@@ -175,59 +172,67 @@
 		loadAvailableSlots(date);
 	}
 
-	async function loadMonthSlotCounts(year: number, month: number) {
+	async function loadMonthIndicators(year: number, month: number) {
 		const academyId = academyStore.academyId;
 		if (!academyId) return;
 
-		countsLoading = true;
-		const todayStr = getTodayString();
-		const daysInMonth = getDaysInMonth(year, month);
-		const dates: string[] = [];
+		const instructorIds = [
+			...new Set(
+				activePasses
+					.map((p) => p.instructor_id)
+					.filter((id): id is number => id !== undefined)
+			)
+		];
 
-		for (let d = 1; d <= daysInMonth; d++) {
-			const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-			if (dateStr >= todayStr) dates.push(dateStr);
+		if (instructorIds.length === 0) {
+			dateIndicators = new Map();
+			return;
 		}
+
+		indicatorsLoading = true;
+		const requestId = ++indicatorRequestId;
 
 		try {
 			const results = await Promise.allSettled(
-				dates.map((date) => getAvailableSlots(academyId, date))
+				instructorIds.map((id) => getLessonSlotsMonthlySummary(academyId, year, month, id))
 			);
-			const newMap: Record<string, number> = {};
-			results.forEach((result, i) => {
-				if (result.status === 'fulfilled' && result.value.status && result.value.data) {
-					const count = result.value.data.length;
-					if (count > 0) newMap[dates[i]] = count;
+
+			if (requestId !== indicatorRequestId) return;
+
+			const merged = new Map<string, DateIndicators>();
+			for (const result of results) {
+				if (result.status !== 'fulfilled' || !result.value.status || !result.value.data) continue;
+				for (const [date, indicators] of Object.entries(result.value.data)) {
+					const existing = merged.get(date);
+					if (existing) {
+						merged.set(date, {
+							has_confirmed: existing.has_confirmed || indicators.has_confirmed,
+							has_pending: existing.has_pending || indicators.has_pending,
+							has_available: existing.has_available || indicators.has_available
+						});
+					} else {
+						merged.set(date, { ...indicators });
+					}
 				}
-			});
-			slotCountMap = newMap;
+			}
+			dateIndicators = merged;
 		} catch {
 			// handled by client.ts
 		} finally {
-			countsLoading = false;
+			if (requestId === indicatorRequestId) {
+				indicatorsLoading = false;
+			}
 		}
 	}
 
 	function handleMonthChange(year: number, month: number) {
-		loadMonthSlotCounts(year, month);
+		currentCalendarYear = year;
+		currentCalendarMonth = month;
+		loadMonthIndicators(year, month);
 	}
 
-	async function refreshSlotCount(date: string) {
-		const academyId = academyStore.academyId;
-		if (!academyId) return;
-
-		try {
-			const res = await getAvailableSlots(academyId, date);
-			if (res.status && res.data) {
-				const count = res.data.length;
-				slotCountMap =
-					count > 0
-						? { ...slotCountMap, [date]: count }
-						: Object.fromEntries(Object.entries(slotCountMap).filter(([k]) => k !== date));
-			}
-		} catch {
-			// handled by client.ts
-		}
+	function refreshMonthIndicators() {
+		loadMonthIndicators(currentCalendarYear, currentCalendarMonth);
 	}
 
 	function handleSlotClick(slot: AvailableSlot) {
@@ -269,7 +274,7 @@
 				loadAvailableSlots(selectedDate);
 				loadMyReservations();
 				loadMemberPasses();
-				refreshSlotCount(selectedDate);
+				refreshMonthIndicators();
 			}
 		} catch {
 			// handled by client.ts
@@ -302,7 +307,7 @@
 				loadMyReservations();
 				loadAvailableSlots(selectedDate);
 				loadMemberPasses();
-				refreshSlotCount(selectedDate);
+				refreshMonthIndicators();
 			}
 		} catch {
 			// handled by client.ts
@@ -380,8 +385,8 @@
 
 		<ReservationCalendar
 			{selectedDate}
-			{slotCountMap}
-			{countsLoading}
+			{dateIndicators}
+			{indicatorsLoading}
 			onselect={handleDateSelect}
 			onmonthchange={handleMonthChange}
 		/>
