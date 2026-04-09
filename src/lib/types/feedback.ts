@@ -68,7 +68,7 @@ export interface CurriculumDirection {
 	focus: string;
 }
 
-export interface MonthlyFeedbackDetail {
+export interface LevelTestFeedbackDetail {
 	id: number;
 	feedback_type: 'MONTHLY';
 	feedback_date: string;
@@ -84,7 +84,7 @@ export interface MonthlyFeedbackDetail {
 	created_at?: string;
 }
 
-export type FeedbackDetail = WeeklyFeedbackDetail | MonthlyFeedbackDetail;
+export type FeedbackDetail = WeeklyFeedbackDetail | LevelTestFeedbackDetail;
 
 export interface CreateWeeklyRequest {
 	member_id: number;
@@ -106,7 +106,7 @@ export interface UpdateWeeklyRequest {
 	video_url?: string;
 }
 
-export interface CreateMonthlyRequest {
+export interface CreateLevelTestRequest {
 	member_id: number;
 	member_pass_id: number;
 	feedback_date: string;
@@ -118,7 +118,7 @@ export interface CreateMonthlyRequest {
 	video_url?: string;
 }
 
-export interface UpdateMonthlyRequest {
+export interface UpdateLevelTestRequest {
 	member_music_info?: MusicInfo;
 	skill_details?: { category_id: number; score: number; comment?: string }[];
 	curriculum_direction?: CurriculumDirection;

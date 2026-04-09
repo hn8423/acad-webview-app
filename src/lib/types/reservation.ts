@@ -110,3 +110,5 @@ export interface DateIndicators {
 	has_pending: boolean;
 	has_available: boolean;
 }
+
+export type MonthlySummaryData = Record<string, DateIndicators>;

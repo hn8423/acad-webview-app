@@ -11,7 +11,7 @@
 	import type {
 		FeedbackDetail,
 		WeeklyFeedbackDetail,
-		MonthlyFeedbackDetail
+		LevelTestFeedbackDetail
 	} from '$lib/types/feedback';
 	import { onMount } from 'svelte';
 
@@ -21,7 +21,7 @@
 	const feedbackId = $derived(Number(page.params.id));
 	const isWeekly = $derived(feedback?.feedback_type === 'WEEKLY');
 	const weekly = $derived(feedback as WeeklyFeedbackDetail | null);
-	const monthly = $derived(feedback as MonthlyFeedbackDetail | null);
+	const levelTest = $derived(feedback as LevelTestFeedbackDetail | null);
 
 	$effect(() => {
 		const token = headerStore.showBackHeader({ title: '피드백 상세' });
@@ -58,7 +58,7 @@
 			<div class="detail-card">
 				<div class="detail-card__header">
 					<Badge variant={isWeekly ? 'info' : 'success'}>
-						{isWeekly ? '위클리' : '먼슬리'}
+						{isWeekly ? '위클리' : '레벨테스트'}
 					</Badge>
 					<span class="detail-card__date">{formatDate(feedback.feedback_date)}</span>
 				</div>
@@ -98,12 +98,12 @@
 						<MediaDisplay url={weekly.video_url} />
 					</div>
 				{/if}
-			{:else if !isWeekly && monthly}
-				{#if monthly.skill_details.length > 0}
+			{:else if !isWeekly && levelTest}
+				{#if levelTest.skill_details.length > 0}
 					<div class="detail-card">
 						<h3 class="detail-card__title">카테고리별 평가</h3>
 						<div class="skill-list">
-							{#each monthly.skill_details as detail}
+							{#each levelTest.skill_details as detail}
 								<ScoreDisplay
 									categoryName={detail.category_name ?? ''}
 									score={detail.score}
@@ -114,42 +114,42 @@
 					</div>
 				{/if}
 
-				{#if monthly.curriculum_direction}
+				{#if levelTest.curriculum_direction}
 					<div class="detail-card">
 						<h3 class="detail-card__title">커리큘럼 방향</h3>
-						{#if monthly.curriculum_direction.direction}
+						{#if levelTest.curriculum_direction.direction}
 							<div class="detail-card__section">
 								<p class="detail-card__subtitle">커리큘럼 방향</p>
-								<p class="detail-card__body">{monthly.curriculum_direction.direction}</p>
+								<p class="detail-card__body">{levelTest.curriculum_direction.direction}</p>
 							</div>
 						{/if}
-						{#if monthly.curriculum_direction.focus}
+						{#if levelTest.curriculum_direction.focus}
 							<div class="detail-card__section">
 								<p class="detail-card__subtitle">중점 사항</p>
-								<p class="detail-card__body">{monthly.curriculum_direction.focus}</p>
+								<p class="detail-card__body">{levelTest.curriculum_direction.focus}</p>
 							</div>
 						{/if}
 					</div>
 				{/if}
 
-				{#if monthly.instructor_goals}
+				{#if levelTest.instructor_goals}
 					<div class="detail-card">
 						<h3 class="detail-card__title">강사 목표</h3>
-						<p class="detail-card__body">{monthly.instructor_goals}</p>
+						<p class="detail-card__body">{levelTest.instructor_goals}</p>
 					</div>
 				{/if}
 
-				{#if monthly.instructor_message}
+				{#if levelTest.instructor_message}
 					<div class="detail-card">
 						<h3 class="detail-card__title">강사 메시지</h3>
-						<p class="detail-card__body">{monthly.instructor_message}</p>
+						<p class="detail-card__body">{levelTest.instructor_message}</p>
 					</div>
 				{/if}
 
-				{#if monthly.video_url}
+				{#if levelTest.video_url}
 					<div class="detail-card">
 						<h3 class="detail-card__title">미디어</h3>
-						<MediaDisplay url={monthly.video_url} />
+						<MediaDisplay url={levelTest.video_url} />
 					</div>
 				{/if}
 			{/if}

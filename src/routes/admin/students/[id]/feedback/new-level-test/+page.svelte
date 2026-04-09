@@ -3,7 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { academyStore } from '$lib/stores/academy.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
-	import { getCategories, createMonthlyFeedback } from '$lib/api/feedback';
+	import { getCategories, createLevelTestFeedback } from '$lib/api/feedback';
 	import { getMemberPasses } from '$lib/api/member';
 	import BackHeader from '$lib/components/layout/BackHeader.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -92,7 +92,7 @@
 
 		creating = true;
 		try {
-			const res = await createMonthlyFeedback(academyId, {
+			const res = await createLevelTestFeedback(academyId, {
 				member_id: memberId,
 				member_pass_id: Number(selectedPassId),
 				feedback_date: feedbackDate,
@@ -116,7 +116,7 @@
 				instructor_message: instructorMessage.trim() || undefined
 			});
 			if (res.status) {
-				toastStore.success('먼슬리 피드백이 작성되었습니다.');
+				toastStore.success('레벨테스트 피드백이 작성되었습니다.');
 				goto(`/admin/students/${memberId}/feedback`);
 			}
 		} catch (err) {
@@ -127,9 +127,9 @@
 	}
 </script>
 
-<div class="monthly-page">
+<div class="level-test-page">
 	<BackHeader
-		title="먼슬리 피드백 작성"
+		title="레벨테스트 피드백 작성"
 		onback={() => {
 			if (step > 1) {
 				step -= 1;
@@ -139,9 +139,9 @@
 		}}
 	/>
 
-	<div class="monthly-page__content">
+	<div class="level-test-page__content">
 		{#if loading}
-			<div class="monthly-page__loading">
+			<div class="level-test-page__loading">
 				<Spinner />
 			</div>
 		{:else}
@@ -201,7 +201,7 @@
 					<h2 class="step-section__title">카테고리별 평가</h2>
 
 					{#if categories.length === 0}
-						<p class="monthly-page__empty">
+						<p class="level-test-page__empty">
 							등록된 평가 카테고리가 없습니다. 먼저 카테고리를 추가해주세요.
 						</p>
 					{:else}
@@ -282,7 +282,7 @@
 </div>
 
 <style lang="scss">
-	.monthly-page {
+	.level-test-page {
 		&__content {
 			padding: calc(var(--header-height) + var(--space-md)) var(--space-md) var(--space-2xl);
 		}
