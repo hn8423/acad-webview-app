@@ -97,7 +97,7 @@
 		try {
 			const [passRes, catRes] = await Promise.allSettled([
 				getMemberPasses(academyId, member.member_id),
-				getCategories(academyId)
+				getCategories(academyId, academyStore.instructorId ?? undefined)
 			]);
 
 			if (passRes.status === 'fulfilled' && passRes.value.status) {
