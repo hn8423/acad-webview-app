@@ -128,7 +128,7 @@
 		if (!academyId) return;
 
 		try {
-			const catRes = await getCategories(academyId);
+			const catRes = await getCategories(academyId, academyStore.instructorId ?? undefined);
 			if (catRes.status && catRes.data) {
 				categories = [...catRes.data].sort((a, b) => a.sort_order - b.sort_order);
 			}
