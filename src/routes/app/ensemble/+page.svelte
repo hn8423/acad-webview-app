@@ -7,7 +7,11 @@
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import EnsembleCreateForm from '$lib/components/ensemble/EnsembleCreateForm.svelte';
 	import { formatDate } from '$lib/utils/format';
-	import type { EnsembleListItem, MyEnsembleListItem } from '$lib/types/ensemble';
+	import type {
+		EnsembleListItem,
+		EnsembleMyStatus,
+		MyEnsembleListItem
+	} from '$lib/types/ensemble';
 	import { onMount } from 'svelte';
 
 	let activeTab = $state<'recruiting' | 'my'>('recruiting');
@@ -97,6 +101,28 @@
 		}
 	}
 
+	function getMyStatusLabel(myStatus: EnsembleMyStatus): string | null {
+		switch (myStatus) {
+			case 'PENDING_APPROVAL':
+				return '입장 심사중';
+			case 'JOINED':
+				return '입장완료';
+			default:
+				return null;
+		}
+	}
+
+	function getMyStatusVariant(myStatus: EnsembleMyStatus) {
+		switch (myStatus) {
+			case 'PENDING_APPROVAL':
+				return 'info' as const;
+			case 'JOINED':
+				return 'success' as const;
+			default:
+				return 'neutral' as const;
+		}
+	}
+
 	let isEmpty = $derived(
 		activeTab === 'recruiting' ? recruitingList.length === 0 : myList.length === 0
 	);
@@ -144,9 +170,16 @@
 					<button class="ensemble-card" onclick={() => openDetail(ensemble.id)}>
 						<div class="ensemble-card__header">
 							<h3 class="ensemble-card__title">{ensemble.group_name}</h3>
-							<Badge variant={getStatusVariant(ensemble.status)}>
-								{getStatusLabel(ensemble.status)}
-							</Badge>
+							<div class="ensemble-card__badges">
+								{#if getMyStatusLabel(ensemble.my_status)}
+									<Badge variant={getMyStatusVariant(ensemble.my_status)}>
+										{getMyStatusLabel(ensemble.my_status)}
+									</Badge>
+								{/if}
+								<Badge variant={getStatusVariant(ensemble.status)}>
+									{getStatusLabel(ensemble.status)}
+								</Badge>
+							</div>
 						</div>
 						{#if ensemble.description}
 							<p class="ensemble-card__desc">{ensemble.description}</p>
@@ -187,23 +220,29 @@
 					<button class="ensemble-card" onclick={() => openDetail(ensemble.id)}>
 						<div class="ensemble-card__header">
 							<h3 class="ensemble-card__title">{ensemble.group_name}</h3>
-							<Badge variant={getStatusVariant(ensemble.status)}>
-								{getStatusLabel(ensemble.status)}
-							</Badge>
+							<div class="ensemble-card__badges">
+								{#if getMyStatusLabel(ensemble.my_status)}
+									<Badge variant={getMyStatusVariant(ensemble.my_status)}>
+										{getMyStatusLabel(ensemble.my_status)}
+									</Badge>
+								{/if}
+								<Badge variant={getStatusVariant(ensemble.status)}>
+									{getStatusLabel(ensemble.status)}
+								</Badge>
+							</div>
 						</div>
-						{#if ensemble.description}
-							<p class="ensemble-card__desc">{ensemble.description}</p>
-						{/if}
 						<div class="ensemble-card__footer">
 							<div class="ensemble-card__meta">
-								<span>{ensemble.my_role}</span>
-								{#if ensemble.is_leader}
-									<span class="ensemble-card__dot"></span>
-									<Badge variant="info">리더</Badge>
-								{/if}
+								<span class="ensemble-card__creator">{ensemble.creator_name}</span>
 								<span class="ensemble-card__dot"></span>
 								<span>{ensemble.current_members}/{ensemble.max_members}명</span>
 							</div>
+							{#if ensemble.practice_date}
+								<span class="ensemble-card__date">
+									{formatDate(ensemble.practice_date)}
+									{ensemble.practice_time ?? ''}
+								</span>
+							{/if}
 						</div>
 					</button>
 				{/each}
@@ -332,6 +371,13 @@
 			justify-content: space-between;
 			gap: var(--space-sm);
 			margin-bottom: 6px;
+		}
+
+		&__badges {
+			display: flex;
+			align-items: center;
+			gap: var(--space-xs);
+			flex-shrink: 0;
 		}
 
 		&__title {
