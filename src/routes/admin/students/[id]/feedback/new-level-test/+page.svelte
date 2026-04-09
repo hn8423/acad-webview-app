@@ -47,7 +47,7 @@
 
 		try {
 			const [catRes, passRes] = await Promise.allSettled([
-				getCategories(academyId),
+				getCategories(academyId, academyStore.instructorId ?? undefined),
 				getMemberPasses(academyId, memberId)
 			]);
 

@@ -39,7 +39,8 @@
 		loading = true;
 		fetchError = '';
 		try {
-			const res = await getCategories(academyId);
+			const instructorId = academyStore.instructorId;
+			const res = await getCategories(academyId, instructorId ?? undefined);
 			if (res.status && res.data) {
 				categories = [...res.data].sort((a, b) => a.sort_order - b.sort_order);
 			} else {
