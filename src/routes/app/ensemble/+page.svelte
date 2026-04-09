@@ -15,7 +15,7 @@
 	import { onMount } from 'svelte';
 
 	let activeTab = $state<'recruiting' | 'my'>('recruiting');
-	let recruitingList = $state<EnsembleListItem[]>([]);
+	let allEnsembles = $state<EnsembleListItem[]>([]);
 	let myList = $state<MyEnsembleListItem[]>([]);
 	let loading = $state(true);
 	let currentPage = $state(1);
@@ -23,6 +23,12 @@
 	const LIMIT = 10;
 
 	let showCreateSheet = $state(false);
+
+	let displayedList = $derived.by(() => {
+		const hasNonRecruiting = allEnsembles.some((e) => e.status !== 'RECRUITING');
+		if (!hasNonRecruiting) return allEnsembles;
+		return allEnsembles.filter((e) => e.status !== 'RECRUITING');
+	});
 
 	onMount(() => {
 		fetchData();
@@ -35,9 +41,9 @@
 		loading = true;
 		try {
 			if (activeTab === 'recruiting') {
-				const res = await getEnsembles(academyId, 'RECRUITING', currentPage, LIMIT);
+				const res = await getEnsembles(academyId, undefined, currentPage, LIMIT);
 				if (res.status && res.data) {
-					recruitingList = res.data.list;
+					allEnsembles = res.data.list;
 					totalPages = Math.ceil(res.data.meta.total / LIMIT);
 				}
 			} else {
@@ -124,7 +130,7 @@
 	}
 
 	let isEmpty = $derived(
-		activeTab === 'recruiting' ? recruitingList.length === 0 : myList.length === 0
+		activeTab === 'recruiting' ? displayedList.length === 0 : myList.length === 0
 	);
 </script>
 
@@ -166,7 +172,7 @@
 			</div>
 		{:else if activeTab === 'recruiting'}
 			<div class="ensemble-list">
-				{#each recruitingList as ensemble}
+				{#each displayedList as ensemble}
 					<button class="ensemble-card" onclick={() => openDetail(ensemble.id)}>
 						<div class="ensemble-card__header">
 							<h3 class="ensemble-card__title">{ensemble.group_name}</h3>
