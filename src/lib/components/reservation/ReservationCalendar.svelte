@@ -184,7 +184,7 @@
 		{#each calendarCells as row}
 			{#each row as cell}
 				{@const indicators = dateIndicators.get(cell.fullDate)}
-				{@const hasAvailable = indicators?.has_available ?? false}
+				{@const hasIndicator = (indicators?.has_available || indicators?.has_pending) ?? false}
 				{@const isSelected = cell.fullDate === selectedDate}
 				<button
 					type="button"
@@ -195,10 +195,10 @@
 					class:reservation-calendar__cell--past={cell.isPast}
 					disabled={cell.isPast}
 					onclick={() => handleCellClick(cell)}
-					aria-label="{cell.date}일{hasAvailable ? ', 예약 가능' : ''}"
+					aria-label="{cell.date}일{hasIndicator ? ', 예약 가능' : ''}"
 				>
 					<span class="reservation-calendar__date">{cell.date}</span>
-					{#if hasAvailable && !cell.isPast}
+					{#if hasIndicator && !cell.isPast}
 						<span class="reservation-calendar__dot"></span>
 					{/if}
 				</button>
