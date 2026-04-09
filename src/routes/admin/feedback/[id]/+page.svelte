@@ -7,7 +7,7 @@
 		getFeedbackDetail,
 		deleteFeedback,
 		updateWeeklyFeedback,
-		updateMonthlyFeedback,
+		updateLevelTestFeedback,
 		getCategories
 	} from '$lib/api/feedback';
 	import BackHeader from '$lib/components/layout/BackHeader.svelte';
@@ -23,7 +23,7 @@
 	import type {
 		FeedbackDetail,
 		WeeklyFeedbackDetail,
-		MonthlyFeedbackDetail,
+		LevelTestFeedbackDetail,
 		FeedbackCategory
 	} from '$lib/types/feedback';
 	import { onMount } from 'svelte';
@@ -44,20 +44,20 @@
 	let saving = $state(false);
 	let editError = $state('');
 
-	// 먼슬리 수정 모달
-	let showEditMonthlyModal = $state(false);
+	// 레벨테스트 수정 모달
+	let showEditLevelTestModal = $state(false);
 	let categories = $state<FeedbackCategory[]>([]);
 	let editScores = $state<Record<number, number>>({});
 	let editComments = $state<Record<number, string>>({});
 	let editGoals = $state('');
 	let editMessage = $state('');
-	let editMonthlyVideoUrl = $state('');
+	let editLevelTestVideoUrl = $state('');
 
 	const feedbackId = $derived(Number(page.params.id));
 
 	const isWeekly = $derived(feedback?.feedback_type === 'WEEKLY');
 	const weekly = $derived(feedback as WeeklyFeedbackDetail | null);
-	const monthly = $derived(feedback as MonthlyFeedbackDetail | null);
+	const levelTest = $derived(feedback as LevelTestFeedbackDetail | null);
 
 	onMount(async () => {
 		const academyId = academyStore.academyId;
@@ -122,8 +122,8 @@
 		}
 	}
 
-	async function openEditMonthly() {
-		if (!monthly) return;
+	async function openEditLevelTest() {
+		if (!levelTest) return;
 		const academyId = academyStore.academyId;
 		if (!academyId) return;
 
@@ -138,20 +138,20 @@
 
 		const newScores: Record<number, number> = {};
 		const newComments: Record<number, string> = {};
-		for (const detail of monthly.skill_details) {
+		for (const detail of levelTest.skill_details) {
 			newScores[detail.category_id] = detail.score;
 			newComments[detail.category_id] = detail.comment ?? '';
 		}
 		editScores = newScores;
 		editComments = newComments;
-		editGoals = monthly.instructor_goals ?? '';
-		editMessage = monthly.instructor_message ?? '';
-		editMonthlyVideoUrl = monthly.video_url ?? '';
+		editGoals = levelTest.instructor_goals ?? '';
+		editMessage = levelTest.instructor_message ?? '';
+		editLevelTestVideoUrl = levelTest.video_url ?? '';
 		editError = '';
-		showEditMonthlyModal = true;
+		showEditLevelTestModal = true;
 	}
 
-	async function handleEditMonthly() {
+	async function handleEditLevelTest() {
 		const academyId = academyStore.academyId;
 		if (!academyId) return;
 
@@ -163,15 +163,15 @@
 
 		saving = true;
 		try {
-			const res = await updateMonthlyFeedback(academyId, feedbackId, {
+			const res = await updateLevelTestFeedback(academyId, feedbackId, {
 				skill_details: skillDetails,
 				instructor_goals: editGoals.trim() || undefined,
 				instructor_message: editMessage.trim() || undefined,
-				video_url: editMonthlyVideoUrl.trim() || undefined
+				video_url: editLevelTestVideoUrl.trim() || undefined
 			});
 			if (res.status) {
 				toastStore.success('피드백이 수정되었습니다.');
-				showEditMonthlyModal = false;
+				showEditLevelTestModal = false;
 				// 수정 응답은 flat DB row이므로, 상세 데이터를 다시 조회
 				const detailRes = await getFeedbackDetail(academyId, feedbackId);
 				if (detailRes.status && detailRes.data) {
@@ -216,7 +216,7 @@
 			<div class="detail-card">
 				<div class="detail-card__header">
 					<Badge variant={isWeekly ? 'info' : 'success'}>
-						{isWeekly ? '위클리' : '먼슬리'}
+						{isWeekly ? '위클리' : '레벨테스트'}
 					</Badge>
 					<span class="detail-card__date">{formatDate(feedback.feedback_date)}</span>
 				</div>
@@ -260,13 +260,13 @@
 						<MediaDisplay url={weekly.video_url} />
 					</div>
 				{/if}
-			{:else if !isWeekly && monthly}
-				<!-- 먼슬리 상세 -->
-				{#if monthly.skill_details.length > 0}
+			{:else if !isWeekly && levelTest}
+				<!-- 레벨테스트 상세 -->
+				{#if levelTest.skill_details.length > 0}
 					<div class="detail-card">
 						<h3 class="detail-card__title">카테고리별 평가</h3>
 						<div class="skill-list">
-							{#each monthly.skill_details as detail}
+							{#each levelTest.skill_details as detail}
 								<ScoreDisplay
 									categoryName={detail.category_name ?? ''}
 									score={detail.score}
@@ -277,66 +277,66 @@
 					</div>
 				{/if}
 
-				{#if monthly.member_music_info}
+				{#if levelTest.member_music_info}
 					<div class="detail-card">
 						<h3 class="detail-card__title">학생 음악 정보</h3>
 						<div class="detail-card__info-grid">
-							{#if monthly.member_music_info.genre}
-								<p>장르: {monthly.member_music_info.genre}</p>
+							{#if levelTest.member_music_info.genre}
+								<p>장르: {levelTest.member_music_info.genre}</p>
 							{/if}
-							{#if monthly.member_music_info.favorite_artist}
-								<p>좋아하는 아티스트: {monthly.member_music_info.favorite_artist}</p>
+							{#if levelTest.member_music_info.favorite_artist}
+								<p>좋아하는 아티스트: {levelTest.member_music_info.favorite_artist}</p>
 							{/if}
-							{#if monthly.member_music_info.experience_years}
-								<p>경력: {monthly.member_music_info.experience_years}년</p>
+							{#if levelTest.member_music_info.experience_years}
+								<p>경력: {levelTest.member_music_info.experience_years}년</p>
 							{/if}
 						</div>
 					</div>
 				{/if}
 
-				{#if monthly.curriculum_direction}
+				{#if levelTest.curriculum_direction}
 					<div class="detail-card">
 						<h3 class="detail-card__title">커리큘럼 방향</h3>
-						{#if monthly.curriculum_direction.direction}
+						{#if levelTest.curriculum_direction.direction}
 							<div class="detail-card__section">
 								<p class="detail-card__subtitle">커리큘럼 방향</p>
-								<p class="detail-card__body">{monthly.curriculum_direction.direction}</p>
+								<p class="detail-card__body">{levelTest.curriculum_direction.direction}</p>
 							</div>
 						{/if}
-						{#if monthly.curriculum_direction.focus}
+						{#if levelTest.curriculum_direction.focus}
 							<div class="detail-card__section">
 								<p class="detail-card__subtitle">중점 사항</p>
-								<p class="detail-card__body">{monthly.curriculum_direction.focus}</p>
+								<p class="detail-card__body">{levelTest.curriculum_direction.focus}</p>
 							</div>
 						{/if}
 					</div>
 				{/if}
 
-				{#if monthly.instructor_goals}
+				{#if levelTest.instructor_goals}
 					<div class="detail-card">
 						<h3 class="detail-card__title">강사 목표</h3>
-						<p class="detail-card__body">{monthly.instructor_goals}</p>
+						<p class="detail-card__body">{levelTest.instructor_goals}</p>
 					</div>
 				{/if}
 
-				{#if monthly.instructor_message}
+				{#if levelTest.instructor_message}
 					<div class="detail-card">
 						<h3 class="detail-card__title">강사 메시지</h3>
-						<p class="detail-card__body">{monthly.instructor_message}</p>
+						<p class="detail-card__body">{levelTest.instructor_message}</p>
 					</div>
 				{/if}
 
-				{#if monthly.video_url}
+				{#if levelTest.video_url}
 					<div class="detail-card">
 						<h3 class="detail-card__title">미디어</h3>
-						<MediaDisplay url={monthly.video_url} />
+						<MediaDisplay url={levelTest.video_url} />
 					</div>
 				{/if}
 			{/if}
 
 			<!-- 액션 버튼 -->
 			<div class="detail-page__actions">
-				<Button fullWidth onclick={isWeekly ? openEditWeekly : openEditMonthly}>수정</Button>
+				<Button fullWidth onclick={isWeekly ? openEditWeekly : openEditLevelTest}>수정</Button>
 				<Button variant="danger" fullWidth onclick={() => (showDeleteModal = true)}>삭제</Button>
 			</div>
 		{/if}
@@ -412,17 +412,17 @@
 	</form>
 </Modal>
 
-<!-- 먼슬리 수정 모달 -->
+<!-- 레벨테스트 수정 모달 -->
 <Modal
-	isOpen={showEditMonthlyModal}
-	title="먼슬리 피드백 수정"
-	onclose={() => (showEditMonthlyModal = false)}
+	isOpen={showEditLevelTestModal}
+	title="레벨테스트 피드백 수정"
+	onclose={() => (showEditLevelTestModal = false)}
 >
 	<form
 		class="edit-form"
 		onsubmit={(e) => {
 			e.preventDefault();
-			handleEditMonthly();
+			handleEditLevelTest();
 		}}
 	>
 		{#if categories.length > 0}
@@ -451,7 +451,7 @@
 			></textarea>
 		</div>
 
-		<MediaUpload label="미디어 첨부" bind:value={editMonthlyVideoUrl} />
+		<MediaUpload label="미디어 첨부" bind:value={editLevelTestVideoUrl} />
 
 		{#if editError}
 			<p class="edit-form__error">{editError}</p>
@@ -459,7 +459,7 @@
 
 		<div class="edit-form__actions">
 			<Button type="submit" fullWidth loading={saving}>수정하기</Button>
-			<Button variant="secondary" fullWidth onclick={() => (showEditMonthlyModal = false)}>
+			<Button variant="secondary" fullWidth onclick={() => (showEditLevelTestModal = false)}>
 				취소
 			</Button>
 		</div>

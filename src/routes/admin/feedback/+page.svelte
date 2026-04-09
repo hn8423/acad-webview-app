@@ -106,7 +106,7 @@
 						}}
 					>
 						<Badge variant={item.feedback_type === 'WEEKLY' ? 'info' : 'success'}>
-							{item.feedback_type === 'WEEKLY' ? '위클리' : '먼슬리'}
+							{item.feedback_type === 'WEEKLY' ? '위클리' : '레벨테스트'}
 						</Badge>
 						<div class="feedback-row__info">
 							<span class="feedback-row__name">{item.member_name ?? ''}</span>
@@ -199,13 +199,13 @@
 			class="type-select__option"
 			onclick={() => {
 				showTypeModal = false;
-				goto('/admin/feedback/new-monthly');
+				goto('/admin/feedback/new-level-test');
 			}}
 		>
-			<div class="type-select__icon type-select__icon--monthly">M</div>
+			<div class="type-select__icon type-select__icon--level-test">L</div>
 			<div class="type-select__text">
-				<strong>먼슬리 피드백</strong>
-				<span>월간 종합 평가, 카테고리별 점수</span>
+				<strong>레벨테스트 피드백</strong>
+				<span>레벨테스트 종합 평가, 카테고리별 점수</span>
 			</div>
 		</button>
 	</div>
@@ -368,7 +368,7 @@
 				background: var(--color-info);
 			}
 
-			&--monthly {
+			&--level-test {
 				background: var(--color-success);
 			}
 		}

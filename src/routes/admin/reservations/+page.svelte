@@ -5,6 +5,7 @@
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import {
 		getLessonSlots,
+		getLessonSlotsMonthlySummary,
 		createLessonSlot,
 		createBulkLessonSlots,
 		updateLessonSlot,
@@ -13,14 +14,14 @@
 	} from '$lib/api/reservation';
 	import { getInstructors } from '$lib/api/member';
 	import type { Instructor } from '$lib/types/member';
-	import { formatTimeRange, getTodayString, getDaysInMonth } from '$lib/utils/format';
+	import { formatTimeRange, getTodayString } from '$lib/utils/format';
 	import {
 		getTicketValue,
 		getCapacityWeight,
 		getReservationWeight,
 		isCapacityOccupyingStatus
 	} from '$lib/utils/pass';
-	import { buildDateIndicators, countSlotDates, formatDayLabels } from '$lib/utils/reservation';
+	import { countSlotDates, formatDayLabels } from '$lib/utils/reservation';
 	import type {
 		LessonSlot,
 		SlotStatus,
@@ -57,7 +58,7 @@
 		slot_date: getTodayString(),
 		start_time: '10:00',
 		end_time: '11:00',
-		max_capacity: 2,
+		max_capacity: 1,
 		slot_type: 'REGULAR'
 	});
 
@@ -74,7 +75,7 @@
 		days_of_week: [],
 		start_time: '10:00',
 		end_time: '11:00',
-		max_capacity: 2,
+		max_capacity: 1,
 		slot_type: 'REGULAR'
 	});
 
@@ -111,7 +112,7 @@
 			bulkForm = { ...rest, slot_type: type, min_capacity: 4, end_time: endTime };
 		} else {
 			const { min_capacity: _, ...rest } = bulkForm;
-			bulkForm = { ...rest, slot_type: type, max_capacity: 2, end_time: endTime };
+			bulkForm = { ...rest, slot_type: type, max_capacity: 1, end_time: endTime };
 		}
 	}
 
@@ -153,12 +154,16 @@
 		newStatus: 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW';
 	} | null>(null);
 
+	function getInstructorFilter(): number | undefined {
+		return academyStore.isAdmin ? undefined : (academyStore.instructorId ?? undefined);
+	}
+
 	async function fetchSlots(date: string) {
 		const academyId = academyStore.academyId;
 		if (!academyId) return;
 		loading = true;
 		try {
-			const res = await getLessonSlots(academyId, date);
+			const res = await getLessonSlots(academyId, date, getInstructorFilter());
 			if (res.status) {
 				slots = res.data;
 			}
@@ -187,39 +192,23 @@
 			return;
 		}
 
-		const daysInMonth = getDaysInMonth(year, month);
-
-		const datesToFetch: string[] = [];
-		for (let d = 1; d <= daysInMonth; d++) {
-			datesToFetch.push(
-				`${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`
-			);
-		}
-
 		const requestId = ++indicatorRequestId;
 
 		try {
-			const BATCH_SIZE = 5;
-			const slotsByDate = new Map<string, LessonSlot[]>();
-
-			for (let i = 0; i < datesToFetch.length; i += BATCH_SIZE) {
-				if (requestId !== indicatorRequestId) return;
-				const batch = datesToFetch.slice(i, i + BATCH_SIZE);
-				const results = await Promise.allSettled(
-					batch.map((date) => getLessonSlots(academyId, date))
-				);
-				results.forEach((result, idx) => {
-					if (result.status === 'fulfilled' && result.value.status) {
-						slotsByDate.set(batch[idx], result.value.data);
-					}
-				});
-			}
+			const res = await getLessonSlotsMonthlySummary(
+				academyId,
+				year,
+				month,
+				getInstructorFilter()
+			);
 
 			if (requestId !== indicatorRequestId) return;
 
-			const indicators = buildDateIndicators(slotsByDate);
-			dateIndicators = indicators;
-			dateIndicatorsCache.set(cacheKey, indicators);
+			if (res.status && res.data) {
+				const indicators = new Map<string, DateIndicators>(Object.entries(res.data));
+				dateIndicators = indicators;
+				dateIndicatorsCache.set(cacheKey, indicators);
+			}
 		} catch {
 			// Indicators are non-critical; silently fail
 		}
@@ -281,7 +270,7 @@
 			days_of_week: [],
 			start_time: '10:00',
 			end_time: '11:00',
-			max_capacity: 2,
+			max_capacity: 1,
 			slot_type: 'REGULAR',
 			instructor_id: firstInstructorId
 		};
@@ -302,7 +291,7 @@
 			createForm = { ...rest, slot_type: type, min_capacity: 4, end_time: endTime };
 		} else {
 			const { min_capacity: _, ...rest } = createForm;
-			createForm = { ...rest, slot_type: type, max_capacity: 2, end_time: endTime };
+			createForm = { ...rest, slot_type: type, max_capacity: 1, end_time: endTime };
 		}
 	}
 
