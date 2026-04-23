@@ -251,10 +251,11 @@
 	}
 
 	function openCreateModal() {
-		const firstInstructorId =
-			academyStore.isAdmin && instructors.length > 0
+		const firstInstructorId = academyStore.isAdmin
+			? instructors.length > 0
 				? getInstructorId(instructors[0])
-				: undefined;
+				: undefined
+			: (academyStore.instructorId ?? undefined);
 		createMode = 'single';
 		createForm = {
 			slot_date: selectedDate,
