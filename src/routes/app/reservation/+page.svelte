@@ -97,7 +97,11 @@
 	let isRotationPass = $derived(selectedPass?.pass_category === 'ROTATION');
 	let selectedPassWeight = $derived(
 		selectedPass
-			? getReservationWeight(selectedPass.pass_category, selectedPass.ticket_value)
+			? getReservationWeight(
+					selectedPass.pass_category,
+					selectedPass.ticket_value,
+					selectedSlot?.slot_type
+				)
 			: 1
 	);
 	let exceedsCapacity = $derived(
@@ -529,7 +533,7 @@
 					aria-label="사용할 수강권 선택"
 				>
 					{#each filteredPasses as pass}
-						{@const passWeight = getReservationWeight(pass.pass_category, pass.ticket_value)}
+						{@const passWeight = getReservationWeight(pass.pass_category, pass.ticket_value, selectedSlot?.slot_type)}
 						{@const fits = !selectedSlot || selectedSlot.slot_type === 'ENSEMBLE' || selectedSlot.remaining_capacity >= passWeight}
 						<option value={pass.id} disabled={!fits}>
 							{pass.pass_name} (잔여 {pass.remaining_lessons}회){getTicketValue(pass.ticket_value) > 1 ? ` [${getTicketValue(pass.ticket_value)}회 차감]` : ''}{!fits ? ' (마감)' : ''}
@@ -619,7 +623,7 @@
 					수강권이 차감되며 환불되지 않습니다.
 				</div>
 			{:else}
-				{@const cancelWeight = getReservationWeight(selectedReservation.pass_category, selectedReservation.ticket_value)}
+				{@const cancelWeight = getReservationWeight(selectedReservation.pass_category, selectedReservation.ticket_value, selectedReservation.slot_type)}
 				{#if getTicketValue(selectedReservation.ticket_value) > 1}
 					<p class="cancel-sheet__refund-notice">
 						취소 시 {getTicketValue(selectedReservation.ticket_value)}회가 환불됩니다.
