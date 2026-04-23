@@ -98,9 +98,7 @@
 		bulkForm = {
 			...bulkForm,
 			days_of_week:
-				idx >= 0
-					? bulkForm.days_of_week.filter((d) => d !== day)
-					: [...bulkForm.days_of_week, day]
+				idx >= 0 ? bulkForm.days_of_week.filter((d) => d !== day) : [...bulkForm.days_of_week, day]
 		};
 	}
 
@@ -195,12 +193,7 @@
 		const requestId = ++indicatorRequestId;
 
 		try {
-			const res = await getLessonSlotsMonthlySummary(
-				academyId,
-				year,
-				month,
-				getInstructorFilter()
-			);
+			const res = await getLessonSlotsMonthlySummary(academyId, year, month, getInstructorFilter());
 
 			if (requestId !== indicatorRequestId) return;
 
@@ -298,7 +291,11 @@
 
 	function handleStartTimeChange(newStartTime: string) {
 		const hours = createForm.slot_type === 'ENSEMBLE' ? 2 : 1;
-		createForm = { ...createForm, start_time: newStartTime, end_time: addHours(newStartTime, hours) };
+		createForm = {
+			...createForm,
+			start_time: newStartTime,
+			end_time: addHours(newStartTime, hours)
+		};
 	}
 
 	function handleEndTimeChange(newEndTime: string) {
@@ -314,11 +311,6 @@
 	function getSlotLabel(slot: { slot_type: SlotType; instructor_name: string | null }): string {
 		if (slot.slot_type === 'ENSEMBLE') return '합주 수업';
 		return slot.instructor_name ?? '강사 미지정';
-	}
-
-	function canEditSlot(slot: LessonSlot): boolean {
-		if (academyStore.isAdmin) return true;
-		return slot.slot_type !== 'ENSEMBLE';
 	}
 
 	async function handleCreateSlot() {
@@ -623,7 +615,9 @@
 											<Badge variant="warning">풀타임</Badge>
 										{/if}
 										{#if getReservationWeight(rv.pass_category, rv.ticket_value) !== 1}
-											<span class="reservation-row__weight">{getReservationWeight(rv.pass_category, rv.ticket_value)}인원</span>
+											<span class="reservation-row__weight"
+												>{getReservationWeight(rv.pass_category, rv.ticket_value)}인원</span
+											>
 										{/if}
 										{#if getTicketValue(rv.ticket_value) > 1}
 											<Badge variant="warning">{getTicketValue(rv.ticket_value)}회 차감</Badge>
@@ -679,14 +673,15 @@
 						<p class="slot-card__no-reservations">예약 없음</p>
 					{/if}
 
-					{#if canEditSlot(slot)}
-						<div class="slot-card__footer">
-							<button class="slot-action-btn" onclick={() => openEditModal(slot)}>수정</button>
-							<button class="slot-action-btn slot-action-btn--danger" onclick={() => openDeleteModal(slot)}>
-								삭제
-							</button>
-						</div>
-					{/if}
+					<div class="slot-card__footer">
+						<button class="slot-action-btn" onclick={() => openEditModal(slot)}>수정</button>
+						<button
+							class="slot-action-btn slot-action-btn--danger"
+							onclick={() => openDeleteModal(slot)}
+						>
+							삭제
+						</button>
+					</div>
 				</div>
 			{/each}
 		</div>
@@ -773,9 +768,7 @@
 				<div class="modal-form__field">
 					<span class="modal-form__label">담당 강사</span>
 					{#if instructors.length === 0}
-						<div class="modal-form__notice">
-							강사가 없습니다. 강사를 추가해주세요.
-						</div>
+						<div class="modal-form__notice">강사가 없습니다. 강사를 추가해주세요.</div>
 					{:else}
 						<select class="modal-form__input" bind:value={createForm.instructor_id}>
 							{#each instructors as inst}
@@ -786,11 +779,23 @@
 				</div>
 			{/if}
 			<label class="modal-form__field">
-				<span class="modal-form__label">{createForm.slot_type === 'ENSEMBLE' ? '최소 인원' : '최대 인원'}</span>
+				<span class="modal-form__label"
+					>{createForm.slot_type === 'ENSEMBLE' ? '최소 인원' : '최대 인원'}</span
+				>
 				{#if createForm.slot_type === 'ENSEMBLE'}
-					<input type="number" class="modal-form__input" min="1" bind:value={createForm.min_capacity} />
+					<input
+						type="number"
+						class="modal-form__input"
+						min="1"
+						bind:value={createForm.min_capacity}
+					/>
 				{:else}
-					<input type="number" class="modal-form__input" min="1" bind:value={createForm.max_capacity} />
+					<input
+						type="number"
+						class="modal-form__input"
+						min="1"
+						bind:value={createForm.max_capacity}
+					/>
 				{/if}
 			</label>
 			<div class="modal-form__actions">
@@ -802,7 +807,8 @@
 				>
 					생성
 				</Button>
-				<Button variant="secondary" fullWidth onclick={() => (showCreateModal = false)}>취소</Button>
+				<Button variant="secondary" fullWidth onclick={() => (showCreateModal = false)}>취소</Button
+				>
 			</div>
 		{:else}
 			<!-- Bulk Create Form -->
@@ -878,9 +884,7 @@
 				<div class="modal-form__field">
 					<span class="modal-form__label">담당 강사</span>
 					{#if instructors.length === 0}
-						<div class="modal-form__notice">
-							강사가 없습니다. 강사를 추가해주세요.
-						</div>
+						<div class="modal-form__notice">강사가 없습니다. 강사를 추가해주세요.</div>
 					{:else}
 						<select class="modal-form__input" bind:value={bulkForm.instructor_id}>
 							{#each instructors as inst}
@@ -891,11 +895,23 @@
 				</div>
 			{/if}
 			<label class="modal-form__field">
-				<span class="modal-form__label">{bulkForm.slot_type === 'ENSEMBLE' ? '최소 인원' : '최대 인원'}</span>
+				<span class="modal-form__label"
+					>{bulkForm.slot_type === 'ENSEMBLE' ? '최소 인원' : '최대 인원'}</span
+				>
 				{#if bulkForm.slot_type === 'ENSEMBLE'}
-					<input type="number" class="modal-form__input" min="1" bind:value={bulkForm.min_capacity} />
+					<input
+						type="number"
+						class="modal-form__input"
+						min="1"
+						bind:value={bulkForm.min_capacity}
+					/>
 				{:else}
-					<input type="number" class="modal-form__input" min="1" bind:value={bulkForm.max_capacity} />
+					<input
+						type="number"
+						class="modal-form__input"
+						min="1"
+						bind:value={bulkForm.max_capacity}
+					/>
 				{/if}
 			</label>
 			{#if bulkForm.days_of_week.length > 0 && bulkSlotCount > 0}
@@ -912,12 +928,15 @@
 				<Button
 					fullWidth
 					loading={actionLoading}
-					disabled={(academyStore.isAdmin && instructors.length === 0) || bulkForm.days_of_week.length === 0 || bulkSlotCount === 0}
+					disabled={(academyStore.isAdmin && instructors.length === 0) ||
+						bulkForm.days_of_week.length === 0 ||
+						bulkSlotCount === 0}
 					onclick={handleBulkCreateSlots}
 				>
 					일괄 생성 ({bulkSlotCount}개)
 				</Button>
-				<Button variant="secondary" fullWidth onclick={() => (showCreateModal = false)}>취소</Button>
+				<Button variant="secondary" fullWidth onclick={() => (showCreateModal = false)}>취소</Button
+				>
 			</div>
 		{/if}
 	</div>
@@ -942,7 +961,9 @@
 			</label>
 		</div>
 		<label class="modal-form__field">
-			<span class="modal-form__label">{editTarget?.slot_type === 'ENSEMBLE' ? '최소 인원' : '최대 인원'}</span>
+			<span class="modal-form__label"
+				>{editTarget?.slot_type === 'ENSEMBLE' ? '최소 인원' : '최대 인원'}</span
+			>
 			{#if editTarget?.slot_type === 'ENSEMBLE'}
 				<input type="number" class="modal-form__input" min="1" bind:value={editForm.min_capacity} />
 			{:else}
@@ -973,7 +994,9 @@
 >
 	<p class="modal-message">
 		{#if deleteTarget}
-			{formatTimeRange(deleteTarget.start_time, deleteTarget.end_time)} ({getSlotLabel(deleteTarget)}) 슬롯을 삭제하시겠습니까?
+			{formatTimeRange(deleteTarget.start_time, deleteTarget.end_time)} ({getSlotLabel(
+				deleteTarget
+			)}) 슬롯을 삭제하시겠습니까?
 		{/if}
 	</p>
 	{#if deleteTarget && computeWeightedCount(deleteTarget.reservations) > 0}
@@ -1059,11 +1082,17 @@
 				<Button
 					fullWidth
 					loading={actionLoading}
-					disabled={statusConfirmTarget.newStatus === 'CANCELLED' && cancelReason.trim().length === 0}
-					variant={statusConfirmTarget.newStatus === 'CANCELLED' || statusConfirmTarget.newStatus === 'NO_SHOW' ? 'danger' : 'primary'}
+					disabled={statusConfirmTarget.newStatus === 'CANCELLED' &&
+						cancelReason.trim().length === 0}
+					variant={statusConfirmTarget.newStatus === 'CANCELLED' ||
+					statusConfirmTarget.newStatus === 'NO_SHOW'
+						? 'danger'
+						: 'primary'}
 					onclick={handleConfirmStatusChange}
 				>
-					{statusConfirmTarget.newStatus === 'COMPLETED' ? '피드백 작성하러 가기' : `${getStatusLabel(statusConfirmTarget.newStatus)} 처리`}
+					{statusConfirmTarget.newStatus === 'COMPLETED'
+						? '피드백 작성하러 가기'
+						: `${getStatusLabel(statusConfirmTarget.newStatus)} 처리`}
 				</Button>
 				<Button
 					variant="secondary"
