@@ -422,14 +422,18 @@
 
 	// Reservation status handlers
 
-	function computeWeightedCount(reservations: SlotReservation[]): number {
+	function computeWeightedCount(reservations: SlotReservation[], slotType: SlotType): number {
 		return reservations
 			.filter((rv) => isCapacityOccupyingStatus(rv.status))
-			.reduce((sum, rv) => sum + getReservationWeight(rv.pass_category, rv.ticket_value), 0);
+			.reduce(
+				(sum, rv) => sum + getReservationWeight(rv.pass_category, rv.ticket_value, slotType),
+				0
+			);
 	}
 
 	function openStatusConfirm(
 		rv: SlotReservation,
+		slotType: SlotType,
 		newStatus: 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW'
 	) {
 		statusConfirmTarget = {
@@ -438,7 +442,7 @@
 			passName: rv.pass_name ?? '',
 			passCategory: rv.pass_category,
 			ticketValue: getTicketValue(rv.ticket_value),
-			capacityWeight: getReservationWeight(rv.pass_category, rv.ticket_value),
+			capacityWeight: getReservationWeight(rv.pass_category, rv.ticket_value, slotType),
 			currentStatus: rv.status,
 			newStatus
 		};
@@ -588,9 +592,9 @@
 						<div class="slot-card__meta">
 							<span class="slot-card__capacity">
 								{#if slot.slot_type === 'ENSEMBLE'}
-									예약 {computeWeightedCount(slot.reservations)}명
+									예약 {computeWeightedCount(slot.reservations, slot.slot_type)}명
 								{:else}
-									예약 {computeWeightedCount(slot.reservations)}/{slot.max_capacity}
+									예약 {computeWeightedCount(slot.reservations, slot.slot_type)}/{slot.max_capacity}
 								{/if}
 							</span>
 							<Badge variant={getSlotBadgeVariant(slot.status)}>
@@ -614,9 +618,13 @@
 										{:else if rv.pass_category === 'FULL'}
 											<Badge variant="warning">풀타임</Badge>
 										{/if}
-										{#if getReservationWeight(rv.pass_category, rv.ticket_value) !== 1}
+										{#if getReservationWeight(rv.pass_category, rv.ticket_value, slot.slot_type) !== 1}
 											<span class="reservation-row__weight"
-												>{getReservationWeight(rv.pass_category, rv.ticket_value)}인원</span
+												>{getReservationWeight(
+													rv.pass_category,
+													rv.ticket_value,
+													slot.slot_type
+												)}인원</span
 											>
 										{/if}
 										{#if getTicketValue(rv.ticket_value) > 1}
@@ -631,14 +639,14 @@
 											<button
 												class="action-btn action-btn--confirm"
 												disabled={actionLoading}
-												onclick={() => openStatusConfirm(rv, 'CONFIRMED')}
+												onclick={() => openStatusConfirm(rv, slot.slot_type, 'CONFIRMED')}
 											>
 												승인
 											</button>
 											<button
 												class="action-btn action-btn--cancel"
 												disabled={actionLoading}
-												onclick={() => openStatusConfirm(rv, 'CANCELLED')}
+												onclick={() => openStatusConfirm(rv, slot.slot_type, 'CANCELLED')}
 											>
 												취소
 											</button>
@@ -646,21 +654,21 @@
 											<button
 												class="action-btn action-btn--complete"
 												disabled={actionLoading}
-												onclick={() => openStatusConfirm(rv, 'COMPLETED')}
+												onclick={() => openStatusConfirm(rv, slot.slot_type, 'COMPLETED')}
 											>
 												완료
 											</button>
 											<button
 												class="action-btn action-btn--noshow"
 												disabled={actionLoading}
-												onclick={() => openStatusConfirm(rv, 'NO_SHOW')}
+												onclick={() => openStatusConfirm(rv, slot.slot_type, 'NO_SHOW')}
 											>
 												노쇼
 											</button>
 											<button
 												class="action-btn action-btn--cancel"
 												disabled={actionLoading}
-												onclick={() => openStatusConfirm(rv, 'CANCELLED')}
+												onclick={() => openStatusConfirm(rv, slot.slot_type, 'CANCELLED')}
 											>
 												취소
 											</button>
@@ -999,7 +1007,7 @@
 			)}) 슬롯을 삭제하시겠습니까?
 		{/if}
 	</p>
-	{#if deleteTarget && computeWeightedCount(deleteTarget.reservations) > 0}
+	{#if deleteTarget && computeWeightedCount(deleteTarget.reservations, deleteTarget.slot_type) > 0}
 		<p class="modal-warning">활성 예약이 있는 슬롯은 삭제할 수 없습니다.</p>
 	{/if}
 	<div class="modal-form__actions">
@@ -1007,7 +1015,7 @@
 			variant="danger"
 			fullWidth
 			loading={actionLoading}
-			disabled={deleteTarget !== null && computeWeightedCount(deleteTarget.reservations) > 0}
+			disabled={deleteTarget !== null && computeWeightedCount(deleteTarget.reservations, deleteTarget.slot_type) > 0}
 			onclick={handleDeleteSlot}
 		>
 			삭제
