@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { academyStore } from '$lib/stores/academy.svelte';
 	import { getInstructorStats } from '$lib/api/member';
 	import { formatMonth } from '$lib/utils/format';
@@ -80,10 +81,12 @@
 
 	$effect(() => {
 		if (isOpen && instructor) {
-			const n = new Date();
-			currentYear = n.getFullYear();
-			currentMonth = n.getMonth() + 1;
-			fetchStats();
+			untrack(() => {
+				const n = new Date();
+				currentYear = n.getFullYear();
+				currentMonth = n.getMonth() + 1;
+				fetchStats();
+			});
 		}
 	});
 
