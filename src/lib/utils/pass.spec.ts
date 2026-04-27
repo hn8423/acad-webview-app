@@ -39,6 +39,28 @@ describe('getCapacityWeight', () => {
 	});
 });
 
+describe('getCapacityWeight with slotType', () => {
+	it('should return 1 for ROTATION on ENSEMBLE slot', () => {
+		expect(getCapacityWeight('ROTATION', 'ENSEMBLE')).toBe(1);
+	});
+
+	it('should return 1 for FULL on ENSEMBLE slot', () => {
+		expect(getCapacityWeight('FULL', 'ENSEMBLE')).toBe(1);
+	});
+
+	it('should return 1 for undefined passCategory on ENSEMBLE slot', () => {
+		expect(getCapacityWeight(undefined, 'ENSEMBLE')).toBe(1);
+	});
+
+	it('should return 0.5 for ROTATION on REGULAR slot', () => {
+		expect(getCapacityWeight('ROTATION', 'REGULAR')).toBe(0.5);
+	});
+
+	it('should return 1 for FULL on REGULAR slot', () => {
+		expect(getCapacityWeight('FULL', 'REGULAR')).toBe(1);
+	});
+});
+
 describe('isActiveReservationStatus', () => {
 	it('should return true for PENDING', () => {
 		expect(isActiveReservationStatus('PENDING')).toBe(true);
@@ -132,6 +154,32 @@ describe('getReservationWeight', () => {
 
 	it('should return 1.0 for FULL with negative ticket_value', () => {
 		expect(getReservationWeight('FULL', -1)).toBe(1);
+	});
+});
+
+describe('getReservationWeight with slotType', () => {
+	it('should return 1 for ROTATION ticket_value=1 on ENSEMBLE', () => {
+		expect(getReservationWeight('ROTATION', 1, 'ENSEMBLE')).toBe(1);
+	});
+
+	it('should return 1 for ROTATION ticket_value=2 on ENSEMBLE', () => {
+		expect(getReservationWeight('ROTATION', 2, 'ENSEMBLE')).toBe(1);
+	});
+
+	it('should return 1 for FULL ticket_value=3 on ENSEMBLE', () => {
+		expect(getReservationWeight('FULL', 3, 'ENSEMBLE')).toBe(1);
+	});
+
+	it('should return 1 for undefined values on ENSEMBLE', () => {
+		expect(getReservationWeight(undefined, undefined, 'ENSEMBLE')).toBe(1);
+	});
+
+	it('should return 0.5 for ROTATION ticket_value=1 on REGULAR', () => {
+		expect(getReservationWeight('ROTATION', 1, 'REGULAR')).toBe(0.5);
+	});
+
+	it('should return 1 for ROTATION ticket_value=2 on REGULAR', () => {
+		expect(getReservationWeight('ROTATION', 2, 'REGULAR')).toBe(1);
 	});
 });
 
