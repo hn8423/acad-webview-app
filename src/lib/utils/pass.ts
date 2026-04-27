@@ -1,3 +1,5 @@
+import type { SlotType } from '$lib/types/reservation';
+
 export function getPassStatusVariant(status: string): 'success' | 'warning' | 'info' | 'neutral' {
 	switch (status) {
 		case 'ACTIVE':
@@ -32,7 +34,8 @@ export function getTicketValue(ticketValue?: number): number {
 	return ticketValue && ticketValue > 0 ? ticketValue : 1;
 }
 
-export function getCapacityWeight(passCategory?: string): number {
+export function getCapacityWeight(passCategory?: string, slotType?: SlotType): number {
+	if (slotType === 'ENSEMBLE') return 1;
 	switch (passCategory) {
 		case 'FULL':
 			return 1;
@@ -43,7 +46,12 @@ export function getCapacityWeight(passCategory?: string): number {
 	}
 }
 
-export function getReservationWeight(passCategory?: string, ticketValue?: number): number {
+export function getReservationWeight(
+	passCategory?: string,
+	ticketValue?: number,
+	slotType?: SlotType
+): number {
+	if (slotType === 'ENSEMBLE') return 1;
 	return getCapacityWeight(passCategory) * getTicketValue(ticketValue);
 }
 

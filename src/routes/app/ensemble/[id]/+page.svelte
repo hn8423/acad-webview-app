@@ -280,31 +280,6 @@
 			<p class="ensemble-detail-page__empty">합주조 정보를 불러오지 못했습니다.</p>
 		{:else if ensemble}
 			<div class="detail">
-				<!-- Confirm Dialog -->
-				{#if confirmAction}
-					<div class="confirm-dialog">
-						<p class="confirm-dialog__message">{confirmAction.message}</p>
-						<div class="confirm-dialog__buttons">
-							<Button
-								size="sm"
-								variant="secondary"
-								onclick={() => (confirmAction = null)}
-								disabled={processingConfirm}
-							>
-								취소
-							</Button>
-							<Button
-								size="sm"
-								variant="danger"
-								loading={processingConfirm}
-								onclick={executeConfirmAction}
-							>
-								확인
-							</Button>
-						</div>
-					</div>
-				{/if}
-
 				<!-- Group Info -->
 				<section class="detail__section">
 					<div class="detail__info-row">
@@ -397,6 +372,29 @@
 											</Button>
 										</div>
 									{/if}
+									{#if confirmAction?.type === 'reject' && confirmAction.targetId === member.member_id}
+										<div class="confirm-dialog">
+											<p class="confirm-dialog__message">{confirmAction.message}</p>
+											<div class="confirm-dialog__buttons">
+												<Button
+													size="sm"
+													variant="secondary"
+													onclick={() => (confirmAction = null)}
+													disabled={processingConfirm}
+												>
+													취소
+												</Button>
+												<Button
+													size="sm"
+													variant="danger"
+													loading={processingConfirm}
+													onclick={executeConfirmAction}
+												>
+													확인
+												</Button>
+											</div>
+										</div>
+									{/if}
 								</div>
 							{/each}
 						</div>
@@ -405,6 +403,31 @@
 
 				<!-- Chat -->
 				<EnsembleChat {ensembleId} {isMember} />
+
+				<!-- Leave/Cancel Confirm Dialog -->
+				{#if confirmAction && (confirmAction.type === 'leave' || confirmAction.type === 'cancel')}
+					<div class="confirm-dialog">
+						<p class="confirm-dialog__message">{confirmAction.message}</p>
+						<div class="confirm-dialog__buttons">
+							<Button
+								size="sm"
+								variant="secondary"
+								onclick={() => (confirmAction = null)}
+								disabled={processingConfirm}
+							>
+								취소
+							</Button>
+							<Button
+								size="sm"
+								variant="danger"
+								loading={processingConfirm}
+								onclick={executeConfirmAction}
+							>
+								확인
+							</Button>
+						</div>
+					</div>
+				{/if}
 
 				<!-- Action Buttons -->
 				<section class="detail__actions">
@@ -436,8 +459,7 @@
 <style lang="scss">
 	.ensemble-detail-page {
 		&__content {
-			padding: var(--space-md) var(--space-md)
-				calc(var(--bottom-nav-height) + var(--space-lg));
+			padding: var(--space-md) var(--space-md) calc(var(--bottom-nav-height) + var(--space-lg));
 		}
 
 		&__loading {

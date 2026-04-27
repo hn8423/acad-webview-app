@@ -115,6 +115,11 @@ export interface UpdateInstructorRequest {
 	is_admin?: number;
 }
 
+export interface CategoryLessonBreakdown {
+	completed: number;
+	no_show: number;
+}
+
 export interface InstructorStats {
 	instructor_name: string;
 	year: number;
@@ -124,9 +129,8 @@ export interface InstructorStats {
 	cancelled_lessons: number;
 	no_show_count: number;
 	total_students: number;
-	lessons_by_category?: Partial<
-		Record<'ROTATION' | 'FULL', number>
-	>;
+	lessons_by_category?: Partial<Record<'ROTATION' | 'FULL', CategoryLessonBreakdown>>;
+	self_same_day_cancelled_count: number;
 }
 
 export interface CreatePassTypeRequest {
