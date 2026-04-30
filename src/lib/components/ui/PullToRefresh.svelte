@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import type { Snippet } from 'svelte';
 	import Spinner from './Spinner.svelte';
+	import { modalStore } from '$lib/stores/modal.svelte';
 
 	interface Props {
 		children: Snippet;
@@ -34,6 +35,7 @@
 		if (isRefreshing) return;
 		if (e.touches.length !== 1) return;
 		if (window.scrollY > 0) return;
+		if (modalStore.isAnyOpen) return;
 		if (isInsideScrolledElement(e.target)) return;
 
 		startY = e.touches[0].clientY;

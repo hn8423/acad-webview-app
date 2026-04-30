@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import { modalStore } from '$lib/stores/modal.svelte';
 
 	interface Props {
 		isOpen: boolean;
@@ -16,6 +17,12 @@
 		onclose,
 		children
 	}: Props = $props();
+
+	$effect(() => {
+		if (!isOpen) return;
+		modalStore.open();
+		return () => modalStore.close();
+	});
 
 	function handleBackdropClick(e: MouseEvent) {
 		if (e.target === e.currentTarget) {
