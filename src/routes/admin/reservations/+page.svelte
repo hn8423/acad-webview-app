@@ -683,12 +683,14 @@
 
 					<div class="slot-card__footer">
 						<button class="slot-action-btn" onclick={() => openEditModal(slot)}>수정</button>
-						<button
-							class="slot-action-btn slot-action-btn--danger"
-							onclick={() => openDeleteModal(slot)}
-						>
-							삭제
-						</button>
+						{#if slot.reservations.length === 0}
+							<button
+								class="slot-action-btn slot-action-btn--danger"
+								onclick={() => openDeleteModal(slot)}
+							>
+								삭제
+							</button>
+						{/if}
 					</div>
 				</div>
 			{/each}
@@ -1015,7 +1017,8 @@
 			variant="danger"
 			fullWidth
 			loading={actionLoading}
-			disabled={deleteTarget !== null && computeWeightedCount(deleteTarget.reservations, deleteTarget.slot_type) > 0}
+			disabled={deleteTarget !== null &&
+				computeWeightedCount(deleteTarget.reservations, deleteTarget.slot_type) > 0}
 			onclick={handleDeleteSlot}
 		>
 			삭제
