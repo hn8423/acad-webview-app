@@ -8,8 +8,16 @@
 	import FeedbackTypeFilter from '$lib/components/feedback/FeedbackTypeFilter.svelte';
 	import { formatDate } from '$lib/utils/format';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import type { FeedbackListItem, FeedbackType } from '$lib/types/feedback';
 	import { onMount } from 'svelte';
+
+	function initialTypeFromQuery(): FeedbackType | undefined {
+		const tab = page.url.searchParams.get('tab');
+		if (tab === 'weekly') return 'WEEKLY';
+		if (tab === 'level-test') return 'MONTHLY';
+		return undefined;
+	}
 
 	let showTypeModal = $state(false);
 
@@ -17,7 +25,7 @@
 	let loading = $state(true);
 	let currentPage = $state(1);
 	let totalPages = $state(1);
-	let typeFilter = $state<FeedbackType | undefined>(undefined);
+	let typeFilter = $state<FeedbackType | undefined>(initialTypeFromQuery());
 	let deleteTarget = $state<FeedbackListItem | null>(null);
 	let showDeleteModal = $state(false);
 	const LIMIT = 10;
