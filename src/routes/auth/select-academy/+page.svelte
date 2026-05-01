@@ -38,7 +38,7 @@
 	const joinedAcademyIds = $derived(new Set(academies.map((a) => a.academy_id)));
 
 	const joinableAcademies = $derived(
-		allAcademies.filter((academy) => {
+		(Array.isArray(allAcademies) ? allAcademies : []).filter((academy) => {
 			if (joinedAcademyIds.has(academy.id)) return false;
 			if (!searchQuery.trim()) return true;
 			return academy.academy_name.toLowerCase().includes(searchQuery.trim().toLowerCase());
@@ -102,13 +102,15 @@
 
 		try {
 			const res = await getAcademies();
-			if (res.status && res.data) {
-				allAcademies = res.data.list;
+			if (res.status) {
+				allAcademies = Array.isArray(res.data?.list) ? res.data.list : [];
 			} else {
-				throw new Error(res.message || '학원 목록을 불러오지 못했습니다.');
+				joinError = res.message || '학원 목록을 불러오지 못했습니다.';
+				allAcademies = [];
 			}
 		} catch (err) {
 			joinError = err instanceof Error ? err.message : '학원 목록을 불러오지 못했습니다.';
+			allAcademies = [];
 		} finally {
 			loadingAcademies = false;
 		}
