@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import { onDestroy, untrack } from 'svelte';
 	import { modalStore } from '$lib/stores/modal.svelte';
 
 	interface Props {
@@ -14,11 +15,26 @@
 	let startY = $state(0);
 	let currentY = $state(0);
 	let isDragging = $state(false);
+	let registered = false;
 
 	$effect(() => {
-		if (!isOpen) return;
-		modalStore.open();
-		return () => modalStore.close();
+		const open = isOpen;
+		untrack(() => {
+			if (open && !registered) {
+				modalStore.open();
+				registered = true;
+			} else if (!open && registered) {
+				modalStore.close();
+				registered = false;
+			}
+		});
+	});
+
+	onDestroy(() => {
+		if (registered) {
+			modalStore.close();
+			registered = false;
+		}
 	});
 
 	function handleBackdropClick(e: MouseEvent) {
