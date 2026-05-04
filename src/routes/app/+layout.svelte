@@ -19,6 +19,12 @@
 		}
 		if (!academyStore.academyId) {
 			goto('/auth/select-academy', { replaceState: true });
+			return;
+		}
+		const role = academyStore.memberRole;
+		if (role === 'ADMIN' || role === 'INSTRUCTOR') {
+			goto('/admin', { replaceState: true });
+			return;
 		}
 	});
 
