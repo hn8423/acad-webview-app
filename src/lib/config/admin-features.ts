@@ -10,8 +10,8 @@ export const FEATURE_ROUTE_MAP: Record<string, string> = {
 	NOTICE_MANAGING: '/admin/notices',
 	INSTRUCTOR_MANAGING: '/admin/instructors',
 	STUDENT_MANAGING: '/admin/students',
-	WEEKLY_FEEDBACK_SHEET_MANAGING: '/admin/feedback/new-weekly',
-	MONTHLY_FEEDBACK_SHEET_MANAGING: '/admin/feedback/new-level-test',
+	WEEKLY_FEEDBACK_SHEET_MANAGING: '/admin/feedback?tab=weekly',
+	MONTHLY_FEEDBACK_SHEET_MANAGING: '/admin/feedback?tab=level-test',
 	RESERVATION_MANAGING: '/admin/reservations',
 	PASS_TYPE_MANAGING: '/admin/pass-types',
 	SCHEDULE_ALERM_MANAGING: '/admin/scheduled-alarms'
