@@ -19,6 +19,22 @@
 	let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 	let activeTab = $state<StudentPassStatus>('ALL');
 	let memberPassesMap = $state<Map<number, MemberPass[]>>(new Map());
+	let loadMoreEl = $state<HTMLDivElement | null>(null);
+
+	$effect(() => {
+		if (!loadMoreEl || !hasMore) return;
+		const target = loadMoreEl;
+		const observer = new IntersectionObserver(
+			(entries) => {
+				if (entries[0].isIntersecting && hasMore && !loadingMore && !loading) {
+					fetchMembers(true);
+				}
+			},
+			{ rootMargin: '200px 0px' }
+		);
+		observer.observe(target);
+		return () => observer.disconnect();
+	});
 
 	const tabs: { label: string; value: StudentPassStatus }[] = [
 		{ label: '전체', value: 'ALL' },
@@ -116,12 +132,6 @@
 		nextCursor = null;
 		fetchMembers();
 	}
-
-	function loadMore() {
-		if (!loadingMore && hasMore) {
-			fetchMembers(true);
-		}
-	}
 </script>
 
 <div class="admin-students">
@@ -180,7 +190,9 @@
 					</div>
 					<div class="student-row__stats">
 						{#if memberPassesMap.has(member.member_id)}
-							{#each memberPassesMap.get(member.member_id)?.filter((p) => p.status === 'ACTIVE') ?? [] as pass}
+							{#each memberPassesMap
+								.get(member.member_id)
+								?.filter((p) => p.status === 'ACTIVE') ?? [] as pass}
 								<Badge variant={getPassCategoryVariant(pass.pass_category)}
 									>{getPassCategoryLabel(pass.pass_category)}</Badge
 								>
@@ -197,11 +209,9 @@
 		</div>
 
 		{#if hasMore}
-			<div class="admin-students__load-more">
+			<div class="admin-students__load-more" bind:this={loadMoreEl}>
 				{#if loadingMore}
 					<Spinner size="sm" />
-				{:else}
-					<button class="load-more-btn" onclick={loadMore}>더 보기</button>
 				{/if}
 			</div>
 		{/if}
@@ -263,6 +273,8 @@
 		&__load-more {
 			display: flex;
 			justify-content: center;
+			align-items: center;
+			min-height: 48px;
 			padding: var(--space-md);
 		}
 	}
@@ -314,19 +326,6 @@
 		&__stats {
 			display: flex;
 			gap: var(--space-xs);
-		}
-	}
-
-	.load-more-btn {
-		color: var(--color-primary);
-		font-size: var(--font-size-sm);
-		font-weight: var(--font-weight-medium);
-		padding: var(--space-sm) var(--space-lg);
-		border-radius: var(--radius-full);
-		transition: background-color var(--transition-fast);
-
-		&:hover {
-			background-color: var(--color-primary-bg);
 		}
 	}
 </style>

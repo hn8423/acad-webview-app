@@ -58,6 +58,22 @@
 	let memberLoadingMore = $state(false);
 	let selectedMember = $state<MemberListItem | null>(null);
 	let memberSearchTimeout: ReturnType<typeof setTimeout> | null = null;
+	let memberLoadMoreEl = $state<HTMLDivElement | null>(null);
+
+	$effect(() => {
+		if (!memberLoadMoreEl || !memberHasMore) return;
+		const target = memberLoadMoreEl;
+		const observer = new IntersectionObserver(
+			(entries) => {
+				if (entries[0].isIntersecting && memberHasMore && !memberLoadingMore && !memberLoading) {
+					fetchMemberList(true);
+				}
+			},
+			{ rootMargin: '200px 0px' }
+		);
+		observer.observe(target);
+		return () => observer.disconnect();
+	});
 
 	// Step 2: Instructor details
 	let specialties = $state('');
@@ -147,12 +163,6 @@
 	function goBackToMemberSelect() {
 		step = 'select-member';
 		error = '';
-	}
-
-	function loadMoreMembers() {
-		if (!memberLoadingMore && memberHasMore) {
-			fetchMemberList(true);
-		}
 	}
 
 	function getInstructorId(instructor: Instructor): number {
@@ -441,13 +451,9 @@
 				</div>
 
 				{#if memberHasMore}
-					<div class="member-select__load-more">
+					<div class="member-select__load-more" bind:this={memberLoadMoreEl}>
 						{#if memberLoadingMore}
 							<Spinner size="sm" />
-						{:else}
-							<button type="button" class="load-more-btn" onclick={loadMoreMembers}>
-								더 보기
-							</button>
 						{/if}
 					</div>
 				{/if}
@@ -854,6 +860,8 @@
 		&__load-more {
 			display: flex;
 			justify-content: center;
+			align-items: center;
+			min-height: 48px;
 			padding: var(--space-sm);
 		}
 	}
@@ -1021,18 +1029,5 @@
 		flex-direction: column;
 		gap: var(--space-sm);
 		margin-top: var(--space-lg);
-	}
-
-	.load-more-btn {
-		color: var(--color-primary);
-		font-size: var(--font-size-sm);
-		font-weight: var(--font-weight-medium);
-		padding: var(--space-xs) var(--space-lg);
-		border-radius: var(--radius-full);
-		transition: background-color var(--transition-fast);
-
-		&:hover {
-			background-color: var(--color-primary-bg);
-		}
 	}
 </style>
