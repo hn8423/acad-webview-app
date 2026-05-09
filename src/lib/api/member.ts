@@ -15,7 +15,8 @@ import type {
 	Instructor,
 	CreateInstructorRequest,
 	UpdateInstructorRequest,
-	InstructorStats
+	InstructorStats,
+	UpdateMemberRequest
 } from '$lib/types/member';
 
 // Membership
@@ -52,6 +53,13 @@ export function getMemberDetail(academyId: number, memberId: number) {
 
 export function getMyMembership(academyId: number) {
 	return get<ApiResponse<Member>>(`/academic/academies/${academyId}/members/me`);
+}
+
+export function updateMember(academyId: number, memberId: number, data: UpdateMemberRequest) {
+	return patch<ApiResponse<MemberDetail>>(
+		`/academic/academies/${academyId}/members/${memberId}`,
+		data
+	);
 }
 
 // Instructors
