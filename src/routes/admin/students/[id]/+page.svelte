@@ -2,9 +2,12 @@
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { academyStore } from '$lib/stores/academy.svelte';
-	import { getMemberDetail } from '$lib/api/member';
+	import { toastStore } from '$lib/stores/toast.svelte';
+	import { getMemberDetail, updateMember } from '$lib/api/member';
 	import BackHeader from '$lib/components/layout/BackHeader.svelte';
-	import Card from '$lib/components/ui/Card.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
+	import Modal from '$lib/components/ui/Modal.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import { formatPhone, formatDate } from '$lib/utils/format';
 	import type { MemberDetail } from '$lib/types/member';
@@ -12,6 +15,11 @@
 
 	let member = $state<MemberDetail | null>(null);
 	let loading = $state(true);
+
+	let showEditModal = $state(false);
+	let editNickname = $state('');
+	let saving = $state(false);
+	let editError = $state('');
 
 	onMount(async () => {
 		const academyId = academyStore.academyId;
@@ -29,6 +37,43 @@
 			loading = false;
 		}
 	});
+
+	function openEditModal() {
+		if (!member) return;
+		editNickname = member.member_nickname ?? '';
+		editError = '';
+		showEditModal = true;
+	}
+
+	async function handleUpdate() {
+		editError = '';
+		if (!member) return;
+
+		const trimmed = editNickname.trim();
+		if (trimmed.length > 50) {
+			editError = '닉네임은 최대 50자까지 가능합니다.';
+			return;
+		}
+
+		const academyId = academyStore.academyId;
+		if (!academyId) return;
+
+		saving = true;
+		try {
+			const res = await updateMember(academyId, member.member_id, {
+				member_nickname: trimmed
+			});
+			if (res.status && res.data) {
+				member = res.data;
+				showEditModal = false;
+				toastStore.success('수강생 정보가 수정되었습니다.');
+			}
+		} catch (err) {
+			editError = err instanceof Error ? err.message : '수정에 실패했습니다.';
+		} finally {
+			saving = false;
+		}
+	}
 </script>
 
 <div class="student-detail">
@@ -41,9 +86,19 @@
 			</div>
 		{:else if member}
 			<div class="info-section">
-				<h2 class="info-section__name">{member.user_name}</h2>
-				<p class="info-section__phone">{formatPhone(member.user_phone)}</p>
-				<p class="info-section__date">가입일: {formatDate(member.joined_at)}</p>
+				<div class="info-section__header">
+					<div class="info-section__text">
+						<h2 class="info-section__name">{member.user_name}</h2>
+						{#if member.member_nickname}
+							<p class="info-section__nickname">닉네임: {member.member_nickname}</p>
+						{/if}
+						<p class="info-section__phone">{formatPhone(member.user_phone)}</p>
+						<p class="info-section__date">가입일: {formatDate(member.joined_at)}</p>
+					</div>
+					{#if academyStore.isAdmin}
+						<Button size="sm" variant="secondary" onclick={openEditModal}>수정</Button>
+					{/if}
+				</div>
 			</div>
 
 			<div class="student-detail__menu">
@@ -138,6 +193,32 @@
 	</div>
 </div>
 
+<Modal isOpen={showEditModal} title="수강생 정보 수정" onclose={() => (showEditModal = false)}>
+	<form
+		class="edit-form"
+		onsubmit={(e) => {
+			e.preventDefault();
+			handleUpdate();
+		}}
+	>
+		<Input
+			label="닉네임"
+			placeholder="학원에서 사용할 닉네임"
+			bind:value={editNickname}
+			maxlength={50}
+		/>
+
+		{#if editError}
+			<p class="edit-form__error">{editError}</p>
+		{/if}
+
+		<div class="edit-form__actions">
+			<Button type="submit" fullWidth loading={saving}>저장</Button>
+			<Button variant="secondary" fullWidth onclick={() => (showEditModal = false)}>취소</Button>
+		</div>
+	</form>
+</Modal>
+
 <style lang="scss">
 	.student-detail {
 		&__content {
@@ -167,11 +248,29 @@
 		box-shadow: var(--shadow-card);
 		padding: var(--space-lg);
 
+		&__header {
+			display: flex;
+			align-items: flex-start;
+			justify-content: space-between;
+			gap: var(--space-md);
+		}
+
+		&__text {
+			flex: 1;
+			min-width: 0;
+		}
+
 		&__name {
 			font-size: var(--font-size-2xl);
 			font-weight: var(--font-weight-bold);
 			letter-spacing: var(--letter-spacing-tight);
 			color: var(--color-text);
+		}
+
+		&__nickname {
+			font-size: var(--font-size-sm);
+			color: var(--color-text-secondary);
+			margin-top: var(--space-xs);
 		}
 
 		&__phone {
@@ -222,6 +321,23 @@
 			align-items: center;
 			gap: var(--space-sm);
 			color: var(--color-text-muted);
+		}
+	}
+
+	.edit-form {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-md);
+
+		&__error {
+			font-size: var(--font-size-sm);
+			color: var(--color-danger);
+		}
+
+		&__actions {
+			display: flex;
+			flex-direction: column;
+			gap: var(--space-sm);
 		}
 	}
 </style>

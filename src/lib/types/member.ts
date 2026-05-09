@@ -32,6 +32,10 @@ export interface MemberDetail {
 	joined_at: string;
 }
 
+export interface UpdateMemberRequest {
+	member_nickname?: string;
+}
+
 export interface PassType {
 	id: number;
 	pass_name: string;
