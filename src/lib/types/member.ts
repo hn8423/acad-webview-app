@@ -34,6 +34,7 @@ export interface MemberDetail {
 
 export interface UpdateMemberRequest {
 	member_nickname?: string;
+	user_name?: string;
 }
 
 export interface PassType {
