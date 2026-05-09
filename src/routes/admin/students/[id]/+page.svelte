@@ -17,6 +17,7 @@
 	let loading = $state(true);
 
 	let showEditModal = $state(false);
+	let editName = $state('');
 	let editNickname = $state('');
 	let saving = $state(false);
 	let editError = $state('');
@@ -40,6 +41,7 @@
 
 	function openEditModal() {
 		if (!member) return;
+		editName = member.user_name ?? '';
 		editNickname = member.member_nickname ?? '';
 		editError = '';
 		showEditModal = true;
@@ -49,8 +51,18 @@
 		editError = '';
 		if (!member) return;
 
-		const trimmed = editNickname.trim();
-		if (trimmed.length > 50) {
+		const trimmedName = editName.trim();
+		const trimmedNickname = editNickname.trim();
+
+		if (trimmedName.length === 0) {
+			editError = '이름을 입력해주세요.';
+			return;
+		}
+		if (trimmedName.length > 50) {
+			editError = '이름은 최대 50자까지 가능합니다.';
+			return;
+		}
+		if (trimmedNickname.length > 50) {
 			editError = '닉네임은 최대 50자까지 가능합니다.';
 			return;
 		}
@@ -61,7 +73,8 @@
 		saving = true;
 		try {
 			const res = await updateMember(academyId, member.member_id, {
-				member_nickname: trimmed
+				user_name: trimmedName,
+				member_nickname: trimmedNickname
 			});
 			if (res.status && res.data) {
 				member = res.data;
@@ -201,6 +214,7 @@
 			handleUpdate();
 		}}
 	>
+		<Input label="이름" placeholder="수강생 실명" bind:value={editName} maxlength={50} />
 		<Input
 			label="닉네임"
 			placeholder="학원에서 사용할 닉네임"
