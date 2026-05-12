@@ -23,8 +23,27 @@
 	let members = $state<MemberListItem[]>([]);
 	let search = $state('');
 	let searchLoading = $state(true);
+	let loadingMore = $state(false);
+	let nextCursor = $state<number | null>(null);
+	let hasMore = $state(false);
 	let selectedMember = $state<MemberListItem | null>(null);
 	let searchTimeout: ReturnType<typeof setTimeout> | null = null;
+	let loadMoreEl = $state<HTMLDivElement | null>(null);
+
+	$effect(() => {
+		if (!loadMoreEl || !hasMore) return;
+		const target = loadMoreEl;
+		const observer = new IntersectionObserver(
+			(entries) => {
+				if (entries[0].isIntersecting && hasMore && !loadingMore && !searchLoading) {
+					fetchMembers(true);
+				}
+			},
+			{ rootMargin: '200px 0px' }
+		);
+		observer.observe(target);
+		return () => observer.disconnect();
+	});
 
 	// Step 2: 위클리 폼
 	let passes = $state<MemberPass[]>([]);
@@ -53,26 +72,53 @@
 		fetchMembers();
 	});
 
-	async function fetchMembers() {
+	async function fetchMembers(append = false) {
 		const academyId = academyStore.academyId;
 		if (!academyId) return;
 
-		searchLoading = true;
+		if (append) {
+			loadingMore = true;
+		} else {
+			searchLoading = true;
+		}
 		try {
-			const res = await getMembers(academyId, undefined, 20, search || undefined);
+			const instructorId =
+				academyStore.memberRole === 'INSTRUCTOR'
+					? (academyStore.instructorId ?? undefined)
+					: undefined;
+			const cursor = append ? (nextCursor ?? undefined) : undefined;
+			const res = await getMembers(
+				academyId,
+				cursor,
+				20,
+				search || undefined,
+				'STUDENT',
+				undefined,
+				instructorId
+			);
 			if (res.status && res.data) {
-				members = res.data.list;
+				if (append) {
+					members = [...members, ...res.data.list];
+				} else {
+					members = res.data.list;
+				}
+				nextCursor = res.data.next_cursor;
+				hasMore = res.data.next_cursor !== null;
 			}
 		} catch {
 			// handled by client.ts
 		} finally {
 			searchLoading = false;
+			loadingMore = false;
 		}
 	}
 
 	function handleSearchInput() {
 		if (searchTimeout) clearTimeout(searchTimeout);
-		searchTimeout = setTimeout(() => fetchMembers(), 300);
+		searchTimeout = setTimeout(() => {
+			nextCursor = null;
+			fetchMembers();
+		}, 300);
 	}
 
 	async function selectMember(member: MemberListItem) {
@@ -230,6 +276,14 @@
 							{/if}
 						{/each}
 					</div>
+
+					{#if hasMore}
+						<div class="member-list__load-more" bind:this={loadMoreEl}>
+							{#if loadingMore}
+								<Spinner size="sm" />
+							{/if}
+						</div>
+					{/if}
 				{/if}
 			</div>
 		{:else}
@@ -413,6 +467,14 @@
 	.member-list__divider {
 		height: 1px;
 		background-color: var(--color-divider);
+	}
+
+	.member-list__load-more {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		min-height: 48px;
+		padding: var(--space-md);
 	}
 
 	.member-row {
