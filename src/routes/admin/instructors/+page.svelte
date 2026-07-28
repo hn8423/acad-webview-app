@@ -17,6 +17,7 @@
 	import InstructorStatsModal from '$lib/components/instructor/InstructorStatsModal.svelte';
 	import type { Instructor, MemberListItem } from '$lib/types/member';
 	import { formatPhone } from '$lib/utils/format';
+	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 
 	let instructors = $state<Instructor[]>([]);
@@ -175,6 +176,11 @@
 		showStatsModal = true;
 	}
 
+	function openEditModalFromRow(event: Event, instructor: Instructor) {
+		event.stopPropagation();
+		openEditModal(instructor);
+	}
+
 	async function openEditModal(instructor: Instructor) {
 		const academyId = academyStore.academyId;
 		if (!academyId) return;
@@ -326,8 +332,8 @@
 					<button
 						type="button"
 						class="instructor-row"
-						onclick={() => openEditModal(instructor)}
-						aria-label="{instructor.user_name} 강사 정보 수정"
+						onclick={() => goto(`/admin/instructors/${getInstructorId(instructor)}`)}
+						aria-label="{instructor.user_name} 강사 상세 보기"
 					>
 						<div class="instructor-row__avatar">
 							{#if instructor.profile_img}
@@ -358,10 +364,31 @@
 									<Badge variant="info">{instructor.specialties}</Badge>
 								{/if}
 							</div>
+							<p class="instructor-row__count">수강생 {instructor.student_count ?? 0}명</p>
 							{#if instructor.introduction}
 								<p class="instructor-row__intro">{instructor.introduction}</p>
 							{/if}
 						</div>
+					</button>
+					<button
+						type="button"
+						class="instructor-row__edit-btn"
+						onclick={(e) => openEditModalFromRow(e, instructor)}
+						aria-label="{instructor.user_name} 강사 정보 수정"
+					>
+						<svg
+							width="18"
+							height="18"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path d="M17 3a2.85 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+						</svg>
+						<span>수정</span>
 					</button>
 					<button
 						type="button"
@@ -730,6 +757,13 @@
 			color: var(--color-text);
 		}
 
+		&__count {
+			font-size: var(--font-size-xs);
+			color: var(--color-primary);
+			font-weight: var(--font-weight-medium);
+			margin-bottom: var(--space-xs);
+		}
+
 		&__intro {
 			font-size: var(--font-size-sm);
 			color: var(--color-text-secondary);
@@ -739,6 +773,28 @@
 			line-clamp: 2;
 			-webkit-box-orient: vertical;
 			overflow: hidden;
+		}
+
+		&__edit-btn {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			gap: 2px;
+			padding: var(--space-xs) var(--space-sm);
+			border-radius: var(--radius-md);
+			color: var(--color-text-secondary);
+			font-size: var(--font-size-xs);
+			font-weight: var(--font-weight-medium);
+			cursor: pointer;
+			transition:
+				background-color var(--transition-fast),
+				transform var(--transition-fast);
+			flex-shrink: 0;
+
+			&:active {
+				background-color: var(--color-bg);
+				transform: scale(0.95);
+			}
 		}
 
 		&__stats-btn {

@@ -104,6 +104,7 @@ export interface Instructor {
 	specialties: string;
 	introduction: string;
 	is_admin: number;
+	student_count?: number;
 }
 
 export interface CreateInstructorRequest {

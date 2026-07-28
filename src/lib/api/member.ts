@@ -32,7 +32,7 @@ export function getMembers(
 	limit = 20,
 	search?: string,
 	role?: 'STUDENT' | 'INSTRUCTOR' | 'ADMIN',
-	passStatus?: 'ACTIVE' | 'EXPIRED',
+	passStatus?: 'ACTIVE' | 'EXPIRED' | 'ALL',
 	instructorId?: number
 ) {
 	const params = new URLSearchParams();
