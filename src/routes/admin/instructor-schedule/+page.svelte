@@ -33,7 +33,10 @@
 		const cacheKey = `${year}-${String(month).padStart(2, '0')}`;
 		const cached = scheduleCache.get(cacheKey);
 		if (cached) {
+			// 진행 중인 다른 달 요청이 캐시된 화면을 덮어쓰지 않도록 무효화
+			scheduleRequestId++;
 			scheduleData = cached;
+			monthLoading = false;
 			return;
 		}
 
@@ -41,10 +44,12 @@
 		monthLoading = true;
 		try {
 			const res = await getInstructorSchedule(academyId, year, month);
+			if (res.status && res.data) {
+				scheduleCache.set(cacheKey, res.data);
+			}
 			if (requestId !== scheduleRequestId) return;
 			if (res.status && res.data) {
 				scheduleData = res.data;
-				scheduleCache.set(cacheKey, res.data);
 			}
 		} catch {
 			if (requestId === scheduleRequestId) {
@@ -77,16 +82,20 @@
 				const data = instRes.value.data;
 				instructors = Array.isArray(data) ? data : data.instructors;
 			}
+			// 강사 목록 실패 시 칩 없이 표시되고 색상은 schedule 응답의 강사 목록으로 대체됨
 		} finally {
 			loading = false;
 		}
 	});
 
-	// 색상은 학원 전체 강사 목록 기준으로 고정 (월 이동/필터와 무관하게 동일 강사 = 동일 색)
+	// 색상은 학원 전체 강사 목록 기준으로 고정 (월 이동/필터와 무관하게 동일 강사 = 동일 색).
+	// 목록에 없는 강사(예: 삭제된 강사)의 슬롯은 중립색 처리. 목록 로드 실패 시에만 schedule 응답으로 대체.
 	let colorMap = $derived.by(() => {
-		const ids = instructors.map(getInstructorId);
-		const fallbackIds = scheduleData?.instructors.map((i) => i.instructor_id) ?? [];
-		return buildInstructorColorMap([...ids, ...fallbackIds]);
+		const ids =
+			instructors.length > 0
+				? instructors.map(getInstructorId)
+				: (scheduleData?.instructors.map((i) => i.instructor_id) ?? []);
+		return buildInstructorColorMap(ids);
 	});
 
 	function filterBySelected(slots: ScheduleSlot[]): ScheduleSlot[] {
@@ -165,11 +174,12 @@
 	{#if loading}
 		<div class="instructor-schedule__loading"><Spinner /></div>
 	{:else}
-		<div class="instructor-schedule__chips" role="tablist" aria-label="강사 필터">
+		<div class="instructor-schedule__chips" role="group" aria-label="강사 필터">
 			<button
 				type="button"
 				class="instructor-schedule__chip"
 				class:instructor-schedule__chip--active={selectedInstructorId === null}
+				aria-pressed={selectedInstructorId === null}
 				onclick={() => (selectedInstructorId = null)}
 			>
 				전체
@@ -180,6 +190,7 @@
 					type="button"
 					class="instructor-schedule__chip"
 					class:instructor-schedule__chip--active={selectedInstructorId === instId}
+					aria-pressed={selectedInstructorId === instId}
 					onclick={() => (selectedInstructorId = selectedInstructorId === instId ? null : instId)}
 				>
 					<span

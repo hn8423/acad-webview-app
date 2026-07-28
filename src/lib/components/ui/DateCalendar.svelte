@@ -231,11 +231,13 @@
 							{/if}
 						</span>
 					{:else if dateDots?.get(cell.fullDate)?.length}
+						{@const dots = dateDots.get(cell.fullDate) ?? []}
 						<span class="date-calendar__indicators">
-							{#each visibleDots(dateDots.get(cell.fullDate)!) as dot}
+							{#each visibleDots(dots) as dot}
 								<span
 									class="date-calendar__multi-dot"
-									class:date-calendar__multi-dot--neutral={dot.index < 0}
+									class:date-calendar__multi-dot--more={dot.isMore}
+									class:date-calendar__multi-dot--neutral={dot.index < 0 && !dot.isMore}
 									class:date-calendar__multi-dot--c0={dot.index === 0}
 									class:date-calendar__multi-dot--c1={dot.index === 1}
 									class:date-calendar__multi-dot--c2={dot.index === 2}
@@ -444,6 +446,12 @@
 				&--c#{$i} {
 					background-color: var(--instructor-color-#{$i});
 				}
+			}
+
+			// 표시 한도 초과분을 나타내는 dot (강사 미지정 중립색과 구분)
+			&--more {
+				background-color: transparent;
+				border: 1px solid var(--color-text-muted);
 			}
 		}
 	}
