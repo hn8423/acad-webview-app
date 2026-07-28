@@ -105,6 +105,28 @@ export interface BulkCreateSlotResponse {
 	skipped_dates: string[];
 }
 
+export interface ScheduleSlot {
+	slot_id: number;
+	instructor_id: number | null;
+	instructor_name: string | null;
+	slot_type: SlotType;
+	start_time: string;
+	end_time: string;
+	max_capacity: number | null;
+	current_count: number;
+	status: SlotStatus;
+}
+
+export interface ScheduleInstructor {
+	instructor_id: number;
+	instructor_name: string;
+}
+
+export interface InstructorScheduleData {
+	instructors: ScheduleInstructor[];
+	days: Record<string, ScheduleSlot[]>;
+}
+
 export interface DateIndicators {
 	has_confirmed: boolean;
 	has_pending: boolean;

@@ -13,9 +13,24 @@
 		onmonthchange?: (year: number, month: number) => void;
 		markedDates?: Set<string>;
 		dateIndicators?: Map<string, DateIndicators>;
+		/** date → 팔레트 인덱스 배열 (0~7, -1 = 중립색). 강사별 일정 dot 표시용 */
+		dateDots?: Map<string, number[]>;
 	}
 
-	let { selectedDate, onselect, onmonthchange, markedDates, dateIndicators }: Props = $props();
+	let { selectedDate, onselect, onmonthchange, markedDates, dateIndicators, dateDots }: Props =
+		$props();
+
+	const MAX_DOTS = 4;
+
+	function visibleDots(indices: number[]): { index: number; isMore: boolean }[] {
+		if (indices.length <= MAX_DOTS) {
+			return indices.map((index) => ({ index, isMore: false }));
+		}
+		return [
+			...indices.slice(0, MAX_DOTS - 1).map((index) => ({ index, isMore: false })),
+			{ index: -1, isMore: true }
+		];
+	}
 
 	const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
 	const today = getTodayString();
@@ -215,6 +230,23 @@
 								></span>
 							{/if}
 						</span>
+					{:else if dateDots?.get(cell.fullDate)?.length}
+						<span class="date-calendar__indicators">
+							{#each visibleDots(dateDots.get(cell.fullDate)!) as dot}
+								<span
+									class="date-calendar__multi-dot"
+									class:date-calendar__multi-dot--neutral={dot.index < 0}
+									class:date-calendar__multi-dot--c0={dot.index === 0}
+									class:date-calendar__multi-dot--c1={dot.index === 1}
+									class:date-calendar__multi-dot--c2={dot.index === 2}
+									class:date-calendar__multi-dot--c3={dot.index === 3}
+									class:date-calendar__multi-dot--c4={dot.index === 4}
+									class:date-calendar__multi-dot--c5={dot.index === 5}
+									class:date-calendar__multi-dot--c6={dot.index === 6}
+									class:date-calendar__multi-dot--c7={dot.index === 7}
+								></span>
+							{/each}
+						</span>
 					{:else if markedDates?.has(cell.fullDate)}
 						<span class="date-calendar__dot"></span>
 					{/if}
@@ -346,6 +378,10 @@
 				.date-calendar__indicator--open {
 					background-color: var(--color-on-primary);
 				}
+
+				.date-calendar__multi-dot {
+					background-color: var(--color-on-primary);
+				}
 			}
 		}
 
@@ -394,6 +430,20 @@
 				height: 5px;
 				border-radius: 0;
 				background-color: var(--color-danger);
+			}
+		}
+
+		&__multi-dot {
+			width: 5px;
+			height: 5px;
+			border-radius: 50%;
+			flex-shrink: 0;
+			background-color: var(--instructor-color-neutral);
+
+			@for $i from 0 through 7 {
+				&--c#{$i} {
+					background-color: var(--instructor-color-#{$i});
+				}
 			}
 		}
 	}

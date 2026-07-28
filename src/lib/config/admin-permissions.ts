@@ -15,6 +15,7 @@ const ROUTE_ROLES: Record<string, readonly MemberRole[]> = {
 	'/admin/feedback/new-level-test': ['INSTRUCTOR'],
 	'/admin/ensembles': ['ADMIN', 'INSTRUCTOR'],
 	'/admin/reservations': ['INSTRUCTOR'],
+	'/admin/instructor-schedule': ['ADMIN'],
 	'/admin/pass-types': ['ADMIN'],
 	'/admin/nav': ['ADMIN', 'INSTRUCTOR'],
 	'/admin/notifications': ['ADMIN', 'INSTRUCTOR'],

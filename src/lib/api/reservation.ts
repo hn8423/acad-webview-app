@@ -7,6 +7,7 @@ import type {
 	CreateReservationRequest,
 	CreateReservationResponse,
 	CreateSlotRequest,
+	InstructorScheduleData,
 	LessonSlot,
 	MyReservation,
 	ReservationStatus,
@@ -64,6 +65,24 @@ export function getLessonSlotsMonthlySummary(
 	if (instructorId) params.set('instructor_id', String(instructorId));
 	return get<ApiResponse<MonthlySummaryData>>(
 		`/academic/academies/${academyId}/lesson-slots/monthly-summary?${params.toString()}`
+	);
+}
+
+// Admin: Instructor Schedule (monthly)
+
+export function getInstructorSchedule(
+	academyId: number,
+	year: number,
+	month: number,
+	instructorId?: number
+) {
+	const params = new URLSearchParams({
+		year: String(year),
+		month: String(month)
+	});
+	if (instructorId) params.set('instructor_id', String(instructorId));
+	return get<ApiResponse<InstructorScheduleData>>(
+		`/academic/academies/${academyId}/lesson-slots/schedule?${params.toString()}`
 	);
 }
 

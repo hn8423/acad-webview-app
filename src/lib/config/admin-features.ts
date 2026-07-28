@@ -13,6 +13,7 @@ export const FEATURE_ROUTE_MAP: Record<string, string> = {
 	WEEKLY_FEEDBACK_SHEET_MANAGING: '/admin/feedback?tab=weekly',
 	MONTHLY_FEEDBACK_SHEET_MANAGING: '/admin/feedback?tab=level-test',
 	RESERVATION_MANAGING: '/admin/reservations',
+	INSTRUCTOR_SCHEDULE_MANAGING: '/admin/instructor-schedule',
 	PASS_TYPE_MANAGING: '/admin/pass-types',
 	SCHEDULE_ALERM_MANAGING: '/admin/scheduled-alarms'
 };
@@ -32,6 +33,8 @@ export const FEATURE_ICON_MAP: Record<string, string> = {
 		'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
 	RESERVATION_MANAGING:
 		'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
+	INSTRUCTOR_SCHEDULE_MANAGING:
+		'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2zM9 15h.01M12 15h.01M15 15h.01M9 18h.01M12 18h.01',
 	PASS_TYPE_MANAGING:
 		'M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z',
 	SCHEDULE_ALERM_MANAGING:
