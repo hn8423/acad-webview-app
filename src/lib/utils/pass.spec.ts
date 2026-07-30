@@ -7,7 +7,8 @@ import {
 	getCapacityWeight,
 	getReservationWeight,
 	isActiveReservationStatus,
-	isCapacityOccupyingStatus
+	isCapacityOccupyingStatus,
+	getPassDisplayName
 } from './pass';
 
 describe('getCapacityWeight', () => {
@@ -244,5 +245,27 @@ describe('getPassBadgeVariant', () => {
 
 	it('should return neutral for unknown category above threshold', () => {
 		expect(getPassBadgeVariant('UNKNOWN', 10)).toBe('neutral');
+	});
+});
+
+describe('getPassDisplayName', () => {
+	it('should return 취미반 for ROTATION', () => {
+		expect(getPassDisplayName('로테이션 4회', 'ROTATION')).toBe('취미반');
+	});
+
+	it('should return 전문반 for FULL', () => {
+		expect(getPassDisplayName('풀 수강권', 'FULL')).toBe('전문반');
+	});
+
+	it('should fall back to pass name for unknown category', () => {
+		expect(getPassDisplayName('풀 수강권', 'UNKNOWN')).toBe('풀 수강권');
+	});
+
+	it('should fall back to pass name when category is missing', () => {
+		expect(getPassDisplayName('풀 수강권', undefined)).toBe('풀 수강권');
+	});
+
+	it('should return empty string when both are missing', () => {
+		expect(getPassDisplayName(undefined, undefined)).toBe('');
 	});
 });

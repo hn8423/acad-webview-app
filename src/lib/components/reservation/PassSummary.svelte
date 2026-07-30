@@ -5,7 +5,8 @@
 	import {
 		getPassStatusVariant,
 		getPassStatusLabel,
-		getTicketValue
+		getTicketValue,
+		getPassDisplayName
 	} from '$lib/utils/pass';
 	import type { MemberPass } from '$lib/types/member';
 
@@ -60,7 +61,7 @@
 		<div class="pass-summary-card">
 			<div class="pass-summary-card__header">
 				<span class="pass-summary-card__name">
-					{pass.pass_name}
+					{getPassDisplayName(pass.pass_name, pass.pass_category)}
 					{#if getTicketValue(pass.ticket_value) > 1}
 						<span class="pass-summary-card__ticket-badge">{getTicketValue(pass.ticket_value)}회 차감</span>
 					{/if}

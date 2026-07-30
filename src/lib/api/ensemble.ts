@@ -5,13 +5,11 @@ import type {
 	MyEnsembleListItem,
 	EnsembleDetail,
 	EnsembleComment,
-	EnsembleMessage,
 	EnsembleStatus,
 	CreateEnsembleRequest,
 	ApplyEnsembleRequest,
 	AcceptMemberRequest,
-	CreateCommentRequest,
-	SendMessageRequest
+	CreateCommentRequest
 } from '$lib/types/ensemble';
 
 const base = (academyId: number) => `/academic/academies/${academyId}/ensembles`;
@@ -81,24 +79,4 @@ export function createComment(academyId: number, groupId: number, data: CreateCo
 
 export function deleteComment(academyId: number, groupId: number, commentId: number) {
 	return del<ApiResponse<null>>(`${base(academyId)}/${groupId}/comments/${commentId}`);
-}
-
-export function sendMessage(academyId: number, groupId: number, data: SendMessageRequest) {
-	return post<ApiResponse<EnsembleMessage>>(`${base(academyId)}/${groupId}/messages`, data);
-}
-
-export function getMessages(
-	academyId: number,
-	groupId: number,
-	page = 1,
-	limit = 50,
-	sinceId?: number
-) {
-	const params = new URLSearchParams({ page: String(page), limit: String(limit) });
-	if (sinceId !== undefined) {
-		params.set('since_id', String(sinceId));
-	}
-	return get<ApiResponse<PaginatedList<EnsembleMessage>>>(
-		`${base(academyId)}/${groupId}/messages?${params}`
-	);
 }

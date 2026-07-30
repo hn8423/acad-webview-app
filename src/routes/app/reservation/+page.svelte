@@ -18,7 +18,7 @@
 	import PassSummary from '$lib/components/reservation/PassSummary.svelte';
 	import ReservationCalendar from '$lib/components/reservation/ReservationCalendar.svelte';
 	import { formatDate, formatTimeRange, getDayOfWeek, getTodayString } from '$lib/utils/format';
-	import { getTicketValue, getReservationWeight } from '$lib/utils/pass';
+	import { getTicketValue, getReservationWeight, getPassDisplayName } from '$lib/utils/pass';
 	import { isReservationDay } from '$lib/utils/reservation';
 	import type {
 		AvailableSlot,
@@ -472,7 +472,7 @@
 									</span>
 									{#if reservation.pass_name}
 										<span class="reservation-card__pass">
-											{reservation.pass_name}
+											{getPassDisplayName(reservation.pass_name, reservation.pass_category)}
 											{#if getTicketValue(reservation.ticket_value) > 1}
 												<span class="reservation-card__ticket">({getTicketValue(reservation.ticket_value)}회 차감)</span>
 											{/if}
@@ -536,7 +536,7 @@
 						{@const passWeight = getReservationWeight(pass.pass_category, pass.ticket_value, selectedSlot?.slot_type)}
 						{@const fits = !selectedSlot || selectedSlot.slot_type === 'ENSEMBLE' || selectedSlot.remaining_capacity >= passWeight}
 						<option value={pass.id} disabled={!fits}>
-							{pass.pass_name} (잔여 {pass.remaining_lessons}회){getTicketValue(pass.ticket_value) > 1 ? ` [${getTicketValue(pass.ticket_value)}회 차감]` : ''}{!fits ? ' (마감)' : ''}
+							{getPassDisplayName(pass.pass_name, pass.pass_category)} (잔여 {pass.remaining_lessons}회){getTicketValue(pass.ticket_value) > 1 ? ` [${getTicketValue(pass.ticket_value)}회 차감]` : ''}{!fits ? ' (마감)' : ''}
 						</option>
 					{/each}
 				</select>

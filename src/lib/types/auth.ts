@@ -44,6 +44,11 @@ export interface VerifyCodeRequest {
 	code: string;
 }
 
+export interface ChangePhoneRequest {
+	new_phone: string;
+	code: string;
+}
+
 export type MemberRole = 'STUDENT' | 'INSTRUCTOR' | 'ADMIN';
 
 export interface UserAcademy {

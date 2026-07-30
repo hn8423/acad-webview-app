@@ -7,7 +7,7 @@
 	import { headerStore } from '$lib/stores/header.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
-	import { formatPhone } from '$lib/utils/format';
+	import PhoneChangeField from '$lib/components/profile/PhoneChangeField.svelte';
 
 	const schema = z.object({
 		user_name: z.string().min(1, '이름을 입력해주세요').max(20, '20자 이내로 입력해주세요'),
@@ -18,6 +18,9 @@
 	let userName = $state('');
 	let userBirthday = $state('');
 	let userGender = $state('');
+	let userPhone = $state('');
+	let phoneCode = $state('');
+	let phoneCodeSent = $state(false);
 	let showPasswordChange = $state(false);
 	let currentPassword = $state('');
 	let newPassword = $state('');
@@ -41,6 +44,7 @@
 			userName = currentUser.user_name;
 			userBirthday = currentUser.user_birthday ?? '';
 			userGender = currentUser.user_gender ?? '';
+			userPhone = currentUser.user_phone;
 		}
 	});
 
@@ -48,11 +52,16 @@
 		currentPassword.length > 0 || newPassword.length > 0 || confirmPassword.length > 0
 	);
 
+	let phoneChanged = $derived(
+		user != null && userPhone.replace(/-/g, '') !== user.user_phone
+	);
+
 	let hasChanges = $derived(
 		user != null &&
 			(userName !== user.user_name ||
 				userBirthday !== (user.user_birthday ?? '') ||
 				userGender !== (user.user_gender ?? '') ||
+				phoneChanged ||
 				hasPasswordInput)
 	);
 

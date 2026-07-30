@@ -12,12 +12,14 @@
 	import CalendarSection from '$lib/components/ui/CalendarSection.svelte';
 	import BottomSheet from '$lib/components/ui/BottomSheet.svelte';
 	import DrinkRedeemModal from '$lib/components/drink/DrinkRedeemModal.svelte';
+	import InstructorProfileModal from '$lib/components/instructor/InstructorProfileModal.svelte';
 	import { formatDate, formatTimeRange, getDayOfWeek } from '$lib/utils/format';
 	import { isReservationDay } from '$lib/utils/reservation';
 	import {
 		getPassStatusVariant,
 		getPassStatusLabel,
-		getTicketValue
+		getTicketValue,
+		getPassDisplayName
 	} from '$lib/utils/pass';
 	import type { MemberPass, DrinkTicket } from '$lib/types/member';
 	import type { MyReservation } from '$lib/types/reservation';
@@ -45,6 +47,15 @@
 	let showDrinkRedeemModal = $state(false);
 	let drinkRedeemSubmitting = $state(false);
 	let drinkRedeemError = $state('');
+
+	let instructorProfileOpen = $state(false);
+	let selectedInstructor = $state<{ id: number; name: string } | null>(null);
+
+	function openInstructorProfile(pass: MemberPass) {
+		if (!pass.instructor_id) return;
+		selectedInstructor = { id: pass.instructor_id, name: pass.instructor_name };
+		instructorProfileOpen = true;
+	}
 
 	onMount(async () => {
 		const academyId = academyStore.academyId;
@@ -251,7 +262,7 @@
 							<div class="pass-card">
 								<div class="pass-card__header">
 									<span class="pass-card__name">
-									{pass.pass_name}
+									{getPassDisplayName(pass.pass_name, pass.pass_category)}
 									{#if getTicketValue(pass.ticket_value) > 1}
 										<span class="pass-card__ticket-badge">{getTicketValue(pass.ticket_value)}회 차감</span>
 									{/if}
@@ -261,7 +272,30 @@
 									</Badge>
 								</div>
 								<div class="pass-card__body">
-									<div class="pass-card__instructor">{pass.instructor_name} 선생님</div>
+									{#if pass.instructor_id}
+										<button
+											type="button"
+											class="pass-card__instructor pass-card__instructor--link"
+											onclick={() => openInstructorProfile(pass)}
+											aria-label="{pass.instructor_name} 선생님 정보 보기"
+										>
+											{pass.instructor_name} 선생님
+											<svg
+												width="14"
+												height="14"
+												viewBox="0 0 24 24"
+												fill="none"
+												stroke="currentColor"
+												stroke-width="2"
+												stroke-linecap="round"
+												stroke-linejoin="round"
+											>
+												<path d="M9 18l6-6-6-6" />
+											</svg>
+										</button>
+									{:else}
+										<div class="pass-card__instructor">{pass.instructor_name} 선생님</div>
+									{/if}
 									<div class="pass-card__progress">
 										<div class="progress-bar">
 											<div
@@ -343,6 +377,14 @@
 	error={drinkRedeemError}
 />
 
+<InstructorProfileModal
+	isOpen={instructorProfileOpen}
+	instructor={selectedInstructor}
+	onclose={() => {
+		instructorProfileOpen = false;
+	}}
+/>
+
 <!-- 예약 취소 확인 BottomSheet -->
 <BottomSheet
 	bind:isOpen={cancelSheetOpen}
@@ -380,7 +422,7 @@
 				{#if cancelTarget.pass_name}
 					<div class="cancel-sheet__row">
 						<span class="cancel-sheet__label">수강권</span>
-						<span class="cancel-sheet__value">{cancelTarget.pass_name}</span>
+						<span class="cancel-sheet__value">{getPassDisplayName(cancelTarget.pass_name, cancelTarget.pass_category)}</span>
 					</div>
 				{/if}
 			</div>
@@ -570,6 +612,21 @@
 			font-size: var(--font-size-sm);
 			color: var(--color-text-secondary);
 			margin-bottom: var(--space-sm);
+
+			&--link {
+				display: inline-flex;
+				align-items: center;
+				gap: var(--space-2xs);
+				cursor: pointer;
+
+				svg {
+					color: var(--color-text-muted);
+				}
+
+				&:active {
+					color: var(--color-primary);
+				}
+			}
 		}
 
 		&__progress {

@@ -12,6 +12,7 @@
 	import type { CalendarEvent } from '$lib/types/academy';
 	import type { MyReservation, ReservationStatus } from '$lib/types/reservation';
 	import { isReservationDay } from '$lib/utils/reservation';
+	import { getPassDisplayName } from '$lib/utils/pass';
 	import Spinner from './Spinner.svelte';
 
 	interface Props {
@@ -407,7 +408,7 @@
 							</div>
 							{#if reservation.pass_name}
 								<div class="reservation-card__pass">
-									{reservation.pass_name}
+									{getPassDisplayName(reservation.pass_name, reservation.pass_category)}
 								</div>
 							{/if}
 							{#if reservation.cancel_reason}

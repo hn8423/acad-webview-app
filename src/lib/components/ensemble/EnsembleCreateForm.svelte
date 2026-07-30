@@ -23,7 +23,7 @@
 		group_name: z.string().min(1, '그룹명을 입력해주세요').max(50, '50자 이내로 입력해주세요'),
 		role: z.string().min(1, '파트를 입력해주세요').max(20, '20자 이내로 입력해주세요'),
 		description: z.string().max(500, '500자 이내로 입력해주세요').optional(),
-		max_members: z.number().int().min(2, '최소 2명 이상').max(20, '최대 20명')
+		max_members: z.number().int().min(2, '최소 2명 이상')
 	});
 
 	async function handleSubmit() {

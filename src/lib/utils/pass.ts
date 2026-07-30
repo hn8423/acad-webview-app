@@ -80,6 +80,16 @@ export function getPassCategoryLabel(category: string): string {
 	return CATEGORY_LABELS[category as PassCategory] ?? category;
 }
 
+// 유저(/app) 화면 전용 표시명 — DB pass_name 대신 카테고리 기반 이름으로 대체
+const CATEGORY_DISPLAY_NAMES: Record<PassCategory, string> = {
+	ROTATION: '취미반',
+	FULL: '전문반'
+};
+
+export function getPassDisplayName(passName?: string, passCategory?: string): string {
+	return CATEGORY_DISPLAY_NAMES[passCategory as PassCategory] ?? passName ?? '';
+}
+
 export function getPassCategoryVariant(category: string): BadgeVariant {
 	return CATEGORY_VARIANTS[category as PassCategory] ?? 'neutral';
 }
