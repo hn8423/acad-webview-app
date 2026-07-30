@@ -7,6 +7,7 @@
 		getMemberPasses,
 		createMemberPass,
 		updateMemberPass,
+		deleteMemberPass,
 		getPassTypes,
 		getInstructors
 	} from '$lib/api/member';
@@ -33,6 +34,11 @@
 	let error = $state('');
 	let editTarget = $state<MemberPass | null>(null);
 
+	// Delete modal
+	let showDeleteModal = $state(false);
+	let deleteTarget = $state<MemberPass | null>(null);
+	let deleting = $state(false);
+
 	// Create form fields
 	let selectedPassTypeId = $state('');
 	let selectedInstructorId = $state('');
@@ -48,6 +54,7 @@
 
 	const memberId = $derived(Number(page.params.id));
 	let formTitle = $derived(editTarget ? '수강권 수정' : '수강권 부여');
+	let isAdmin = $derived(academyStore.memberRole === 'ADMIN');
 
 	onMount(() => fetchData());
 
@@ -144,6 +151,32 @@
 		const pt = passTypes.find((t) => String(t.id) === String(selectedPassTypeId));
 		return pt?.ticket_value ?? 1;
 	});
+
+	function confirmDelete(pass: MemberPass) {
+		deleteTarget = pass;
+		showDeleteModal = true;
+	}
+
+	async function handleDelete() {
+		if (deleting) return;
+		const academyId = academyStore.academyId;
+		if (!academyId || !deleteTarget) return;
+
+		deleting = true;
+		try {
+			const res = await deleteMemberPass(academyId, memberId, deleteTarget.id);
+			if (res.status) {
+				toastStore.success('수강권이 삭제되었습니다.');
+				showDeleteModal = false;
+				deleteTarget = null;
+				await fetchPasses();
+			}
+		} catch {
+			// handled by client.ts
+		} finally {
+			deleting = false;
+		}
+	}
 
 	async function handleSubmit() {
 		error = '';
@@ -257,6 +290,11 @@
 							</div>
 							<div class="pass-item__actions">
 								<button class="action-btn" onclick={() => openEditModal(pass)}>수정</button>
+								{#if isAdmin}
+									<button class="action-btn action-btn--danger" onclick={() => confirmDelete(pass)}>
+										삭제
+									</button>
+								{/if}
 							</div>
 						</div>
 					</Card>
@@ -344,6 +382,14 @@
 			<Button variant="secondary" fullWidth onclick={() => (showFormModal = false)}>취소</Button>
 		</div>
 	</form>
+</Modal>
+
+<Modal isOpen={showDeleteModal} title="수강권 삭제" onclose={() => (showDeleteModal = false)}>
+	<p class="modal-message">"{deleteTarget?.pass_name}" 수강권을 삭제하시겠습니까?</p>
+	<div class="modal-actions">
+		<Button variant="danger" fullWidth onclick={handleDelete} loading={deleting}>삭제</Button>
+		<Button variant="secondary" fullWidth onclick={() => (showDeleteModal = false)}>취소</Button>
+	</div>
 </Modal>
 
 <style lang="scss">
@@ -456,6 +502,7 @@
 		&__actions {
 			display: flex;
 			justify-content: flex-end;
+			gap: var(--space-xs);
 			margin-top: var(--space-sm);
 			padding-top: var(--space-sm);
 			border-top: 1px solid var(--color-divider);
@@ -471,6 +518,14 @@
 
 		&:hover {
 			background: var(--color-primary-bg);
+		}
+
+		&--danger {
+			color: var(--color-danger);
+
+			&:hover {
+				background: var(--color-danger-bg);
+			}
 		}
 	}
 
@@ -530,5 +585,18 @@
 			flex-direction: column;
 			gap: var(--space-sm);
 		}
+	}
+
+	.modal-message {
+		font-size: var(--font-size-base);
+		color: var(--color-text-secondary);
+		line-height: var(--line-height-base);
+	}
+
+	.modal-actions {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-sm);
+		margin-top: var(--space-lg);
 	}
 </style>

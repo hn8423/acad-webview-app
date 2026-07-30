@@ -3,6 +3,7 @@
 	import { academyStore } from '$lib/stores/academy.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import { getCategories, createCategory, updateCategory, deleteCategory } from '$lib/api/feedback';
+	import { findOwnInstructorId } from '$lib/utils/own-instructor';
 	import BackHeader from '$lib/components/layout/BackHeader.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
@@ -39,8 +40,21 @@
 		loading = true;
 		fetchError = '';
 		try {
-			const instructorId = academyStore.instructorId;
-			const res = await getCategories(academyId, instructorId ?? undefined);
+			let instructorId = academyStore.instructorId;
+			if (instructorId === null) {
+				const memberId = academyStore.memberId;
+				if (memberId === null) {
+					fetchError = '강사 정보를 확인할 수 없습니다.';
+					return;
+				}
+				instructorId = await findOwnInstructorId(academyId, memberId);
+			}
+			if (instructorId === null) {
+				// 본인 강사 레코드 없음 → 소유한 카테고리 0개
+				categories = [];
+				return;
+			}
+			const res = await getCategories(academyId, instructorId);
 			if (res.status && res.data) {
 				categories = [...res.data].sort((a, b) => a.sort_order - b.sort_order);
 			} else {

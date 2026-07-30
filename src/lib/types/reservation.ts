@@ -53,6 +53,7 @@ export interface SlotReservation {
 export interface LessonSlot {
 	id: number;
 	slot_type: SlotType;
+	instructor_id: number | null;
 	instructor_name: string | null;
 	slot_date: string;
 	start_time: string;

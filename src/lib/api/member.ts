@@ -157,6 +157,12 @@ export function updateMemberPass(
 	);
 }
 
+export function deleteMemberPass(academyId: number, memberId: number, passId: number) {
+	return del<ApiResponse<null>>(
+		`/academic/academies/${academyId}/members/${memberId}/passes/${passId}`
+	);
+}
+
 // Drink Tickets
 export function getMyDrinkTickets(academyId: number) {
 	return get<ApiResponse<DrinkTicket[]>>(
