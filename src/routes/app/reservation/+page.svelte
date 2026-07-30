@@ -18,7 +18,12 @@
 	import PassSummary from '$lib/components/reservation/PassSummary.svelte';
 	import ReservationCalendar from '$lib/components/reservation/ReservationCalendar.svelte';
 	import { formatDate, formatTimeRange, getDayOfWeek, getTodayString } from '$lib/utils/format';
-	import { getTicketValue, getReservationWeight, getPassDisplayName } from '$lib/utils/pass';
+	import {
+		getTicketValue,
+		getReservationWeight,
+		getPassDisplayName,
+		isPassUsable
+	} from '$lib/utils/pass';
 	import { isReservationDay } from '$lib/utils/reservation';
 	import type {
 		AvailableSlot,
@@ -62,9 +67,7 @@
 		selectedReservation ? isReservationDay(selectedReservation.slot_date) : false
 	);
 
-	let activePasses = $derived(
-		memberPasses.filter((p) => p.status === 'ACTIVE' && p.remaining_lessons > 0)
-	);
+	let activePasses = $derived(memberPasses.filter((p) => isPassUsable(p, getTodayString())));
 
 	const ACTIVE_STATUSES: ReadonlySet<ReservationStatus> = new Set(['PENDING', 'CONFIRMED']);
 

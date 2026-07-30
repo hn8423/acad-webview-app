@@ -8,8 +8,53 @@ import {
 	getReservationWeight,
 	isActiveReservationStatus,
 	isCapacityOccupyingStatus,
-	getPassDisplayName
+	getPassDisplayName,
+	isPassUsable
 } from './pass';
+
+describe('isPassUsable', () => {
+	const TODAY = '2026-07-30';
+
+	function createPass(overrides: Partial<Parameters<typeof isPassUsable>[0]> = {}) {
+		return {
+			status: 'ACTIVE',
+			remaining_lessons: 5,
+			end_date: '2026-08-31',
+			...overrides
+		};
+	}
+
+	it('should return true for active pass within period', () => {
+		expect(isPassUsable(createPass(), TODAY)).toBe(true);
+	});
+
+	it('should return true on the expiry date itself (inclusive)', () => {
+		expect(isPassUsable(createPass({ end_date: '2026-07-30' }), TODAY)).toBe(true);
+	});
+
+	it('should return false when end_date has passed', () => {
+		expect(isPassUsable(createPass({ end_date: '2026-07-29' }), TODAY)).toBe(false);
+	});
+
+	it('should handle ISO datetime end_date strings', () => {
+		expect(isPassUsable(createPass({ end_date: '2026-07-29T00:00:00.000Z' }), TODAY)).toBe(false);
+		expect(isPassUsable(createPass({ end_date: '2026-07-30T00:00:00.000Z' }), TODAY)).toBe(true);
+	});
+
+	it('should return false for EXPIRED, HOLDING, and USED_UP statuses', () => {
+		expect(isPassUsable(createPass({ status: 'EXPIRED' }), TODAY)).toBe(false);
+		expect(isPassUsable(createPass({ status: 'HOLDING' }), TODAY)).toBe(false);
+		expect(isPassUsable(createPass({ status: 'USED_UP' }), TODAY)).toBe(false);
+	});
+
+	it('should return false when no lessons remain', () => {
+		expect(isPassUsable(createPass({ remaining_lessons: 0 }), TODAY)).toBe(false);
+	});
+
+	it('should return true when end_date is missing', () => {
+		expect(isPassUsable(createPass({ end_date: undefined }), TODAY)).toBe(true);
+	});
+});
 
 describe('getCapacityWeight', () => {
 	it('should return 0.5 for ROTATION', () => {

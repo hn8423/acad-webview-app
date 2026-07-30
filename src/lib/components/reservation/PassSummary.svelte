@@ -6,8 +6,10 @@
 		getPassStatusVariant,
 		getPassStatusLabel,
 		getTicketValue,
-		getPassDisplayName
+		getPassDisplayName,
+		isPassUsable
 	} from '$lib/utils/pass';
+	import { getTodayString } from '$lib/utils/format';
 	import type { MemberPass } from '$lib/types/member';
 
 	interface Props {
@@ -20,13 +22,9 @@
 	let expanded = $state(true);
 	let showInactive = $state(false);
 
-	let activePasses = $derived(
-		passes.filter((p) => p.status === 'ACTIVE' && p.remaining_lessons > 0)
-	);
+	let activePasses = $derived(passes.filter((p) => isPassUsable(p, getTodayString())));
 
-	let inactivePasses = $derived(
-		passes.filter((p) => p.status !== 'ACTIVE' || p.remaining_lessons <= 0)
-	);
+	let inactivePasses = $derived(passes.filter((p) => !isPassUsable(p, getTodayString())));
 
 </script>
 
