@@ -6,6 +6,7 @@ import type { MemberRole } from '$lib/types/auth';
  */
 const ROUTE_ROLES: Record<string, readonly MemberRole[]> = {
 	'/admin/notices': ['ADMIN'],
+	'/admin/suggestions': ['ADMIN'],
 	'/admin/instructors': ['ADMIN'],
 	'/admin/students/*/passes': ['ADMIN'],
 	'/admin/students/*/drinks': ['ADMIN'],

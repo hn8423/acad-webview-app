@@ -144,8 +144,13 @@
 		if (selectedDate !== prevSelectedDate) {
 			prevSelectedDate = selectedDate;
 			const d = new Date(selectedDate);
-			currentYear = d.getFullYear();
-			currentMonth = d.getMonth() + 1;
+			const year = d.getFullYear();
+			const month = d.getMonth() + 1;
+			if (year !== currentYear || month !== currentMonth) {
+				currentYear = year;
+				currentMonth = month;
+				onmonthchange?.(year, month);
+			}
 		}
 	});
 </script>

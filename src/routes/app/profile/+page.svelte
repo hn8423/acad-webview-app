@@ -108,6 +108,23 @@
 				</svg>
 			</button>
 			<div class="profile-menu__divider"></div>
+			<button type="button" class="profile-menu__item" onclick={() => goto('/app/suggestion')}>
+				<span class="profile-menu__label">건의사항</span>
+				<svg
+					class="profile-menu__chevron"
+					width="20"
+					height="20"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="var(--color-text-muted)"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				>
+					<polyline points="9 18 15 12 9 6" />
+				</svg>
+			</button>
+			<div class="profile-menu__divider"></div>
 			<button type="button" class="profile-menu__item" onclick={handleSwitchAcademy}>
 				<span class="profile-menu__label">학원 변경</span>
 				<svg
