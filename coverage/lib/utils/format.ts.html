@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">12.69% </span>
+                <span class="strong">25.39% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>8/63</span>
+                <span class='fraction'>16/63</span>
             </div>
         
             
@@ -37,16 +37,16 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">14.28% </span>
+                <span class="strong">42.85% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>2/14</span>
+                <span class='fraction'>6/14</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">12.72% </span>
+                <span class="strong">27.27% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>7/55</span>
+                <span class='fraction'>15/55</span>
             </div>
         
             
@@ -245,23 +245,23 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">10x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -348,24 +348,24 @@ export function <span class="fstat-no" title="function not covered" >getDayOfWee
 <span class="cstat-no" title="statement not covered" >	return days[date.getDay()];</span>
 }
 &nbsp;
-export function <span class="fstat-no" title="function not covered" >getDaysInMonth(y</span>ear: number, month: number): number {
-<span class="cstat-no" title="statement not covered" >	return new Date(year, month, 0).getDate();</span>
+export function getDaysInMonth(year: number, month: number): number {
+	return new Date(year, month, 0).getDate();
 }
 &nbsp;
-export function <span class="fstat-no" title="function not covered" >getFirstDayOfMonth(y</span>ear: number, month: number): number {
-<span class="cstat-no" title="statement not covered" >	return new Date(year, month - 1, 1).getDay();</span>
+export function getFirstDayOfMonth(year: number, month: number): number {
+	return new Date(year, month - 1, 1).getDay();
 }
 &nbsp;
-export function <span class="fstat-no" title="function not covered" >formatMonth(y</span>ear: number, month: number): string {
-<span class="cstat-no" title="statement not covered" >	return `${year}년 ${String(month).padStart(2, '0')}월`;</span>
+export function formatMonth(year: number, month: number): string {
+	return `${year}년 ${String(month).padStart(2, '0')}월`;
 }
 &nbsp;
-export function <span class="fstat-no" title="function not covered" >getTodayString(): string {</span>
-	const today = <span class="cstat-no" title="statement not covered" >new Date();</span>
-	const y = <span class="cstat-no" title="statement not covered" >today.getFullYear();</span>
-	const m = <span class="cstat-no" title="statement not covered" >String(today.getMonth() + 1).padStart(2, '0');</span>
-	const d = <span class="cstat-no" title="statement not covered" >String(today.getDate()).padStart(2, '0');</span>
-<span class="cstat-no" title="statement not covered" >	return `${y}-${m}-${d}`;</span>
+export function getTodayString(): string {
+	const today = new Date();
+	const y = today.getFullYear();
+	const m = String(today.getMonth() + 1).padStart(2, '0');
+	const d = String(today.getDate()).padStart(2, '0');
+	return `${y}-${m}-${d}`;
 }
 &nbsp;
 export function <span class="fstat-no" title="function not covered" >toLocalDateString(d</span>ateStr: string): string {
@@ -382,7 +382,7 @@ export function <span class="fstat-no" title="function not covered" >toLocalDate
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-07-30T11:40:14.916Z
+                at 2026-07-30T11:47:48.870Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
