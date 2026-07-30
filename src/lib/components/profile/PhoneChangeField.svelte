@@ -130,13 +130,12 @@
 					maxlength={6}
 				/>
 			</div>
-			<span
-				class="phone-field__timer"
-				class:phone-field__timer--expired={remainingSeconds === 0}
-			>
+			<span class="phone-field__timer" class:phone-field__timer--expired={remainingSeconds === 0}>
 				{remainingSeconds > 0 ? timerLabel : '만료됨'}
 			</span>
 		</div>
+	{:else if codeError}
+		<span class="phone-field__error">{codeError}</span>
 	{/if}
 </div>
 
@@ -180,6 +179,11 @@
 				color: var(--color-text-disabled);
 				cursor: default;
 			}
+		}
+
+		&__error {
+			font-size: var(--font-size-xs);
+			color: var(--color-danger);
 		}
 
 		&__timer {

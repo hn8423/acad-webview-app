@@ -15,6 +15,10 @@ vi.mock('$lib/stores/academy.svelte', () => ({
 	academyStore: { academyId: 1, memberId: 10 }
 }));
 
+vi.mock('$lib/stores/toast.svelte', () => ({
+	toastStore: { success: vi.fn(), error: vi.fn(), info: vi.fn() }
+}));
+
 const mockedGetComments = vi.mocked(getComments);
 const mockedCreateComment = vi.mocked(createComment);
 const mockedDeleteComment = vi.mocked(deleteComment);
@@ -127,5 +131,37 @@ describe('EnsembleComments', () => {
 
 		expect(mockedDeleteComment).not.toHaveBeenCalled();
 		await expect.element(page.getByText('유지할 댓글')).toBeInTheDocument();
+	});
+
+	it('로드 실패 시 에러 상태와 재시도 버튼을 표시하고, 재시도로 복구된다', async () => {
+		mockedGetComments
+			.mockRejectedValueOnce(new Error('network'))
+			.mockResolvedValueOnce(ok([makeComment({ content: '복구된 댓글' })]));
+
+		render(EnsembleComments, { ensembleId: 5 });
+
+		await expect.element(page.getByText('댓글을 불러오지 못했습니다.')).toBeInTheDocument();
+		await page.getByRole('button', { name: '다시 시도' }).click();
+
+		await expect.element(page.getByText('복구된 댓글')).toBeInTheDocument();
+		expect(mockedGetComments).toHaveBeenCalledTimes(2);
+	});
+
+	it('등록이 비즈니스 실패(status false)하면 에러 토스트를 표시한다', async () => {
+		const { toastStore } = await import('$lib/stores/toast.svelte');
+		mockedGetComments.mockResolvedValue(ok([]));
+		mockedCreateComment.mockResolvedValue({
+			status: false,
+			message: '멤버가 아닙니다',
+			data: makeComment()
+		});
+
+		render(EnsembleComments, { ensembleId: 5 });
+
+		await page.getByPlaceholder('댓글을 입력하세요').fill('실패할 댓글');
+		await page.getByRole('button', { name: '등록' }).click();
+
+		expect(vi.mocked(toastStore.error)).toHaveBeenCalledWith('멤버가 아닙니다');
+		await expect.element(page.getByText('첫 댓글을 남겨보세요.')).toBeInTheDocument();
 	});
 });

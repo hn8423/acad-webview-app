@@ -52,9 +52,7 @@
 		currentPassword.length > 0 || newPassword.length > 0 || confirmPassword.length > 0
 	);
 
-	let phoneChanged = $derived(
-		user != null && userPhone.replace(/-/g, '') !== user.user_phone
-	);
+	let phoneChanged = $derived(user != null && userPhone.replace(/-/g, '') !== user.user_phone);
 
 	let hasChanges = $derived(
 		user != null &&
@@ -213,7 +211,11 @@
 
 				<div class="profile-edit__field" role="group" aria-label="성별">
 					<span class="profile-edit__field-label" id="gender-label">성별</span>
-					<div class="profile-edit__gender-options" role="radiogroup" aria-labelledby="gender-label">
+					<div
+						class="profile-edit__gender-options"
+						role="radiogroup"
+						aria-labelledby="gender-label"
+					>
 						<button
 							type="button"
 							role="radio"

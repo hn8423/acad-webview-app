@@ -43,9 +43,7 @@
 		currentPassword.length > 0 || newPassword.length > 0 || confirmPassword.length > 0
 	);
 
-	let phoneChanged = $derived(
-		user != null && userPhone.replace(/-/g, '') !== user.user_phone
-	);
+	let phoneChanged = $derived(user != null && userPhone.replace(/-/g, '') !== user.user_phone);
 
 	let hasChanges = $derived(
 		user != null &&

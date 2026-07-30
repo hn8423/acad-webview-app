@@ -31,11 +31,12 @@
 		const academyId = academyStore.academyId;
 		if (!academyId) return;
 
+		const parsedMax = Number.parseInt(maxMembers, 10);
 		const parsed = schema.safeParse({
 			group_name: groupName.trim(),
 			role: role.trim(),
 			description: description.trim() || undefined,
-			max_members: parseInt(maxMembers) || 5
+			max_members: Number.isNaN(parsedMax) ? 5 : parsedMax
 		});
 
 		if (!parsed.success) {

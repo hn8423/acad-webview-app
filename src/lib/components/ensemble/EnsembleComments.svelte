@@ -14,14 +14,17 @@
 
 	let { ensembleId }: Props = $props();
 
+	const MAX_COMMENT_LENGTH = 500;
+
 	const commentSchema = z
 		.string()
 		.trim()
 		.min(1, '댓글을 입력해주세요')
-		.max(500, '500자 이내로 입력해주세요');
+		.max(MAX_COMMENT_LENGTH, `${MAX_COMMENT_LENGTH}자 이내로 입력해주세요`);
 
 	let comments = $state<EnsembleComment[]>([]);
 	let loading = $state(true);
+	let loadError = $state(false);
 	let content = $state('');
 	let submitting = $state(false);
 	let confirmDeleteId = $state<number | null>(null);
@@ -31,32 +34,48 @@
 		const signal = { cancelled: false };
 		if (ensembleId) {
 			loadComments(signal);
+		} else {
+			loading = false;
 		}
 		return () => {
 			signal.cancelled = true;
 			comments = [];
 			loading = true;
+			loadError = false;
 			confirmDeleteId = null;
 		};
 	});
 
 	async function loadComments(signal: { cancelled: boolean }) {
 		const academyId = academyStore.academyId;
-		if (!academyId) return;
+		if (!academyId) {
+			loading = false;
+			return;
+		}
 
 		loading = true;
+		loadError = false;
 		try {
 			const res = await getComments(academyId, ensembleId);
-			if (!signal.cancelled && res.status) {
+			if (signal.cancelled) return;
+			if (res.status) {
 				comments = res.data;
+			} else {
+				loadError = true;
 			}
 		} catch {
-			// API client handles toast
+			if (!signal.cancelled) {
+				loadError = true;
+			}
 		} finally {
 			if (!signal.cancelled) {
 				loading = false;
 			}
 		}
+	}
+
+	function retryLoad() {
+		loadComments({ cancelled: false });
 	}
 
 	async function handleSubmit() {
@@ -75,9 +94,11 @@
 			if (res.status) {
 				comments = [...comments, res.data];
 				content = '';
+			} else {
+				toastStore.error(res.message || '댓글 등록에 실패했습니다.');
 			}
 		} catch {
-			// API client handles toast
+			// HTTP 에러 toast는 API client가 처리
 		} finally {
 			submitting = false;
 		}
@@ -94,9 +115,11 @@
 			if (res.status) {
 				comments = comments.filter((c) => c.id !== targetId);
 				toastStore.success('댓글이 삭제되었습니다.');
+			} else {
+				toastStore.error(res.message || '댓글 삭제에 실패했습니다.');
 			}
 		} catch {
-			// API client handles toast
+			// HTTP 에러 toast는 API client가 처리
 		} finally {
 			deleting = false;
 			confirmDeleteId = null;
@@ -105,11 +128,18 @@
 </script>
 
 <section class="ensemble-comments">
-	<h3 class="ensemble-comments__title">댓글 ({comments.length})</h3>
+	<h3 class="ensemble-comments__title">
+		{loading || loadError ? '댓글' : `댓글 (${comments.length})`}
+	</h3>
 
 	{#if loading}
 		<div class="ensemble-comments__loading">
 			<Spinner />
+		</div>
+	{:else if loadError}
+		<div class="ensemble-comments__error">
+			<p>댓글을 불러오지 못했습니다.</p>
+			<Button size="sm" variant="secondary" onclick={retryLoad}>다시 시도</Button>
 		</div>
 	{:else if comments.length === 0}
 		<p class="ensemble-comments__empty">첫 댓글을 남겨보세요.</p>
@@ -124,6 +154,8 @@
 							<button
 								type="button"
 								class="comment-item__delete"
+								aria-label="{comment.user_name}님의 댓글 삭제"
+								disabled={deleting}
 								onclick={() => (confirmDeleteId = comment.id)}
 							>
 								삭제
@@ -132,7 +164,7 @@
 					</div>
 					<p class="comment-item__content">{comment.content}</p>
 					{#if confirmDeleteId === comment.id}
-						<div class="comment-item__confirm">
+						<div class="comment-item__confirm" role="alertdialog" aria-label="댓글 삭제 확인">
 							<p class="comment-item__confirm-message">댓글을 삭제하시겠습니까?</p>
 							<div class="comment-item__confirm-buttons">
 								<Button
@@ -164,8 +196,9 @@
 		<textarea
 			class="comment-form__input"
 			placeholder="댓글을 입력하세요"
+			aria-label="댓글 입력"
 			bind:value={content}
-			maxlength={500}
+			maxlength={MAX_COMMENT_LENGTH}
 			rows={2}
 			disabled={submitting}
 		></textarea>
@@ -195,6 +228,19 @@
 			padding: var(--space-lg);
 		}
 
+		&__error {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			gap: var(--space-sm);
+			padding: var(--space-lg) 0;
+
+			p {
+				font-size: var(--font-size-sm);
+				color: var(--color-text-muted);
+			}
+		}
+
 		&__empty {
 			font-size: var(--font-size-sm);
 			color: var(--color-text-muted);
@@ -214,7 +260,7 @@
 	.comment-item {
 		display: flex;
 		flex-direction: column;
-		gap: 4px;
+		gap: var(--space-xs);
 		padding: 10px 0;
 		border-bottom: 1px solid var(--color-divider);
 
@@ -246,10 +292,21 @@
 			font-size: var(--font-size-xs);
 			color: var(--color-text-muted);
 			cursor: pointer;
-			padding: 4px;
+			padding: var(--space-sm);
+			margin-right: calc(var(--space-sm) * -1);
 
-			&:active {
+			&:active:not(:disabled) {
 				color: var(--color-danger);
+			}
+
+			&:focus-visible {
+				outline: 2px solid var(--color-primary-light);
+				border-radius: var(--radius-sm);
+			}
+
+			&:disabled {
+				opacity: 0.5;
+				cursor: not-allowed;
 			}
 		}
 
@@ -268,7 +325,7 @@
 			display: flex;
 			flex-direction: column;
 			gap: var(--space-sm);
-			margin-top: 4px;
+			margin-top: var(--space-xs);
 		}
 
 		&__confirm-message {

@@ -63,6 +63,18 @@ describe('PhoneChangeField', () => {
 		await expect.element(page.getByText('3:00')).toBeInTheDocument();
 	});
 
+	it('인증코드 입력란이 없어도 codeError를 표시한다', async () => {
+		render(PhoneChangeField, {
+			currentPhone: '01012345678',
+			phone: '01098765432',
+			codeError: '전화번호 변경 시 인증요청이 필요합니다'
+		});
+
+		await expect
+			.element(page.getByText('전화번호 변경 시 인증요청이 필요합니다'))
+			.toBeInTheDocument();
+	});
+
 	it('인증요청 실패 시 에러 메시지를 표시한다', async () => {
 		mockedSendVerification.mockResolvedValue({
 			status: false,

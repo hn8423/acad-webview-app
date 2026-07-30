@@ -7,11 +7,7 @@
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import EnsembleCreateForm from '$lib/components/ensemble/EnsembleCreateForm.svelte';
 	import { formatDate } from '$lib/utils/format';
-	import type {
-		EnsembleListItem,
-		EnsembleMyStatus,
-		MyEnsembleListItem
-	} from '$lib/types/ensemble';
+	import type { EnsembleListItem, EnsembleMyStatus, MyEnsembleListItem } from '$lib/types/ensemble';
 	import { onMount } from 'svelte';
 
 	let activeTab = $state<'recruiting' | 'my'>('recruiting');
