@@ -30,7 +30,7 @@
 
 	$effect(() => {
 		const token = headerStore.showBackHeader({
-			title: '건의사항',
+			title: isNew ? '건의하기' : '건의사항',
 			onback: () => goto('/app/suggestion')
 		});
 		return () => headerStore.hideBackHeader(token);
@@ -61,7 +61,8 @@
 		}
 	});
 
-	async function handleSubmit() {
+	async function handleSubmit(event: SubmitEvent) {
+		event.preventDefault();
 		errors = {};
 		const academyId = academyStore.academyId;
 		if (!academyId) return;

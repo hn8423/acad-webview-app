@@ -15,5 +15,8 @@ export function getSuggestionDetail(academyId: number, suggestionId: number) {
 }
 
 export function createSuggestion(academyId: number, data: { title: string; content: string }) {
-	return post<ApiResponse<SuggestionDetail>>(`/academic/academies/${academyId}/suggestions`, data);
+	return post<ApiResponse<Omit<SuggestionDetail, 'author_name'>>>(
+		`/academic/academies/${academyId}/suggestions`,
+		data
+	);
 }
