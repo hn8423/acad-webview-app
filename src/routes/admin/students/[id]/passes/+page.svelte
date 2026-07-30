@@ -170,6 +170,8 @@
 				showDeleteModal = false;
 				deleteTarget = null;
 				await fetchPasses();
+			} else {
+				toastStore.error(res.message || '수강권 삭제에 실패했습니다.');
 			}
 		} catch {
 			// handled by client.ts
