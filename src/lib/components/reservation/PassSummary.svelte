@@ -1,15 +1,15 @@
 <script lang="ts">
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
-	import { formatDate } from '$lib/utils/format';
+	import { formatDate, getTodayString } from '$lib/utils/format';
 	import {
 		getPassStatusVariant,
 		getPassStatusLabel,
 		getTicketValue,
 		getPassDisplayName,
+		getEffectivePassStatus,
 		isPassUsable
 	} from '$lib/utils/pass';
-	import { getTodayString } from '$lib/utils/format';
 	import type { MemberPass } from '$lib/types/member';
 
 	interface Props {
@@ -22,10 +22,9 @@
 	let expanded = $state(true);
 	let showInactive = $state(false);
 
-	let activePasses = $derived(passes.filter((p) => isPassUsable(p, getTodayString())));
-
-	let inactivePasses = $derived(passes.filter((p) => !isPassUsable(p, getTodayString())));
-
+	let today = $derived(getTodayString());
+	let activePasses = $derived(passes.filter((p) => isPassUsable(p, today)));
+	let inactivePasses = $derived(passes.filter((p) => !isPassUsable(p, today)));
 </script>
 
 <section class="pass-summary">
@@ -56,6 +55,7 @@
 	</button>
 
 	{#snippet passCard(pass: MemberPass)}
+		{@const effectiveStatus = getEffectivePassStatus(pass, today)}
 		<div class="pass-summary-card">
 			<div class="pass-summary-card__header">
 				<span class="pass-summary-card__name">
@@ -64,8 +64,8 @@
 						<span class="pass-summary-card__ticket-badge">{getTicketValue(pass.ticket_value)}회 차감</span>
 					{/if}
 				</span>
-				<Badge variant={getPassStatusVariant(pass.status)}>
-					{getPassStatusLabel(pass.status)}
+				<Badge variant={getPassStatusVariant(effectiveStatus)}>
+					{getPassStatusLabel(effectiveStatus)}
 				</Badge>
 			</div>
 			<div class="pass-summary-card__instructor">

@@ -9,6 +9,7 @@ import {
 	isActiveReservationStatus,
 	isCapacityOccupyingStatus,
 	getPassDisplayName,
+	getEffectivePassStatus,
 	isPassUsable
 } from './pass';
 
@@ -19,6 +20,7 @@ describe('isPassUsable', () => {
 		return {
 			status: 'ACTIVE',
 			remaining_lessons: 5,
+			start_date: '2026-07-01',
 			end_date: '2026-08-31',
 			...overrides
 		};
@@ -32,13 +34,31 @@ describe('isPassUsable', () => {
 		expect(isPassUsable(createPass({ end_date: '2026-07-30' }), TODAY)).toBe(true);
 	});
 
+	it('should return true on the start date itself (inclusive)', () => {
+		expect(isPassUsable(createPass({ start_date: '2026-07-30' }), TODAY)).toBe(true);
+	});
+
 	it('should return false when end_date has passed', () => {
 		expect(isPassUsable(createPass({ end_date: '2026-07-29' }), TODAY)).toBe(false);
 	});
 
-	it('should handle ISO datetime end_date strings', () => {
+	it('should return false before the pass starts', () => {
+		expect(isPassUsable(createPass({ start_date: '2026-07-31' }), TODAY)).toBe(false);
+	});
+
+	it('should handle ISO datetime date strings on both sides', () => {
 		expect(isPassUsable(createPass({ end_date: '2026-07-29T00:00:00.000Z' }), TODAY)).toBe(false);
 		expect(isPassUsable(createPass({ end_date: '2026-07-30T00:00:00.000Z' }), TODAY)).toBe(true);
+		expect(isPassUsable(createPass(), '2026-07-30T00:00:00.000Z')).toBe(true);
+		expect(isPassUsable(createPass({ end_date: '2026-07-29' }), '2026-07-30T00:00:00.000Z')).toBe(
+			false
+		);
+	});
+
+	it('should evaluate against a future target date (slot date), not just today', () => {
+		const pass = createPass({ end_date: '2026-08-31' });
+		expect(isPassUsable(pass, '2026-08-31')).toBe(true);
+		expect(isPassUsable(pass, '2026-09-01')).toBe(false);
 	});
 
 	it('should return false for EXPIRED, HOLDING, and USED_UP statuses', () => {
@@ -51,8 +71,39 @@ describe('isPassUsable', () => {
 		expect(isPassUsable(createPass({ remaining_lessons: 0 }), TODAY)).toBe(false);
 	});
 
-	it('should return true when end_date is missing', () => {
-		expect(isPassUsable(createPass({ end_date: undefined }), TODAY)).toBe(true);
+	it('should return true when period dates are missing', () => {
+		expect(isPassUsable(createPass({ start_date: undefined, end_date: undefined }), TODAY)).toBe(
+			true
+		);
+	});
+});
+
+describe('getEffectivePassStatus', () => {
+	const TODAY = '2026-07-30';
+
+	it('should keep ACTIVE while within period', () => {
+		expect(getEffectivePassStatus({ status: 'ACTIVE', end_date: '2026-07-30' }, TODAY)).toBe(
+			'ACTIVE'
+		);
+	});
+
+	it('should treat date-expired ACTIVE pass as EXPIRED (pre-cron window)', () => {
+		expect(getEffectivePassStatus({ status: 'ACTIVE', end_date: '2026-07-29' }, TODAY)).toBe(
+			'EXPIRED'
+		);
+	});
+
+	it('should keep non-ACTIVE statuses as-is', () => {
+		expect(getEffectivePassStatus({ status: 'HOLDING', end_date: '2026-07-01' }, TODAY)).toBe(
+			'HOLDING'
+		);
+		expect(getEffectivePassStatus({ status: 'USED_UP', end_date: '2026-07-01' }, TODAY)).toBe(
+			'USED_UP'
+		);
+	});
+
+	it('should keep ACTIVE when end_date is missing', () => {
+		expect(getEffectivePassStatus({ status: 'ACTIVE' }, TODAY)).toBe('ACTIVE');
 	});
 });
 

@@ -55,16 +55,34 @@ export function getReservationWeight(
 	return getCapacityWeight(passCategory) * getTicketValue(ticketValue);
 }
 
-// 예약에 사용 가능한 수강권 판정.
+// targetDate 날짜에 사용 가능한 수강권 판정 (유효기간 양끝 포함).
 // 백엔드 크론이 만료 수강권을 EXPIRED로 전환하지만, 크론 실행 전 시간창과
-// stale 클라이언트 상태를 대비해 end_date도 함께 방어적으로 검사한다.
+// stale 클라이언트 상태를 대비해 start_date/end_date도 함께 방어적으로 검사한다.
+// 날짜는 UTC ISO 문자열('YYYY-MM-DD...' 형태) 전제 — slice(0, 10)으로 날짜부만 비교.
 export function isPassUsable(
-	pass: { status: string; remaining_lessons: number; end_date?: string },
-	today: string
+	pass: {
+		status: string;
+		remaining_lessons: number;
+		start_date?: string;
+		end_date?: string;
+	},
+	targetDate: string
 ): boolean {
 	if (pass.status !== 'ACTIVE' || pass.remaining_lessons <= 0) return false;
-	if (!pass.end_date) return true;
-	return pass.end_date.slice(0, 10) >= today;
+	const date = targetDate.slice(0, 10);
+	if (pass.start_date && pass.start_date.slice(0, 10) > date) return false;
+	return !pass.end_date || pass.end_date.slice(0, 10) >= date;
+}
+
+// 표시용 상태 — status가 ACTIVE라도 기간이 지났으면 만료로 취급 (크론 실행 전 시간창 방어)
+export function getEffectivePassStatus(
+	pass: { status: string; end_date?: string },
+	today: string
+): string {
+	if (pass.status === 'ACTIVE' && pass.end_date && pass.end_date.slice(0, 10) < today.slice(0, 10)) {
+		return 'EXPIRED';
+	}
+	return pass.status;
 }
 
 export function isActiveReservationStatus(status: string): boolean {

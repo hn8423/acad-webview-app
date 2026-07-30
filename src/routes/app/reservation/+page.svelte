@@ -67,7 +67,13 @@
 		selectedReservation ? isReservationDay(selectedReservation.slot_date) : false
 	);
 
+	// 오늘 기준 이용 가능 수강권 (월 인디케이터의 강사 필터용)
 	let activePasses = $derived(memberPasses.filter((p) => isPassUsable(p, getTodayString())));
+
+	// 슬롯 날짜 기준 이용 가능 수강권 — 미래 슬롯 예약 시 해당 날짜에 유효한 수강권만 노출
+	function getUsablePassesForDate(date: string): MemberPass[] {
+		return memberPasses.filter((p) => isPassUsable(p, date));
+	}
 
 	const ACTIVE_STATUSES: ReadonlySet<ReservationStatus> = new Set(['PENDING', 'CONFIRMED']);
 
@@ -88,11 +94,12 @@
 	}
 
 	function getPassesForSlot(slot: AvailableSlot | null): MemberPass[] {
-		if (!slot) return activePasses;
-		if (slot.slot_type === 'ENSEMBLE') return activePasses;
-		if (!slot.instructor_name) return activePasses;
-		const matched = activePasses.filter((p) => p.instructor_name === slot.instructor_name);
-		return matched.length > 0 ? matched : activePasses;
+		const usable = getUsablePassesForDate(slot?.slot_date ?? selectedDate);
+		if (!slot) return usable;
+		if (slot.slot_type === 'ENSEMBLE') return usable;
+		if (!slot.instructor_name) return usable;
+		const matched = usable.filter((p) => p.instructor_name === slot.instructor_name);
+		return matched.length > 0 ? matched : usable;
 	}
 
 	let filteredPasses = $derived(getPassesForSlot(selectedSlot));
@@ -549,7 +556,7 @@
 				<p class="booking-sheet__pass-notice booking-sheet__pass-notice--info">
 					합주 수업은 모든 수강권으로 예약할 수 있습니다.
 				</p>
-			{:else if selectedSlot?.instructor_name && filteredPasses.length < activePasses.length}
+			{:else if selectedSlot?.instructor_name && filteredPasses.length < getUsablePassesForDate(selectedSlot.slot_date).length}
 				<p class="booking-sheet__pass-notice">
 					{selectedSlot.instructor_name} 선생님 담당 수강권만 표시됩니다.
 				</p>
