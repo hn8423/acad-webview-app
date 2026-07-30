@@ -264,7 +264,9 @@
 								<span class="pass-item__name">
 									{pass.pass_name}
 									{#if getTicketValue(pass.ticket_value) > 1}
-										<span class="pass-item__ticket-badge">{getTicketValue(pass.ticket_value)}회 차감</span>
+										<span class="pass-item__ticket-badge"
+											>{getTicketValue(pass.ticket_value)}회 차감</span
+										>
 									{/if}
 								</span>
 								<Badge variant={getPassStatusVariant(pass.status)}
@@ -276,7 +278,7 @@
 									<div
 										class="pass-item__progress-fill"
 										style="width: {pass.total_lessons > 0
-											? ((pass.total_lessons - pass.remaining_lessons) / pass.total_lessons) * 100
+											? (pass.remaining_lessons / pass.total_lessons) * 100
 											: 0}%"
 									></div>
 								</div>
@@ -326,7 +328,9 @@
 					<option value="">선택하세요</option>
 					{#each passTypes as pt}
 						<option value={pt.id}>
-							{pt.pass_name} ({pt.pass_category}){pt.ticket_value > 1 ? ` [${pt.ticket_value}회 차감]` : ''}
+							{pt.pass_name} ({pt.pass_category}){pt.ticket_value > 1
+								? ` [${pt.ticket_value}회 차감]`
+								: ''}
 						</option>
 					{/each}
 				</select>

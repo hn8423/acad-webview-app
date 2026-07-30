@@ -101,23 +101,56 @@
 			}
 		}
 
+		if (phoneChanged) {
+			if (!phoneCodeSent) {
+				errors = { phone_code: '전화번호 변경 시 인증요청이 필요합니다' };
+				return;
+			}
+			if (phoneCode.trim().length !== 6) {
+				errors = { phone_code: '인증코드 6자리를 입력해주세요' };
+				return;
+			}
+		}
+
+		// updatePhone 성공 시 스토어의 user가 갱신되어 derived 값이 바뀌므로 미리 스냅샷
+		const didChangePhone = phoneChanged;
+		const hasOtherChanges =
+			user != null &&
+			(parsed.data.user_name !== user.user_name ||
+				userBirthday !== (user.user_birthday ?? '') ||
+				userGender !== (user.user_gender ?? '') ||
+				hasPasswordInput);
+
 		loading = true;
 		try {
-			const updateData: Record<string, string | undefined> = {
-				user_name: parsed.data.user_name,
-				user_birthday: parsed.data.user_birthday,
-				user_gender: parsed.data.user_gender
-			};
-
-			if (hasPasswordInput) {
-				updateData.current_password = btoa(currentPassword);
-				updateData.new_password = btoa(newPassword);
+			if (didChangePhone) {
+				await authStore.updatePhone({
+					new_phone: userPhone.replace(/-/g, ''),
+					code: phoneCode.trim()
+				});
+				phoneCodeSent = false;
+				phoneCode = '';
 			}
 
-			await authStore.updateProfile(updateData);
+			if (hasOtherChanges) {
+				const updateData: Record<string, string | undefined> = {
+					user_name: parsed.data.user_name,
+					user_birthday: parsed.data.user_birthday,
+					user_gender: parsed.data.user_gender
+				};
+
+				if (hasPasswordInput) {
+					updateData.current_password = btoa(currentPassword);
+					updateData.new_password = btoa(newPassword);
+				}
+
+				await authStore.updateProfile(updateData);
+			}
 
 			if (hasPasswordInput) {
 				toastStore.success('비밀번호가 변경되었습니다.');
+			} else if (didChangePhone && !hasOtherChanges) {
+				toastStore.success('전화번호가 변경되었습니다.');
 			} else {
 				toastStore.success('프로필이 수정되었습니다.');
 			}
@@ -163,10 +196,13 @@
 					maxlength={20}
 				/>
 
-				<div class="profile-edit__readonly-field">
-					<span class="profile-edit__readonly-label">전화번호</span>
-					<div class="profile-edit__readonly-value">{formatPhone(user.user_phone)}</div>
-				</div>
+				<PhoneChangeField
+					currentPhone={user.user_phone}
+					bind:phone={userPhone}
+					bind:code={phoneCode}
+					bind:codeSent={phoneCodeSent}
+					codeError={errors['phone_code'] ?? ''}
+				/>
 
 				<Input
 					type="date"
@@ -323,28 +359,6 @@
 			justify-content: center;
 			font-size: var(--font-size-3xl);
 			font-weight: var(--font-weight-bold);
-		}
-
-		&__readonly-field {
-			display: flex;
-			flex-direction: column;
-			gap: var(--space-xs);
-		}
-
-		&__readonly-label {
-			font-size: var(--font-size-sm);
-			font-weight: var(--font-weight-medium);
-			color: var(--color-text-secondary);
-		}
-
-		&__readonly-value {
-			padding: var(--space-sm) var(--space-md);
-			background: var(--color-white);
-			border: 1px solid var(--color-border);
-			border-radius: var(--radius-md);
-			font-size: var(--font-size-base);
-			color: var(--color-text-muted);
-			opacity: 0.6;
 		}
 
 		&__field {

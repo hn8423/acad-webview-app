@@ -3,7 +3,11 @@
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import { getMyPasses, getMyDrinkTickets, useDrinkTicket } from '$lib/api/member';
 	import { getRecentNotices } from '$lib/api/academy';
-	import { getMyReservations, cancelReservation, cancelReservationAsNoShow } from '$lib/api/reservation';
+	import {
+		getMyReservations,
+		cancelReservation,
+		cancelReservationAsNoShow
+	} from '$lib/api/reservation';
 	import { login } from '$lib/api/auth';
 	import { apiRequest } from '$lib/api/client';
 	import Badge from '$lib/components/ui/Badge.svelte';
@@ -39,10 +43,7 @@
 	let cancelTarget = $state<MyReservation | null>(null);
 	let cancelling = $state(false);
 
-	let isSameDayCancel = $derived(
-		cancelTarget ? isReservationDay(cancelTarget.slot_date) : false
-	);
-
+	let isSameDayCancel = $derived(cancelTarget ? isReservationDay(cancelTarget.slot_date) : false);
 
 	let showDrinkRedeemModal = $state(false);
 	let drinkRedeemSubmitting = $state(false);
@@ -149,9 +150,7 @@
 
 			if (useRes.status) {
 				drinkTickets = drinkTickets.map((t) =>
-					t.id === ticket.id
-						? { ...t, remaining_count: useRes.data.remaining_count }
-						: t
+					t.id === ticket.id ? { ...t, remaining_count: useRes.data.remaining_count } : t
 				);
 				toastStore.success('음료권 1잔이 사용되었습니다.');
 				showDrinkRedeemModal = false;
@@ -183,9 +182,7 @@
 				? await cancelReservationAsNoShow(academyId, cancelTarget.reservation_id)
 				: await cancelReservation(academyId, cancelTarget.reservation_id);
 			if (res.status) {
-				toastStore.success(
-					noShow ? '당일 취소로 노쇼 처리되었습니다.' : '예약이 취소되었습니다.'
-				);
+				toastStore.success(noShow ? '당일 취소로 노쇼 처리되었습니다.' : '예약이 취소되었습니다.');
 				cancelSheetOpen = false;
 				cancelTarget = null;
 				const refreshRes = await getMyReservations(academyId);
@@ -202,9 +199,7 @@
 
 	function getInstructorLabel(reservation: MyReservation): string {
 		if (reservation.slot_type === 'ENSEMBLE') return '합주 수업';
-		return reservation.instructor_name
-			? `${reservation.instructor_name} 선생님`
-			: '강사 미지정';
+		return reservation.instructor_name ? `${reservation.instructor_name} 선생님` : '강사 미지정';
 	}
 </script>
 
@@ -262,11 +257,13 @@
 							<div class="pass-card">
 								<div class="pass-card__header">
 									<span class="pass-card__name">
-									{getPassDisplayName(pass.pass_name, pass.pass_category)}
-									{#if getTicketValue(pass.ticket_value) > 1}
-										<span class="pass-card__ticket-badge">{getTicketValue(pass.ticket_value)}회 차감</span>
-									{/if}
-								</span>
+										{getPassDisplayName(pass.pass_name, pass.pass_category)}
+										{#if getTicketValue(pass.ticket_value) > 1}
+											<span class="pass-card__ticket-badge"
+												>{getTicketValue(pass.ticket_value)}회 차감</span
+											>
+										{/if}
+									</span>
 									<Badge variant={getPassStatusVariant(pass.status)}>
 										{getPassStatusLabel(pass.status)}
 									</Badge>
@@ -300,9 +297,9 @@
 										<div class="progress-bar">
 											<div
 												class="progress-bar__fill"
-												style="width: {((pass.total_lessons - pass.remaining_lessons) /
-													pass.total_lessons) *
-													100}%"
+												style="width: {pass.total_lessons > 0
+													? (pass.remaining_lessons / pass.total_lessons) * 100
+													: 0}%"
 											></div>
 										</div>
 										<span class="pass-card__remaining">
@@ -416,27 +413,28 @@
 					</span>
 				</div>
 				<div class="cancel-sheet__row">
-					<span class="cancel-sheet__label">{cancelTarget.slot_type === 'ENSEMBLE' ? '유형' : '강사'}</span>
+					<span class="cancel-sheet__label"
+						>{cancelTarget.slot_type === 'ENSEMBLE' ? '유형' : '강사'}</span
+					>
 					<span class="cancel-sheet__value">{getInstructorLabel(cancelTarget)}</span>
 				</div>
 				{#if cancelTarget.pass_name}
 					<div class="cancel-sheet__row">
 						<span class="cancel-sheet__label">수강권</span>
-						<span class="cancel-sheet__value">{getPassDisplayName(cancelTarget.pass_name, cancelTarget.pass_category)}</span>
+						<span class="cancel-sheet__value"
+							>{getPassDisplayName(cancelTarget.pass_name, cancelTarget.pass_category)}</span
+						>
 					</div>
 				{/if}
 			</div>
 			{#if isSameDayCancel}
 				<div class="cancel-sheet__noshow-warning">
-					당일 취소는 노쇼(No-Show)로 처리됩니다.
-					수강권이 차감되며 환불되지 않습니다.
+					당일 취소는 노쇼(No-Show)로 처리됩니다. 수강권이 차감되며 환불되지 않습니다.
 				</div>
-			{:else}
-				{#if getTicketValue(cancelTarget.ticket_value) > 1}
-					<p class="cancel-sheet__refund-notice">
-						취소 시 {getTicketValue(cancelTarget.ticket_value)}회가 환불됩니다.
-					</p>
-				{/if}
+			{:else if getTicketValue(cancelTarget.ticket_value) > 1}
+				<p class="cancel-sheet__refund-notice">
+					취소 시 {getTicketValue(cancelTarget.ticket_value)}회가 환불됩니다.
+				</p>
 			{/if}
 			<div class="cancel-sheet__buttons">
 				<Button
