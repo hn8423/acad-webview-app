@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
 	getPassStatusVariant,
 	getPassStatusLabel,
+	getPassBadgeVariant,
 	getTicketValue,
 	getCapacityWeight,
 	getReservationWeight,
@@ -224,5 +225,24 @@ describe('getPassStatusLabel', () => {
 
 	it('should return raw status for unknown', () => {
 		expect(getPassStatusLabel('UNKNOWN')).toBe('UNKNOWN');
+	});
+});
+
+describe('getPassBadgeVariant', () => {
+	it('should return danger when remaining lessons is at threshold (2)', () => {
+		expect(getPassBadgeVariant('FULL', 2)).toBe('danger');
+	});
+
+	it('should return danger when remaining lessons is 0', () => {
+		expect(getPassBadgeVariant('ROTATION', 0)).toBe('danger');
+	});
+
+	it('should return category variant when remaining lessons is above threshold', () => {
+		expect(getPassBadgeVariant('FULL', 3)).toBe('success');
+		expect(getPassBadgeVariant('ROTATION', 3)).toBe('info');
+	});
+
+	it('should return neutral for unknown category above threshold', () => {
+		expect(getPassBadgeVariant('UNKNOWN', 10)).toBe('neutral');
 	});
 });

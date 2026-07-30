@@ -5,7 +5,7 @@
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import { formatPhone } from '$lib/utils/format';
-	import { getPassCategoryLabel, getPassCategoryVariant } from '$lib/utils/pass';
+	import { getPassCategoryLabel, getPassBadgeVariant } from '$lib/utils/pass';
 	import { goto } from '$app/navigation';
 	import type { MemberListItem, MemberPass, StudentPassStatus } from '$lib/types/member';
 	import { onMount } from 'svelte';
@@ -41,6 +41,7 @@
 		{ label: '수업중', value: 'ACTIVE' },
 		{ label: '만료', value: 'EXPIRED' }
 	];
+
 
 	onMount(() => fetchMembers());
 
@@ -193,8 +194,9 @@
 							{#each memberPassesMap
 								.get(member.member_id)
 								?.filter((p) => p.status === 'ACTIVE') ?? [] as pass}
-								<Badge variant={getPassCategoryVariant(pass.pass_category)}
-									>{getPassCategoryLabel(pass.pass_category)}</Badge
+								{@const remaining = pass.remaining_lessons ?? 0}
+								<Badge variant={getPassBadgeVariant(pass.pass_category, remaining)}
+									>{getPassCategoryLabel(pass.pass_category)} 잔여 {remaining}회</Badge
 								>
 							{/each}
 						{:else if member.active_passes > 0}
@@ -219,6 +221,8 @@
 </div>
 
 <style lang="scss">
+	@use '$lib/styles/mixins' as *;
+
 	.admin-students {
 		&__title {
 			font-size: var(--font-size-2xl);
@@ -312,6 +316,7 @@
 		}
 
 		&__name {
+			@include text-truncate;
 			font-size: var(--font-size-base);
 			font-weight: var(--font-weight-medium);
 			color: var(--color-text);
@@ -325,6 +330,8 @@
 
 		&__stats {
 			display: flex;
+			flex-wrap: wrap;
+			justify-content: flex-end;
 			gap: var(--space-xs);
 		}
 	}

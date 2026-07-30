@@ -64,7 +64,7 @@ export function isCapacityOccupyingStatus(status: string): boolean {
 }
 
 export type PassCategory = 'ROTATION' | 'FULL';
-type BadgeVariant = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
+export type BadgeVariant = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
 
 const CATEGORY_LABELS: Record<PassCategory, string> = {
 	ROTATION: '로테이션',
@@ -82,4 +82,12 @@ export function getPassCategoryLabel(category: string): string {
 
 export function getPassCategoryVariant(category: string): BadgeVariant {
 	return CATEGORY_VARIANTS[category as PassCategory] ?? 'neutral';
+}
+
+export const LOW_REMAINING_THRESHOLD = 2;
+
+export function getPassBadgeVariant(category: string, remainingLessons: number): BadgeVariant {
+	return remainingLessons <= LOW_REMAINING_THRESHOLD
+		? 'danger'
+		: getPassCategoryVariant(category);
 }
