@@ -52,6 +52,18 @@ export interface NoticeFile {
 	file_size: number;
 }
 
+export interface Suggestion {
+	id: number;
+	title: string;
+	status: string;
+	author_name: string;
+	created_at: string;
+}
+
+export interface SuggestionDetail extends Suggestion {
+	content: string;
+}
+
 export interface CalendarEvent {
 	id: number;
 	event_title: string;

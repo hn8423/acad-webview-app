@@ -4,6 +4,7 @@
 	import { academyStore } from '$lib/stores/academy.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import { getCategories, createLevelTestFeedback } from '$lib/api/feedback';
+	import { findOwnInstructorId } from '$lib/utils/own-instructor';
 	import { getMemberPasses } from '$lib/api/member';
 	import BackHeader from '$lib/components/layout/BackHeader.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -46,18 +47,39 @@
 		if (!academyId) return;
 
 		try {
+			// 본인 강사 ID를 해석해 본인 카테고리만 조회 (해석 실패 시 카테고리 조회 생략)
+			let ownInstructorId = academyStore.instructorId;
+			let resolveFailed = false;
+			if (ownInstructorId === null) {
+				const myMemberId = academyStore.memberId;
+				if (myMemberId === null) {
+					resolveFailed = true;
+				} else {
+					try {
+						ownInstructorId = await findOwnInstructorId(academyId, myMemberId);
+					} catch {
+						resolveFailed = true;
+					}
+				}
+			}
+
 			const [catRes, passRes] = await Promise.allSettled([
-				getCategories(academyId, academyStore.instructorId ?? undefined),
+				ownInstructorId !== null
+					? getCategories(academyId, ownInstructorId)
+					: Promise.resolve(null),
 				getMemberPasses(academyId, memberId)
 			]);
 
-			if (catRes.status === 'fulfilled' && catRes.value.status) {
+			if (catRes.status === 'fulfilled' && catRes.value?.status) {
 				categories = [...catRes.value.data].sort((a, b) => a.sort_order - b.sort_order);
 				scores = Object.fromEntries(categories.map((cat) => [cat.id, 3]));
 				comments = Object.fromEntries(categories.map((cat) => [cat.id, '']));
 			}
 			if (passRes.status === 'fulfilled' && passRes.value.status) {
 				passes = passRes.value.data;
+			}
+			if (resolveFailed) {
+				error = '평가 카테고리를 불러오지 못했습니다.';
 			}
 		} catch {
 			// handled by client.ts

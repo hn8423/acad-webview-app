@@ -1,5 +1,21 @@
-export type NotificationType = 'GENERAL' | 'RESERVATION' | 'FEEDBACK';
-export type ReferenceType = 'LESSON' | 'FEEDBACK';
+export type NotificationType =
+	| 'GENERAL'
+	| 'RESERVATION'
+	| 'FEEDBACK'
+	| 'RESERVATION_REQUEST'
+	| 'RESERVATION_CANCELLED'
+	| 'PASS_RENEWAL'
+	| 'PASS_EXPIRED'
+	| 'WEEKLY_RESERVATION_REMINDER';
+export type ReferenceType =
+	| 'LESSON'
+	| 'FEEDBACK'
+	| 'RESERVATION'
+	| 'PASS_RENEWAL'
+	| 'PASS_EXPIRED'
+	| 'PASS_EXPIRED_CANCEL'
+	| 'PASS_DELETED_CANCEL'
+	| 'WEEKLY_RESERVATION_REMINDER';
 
 export interface Notification {
 	id: number;

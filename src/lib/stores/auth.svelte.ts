@@ -1,7 +1,7 @@
 import { setTokens, clearTokens, getAccessToken, getRefreshToken } from '$lib/api/client';
 import * as authApi from '$lib/api/auth';
 import { getJson, setJson, removeItem } from '$lib/utils/storage';
-import type { User, UserAcademy } from '$lib/types/auth';
+import type { ChangePhoneRequest, User, UserAcademy } from '$lib/types/auth';
 
 const USER_STORAGE_KEY = 'user';
 
@@ -119,6 +119,15 @@ export function getAuthStore() {
 		setJson(USER_STORAGE_KEY, res.data);
 	}
 
+	async function updatePhone(data: ChangePhoneRequest): Promise<void> {
+		const res = await authApi.updateMyPhone(data);
+		if (!res.status || !res.data) {
+			throw new Error(res.message || '전화번호 변경에 실패했습니다.');
+		}
+		user = res.data;
+		setJson(USER_STORAGE_KEY, res.data);
+	}
+
 	async function fetchMyAcademies(): Promise<UserAcademy[]> {
 		const res = await authApi.getMyAcademies();
 		if (res.status && res.data) {
@@ -146,6 +155,7 @@ export function getAuthStore() {
 		logout,
 		deleteAccount,
 		updateProfile,
+		updatePhone,
 		fetchMyAcademies
 	};
 }

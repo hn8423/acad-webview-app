@@ -23,7 +23,7 @@
 		group_name: z.string().min(1, '그룹명을 입력해주세요').max(50, '50자 이내로 입력해주세요'),
 		role: z.string().min(1, '파트를 입력해주세요').max(20, '20자 이내로 입력해주세요'),
 		description: z.string().max(500, '500자 이내로 입력해주세요').optional(),
-		max_members: z.number().int().min(2, '최소 2명 이상').max(20, '최대 20명')
+		max_members: z.number().int().min(2, '최소 2명 이상')
 	});
 
 	async function handleSubmit() {
@@ -31,11 +31,12 @@
 		const academyId = academyStore.academyId;
 		if (!academyId) return;
 
+		const parsedMax = Number.parseInt(maxMembers, 10);
 		const parsed = schema.safeParse({
 			group_name: groupName.trim(),
 			role: role.trim(),
 			description: description.trim() || undefined,
-			max_members: parseInt(maxMembers) || 5
+			max_members: Number.isNaN(parsedMax) ? 5 : parsedMax
 		});
 
 		if (!parsed.success) {

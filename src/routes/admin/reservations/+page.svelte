@@ -22,6 +22,7 @@
 		isCapacityOccupyingStatus
 	} from '$lib/utils/pass';
 	import { countSlotDates, formatDayLabels } from '$lib/utils/reservation';
+	import { canManageSlot } from '$lib/utils/slot-permission';
 	import type {
 		LessonSlot,
 		SlotStatus,
@@ -357,6 +358,10 @@
 	}
 
 	function openEditModal(slot: LessonSlot) {
+		if (!canManageSlot(slot, academyStore.instructorId)) {
+			toastStore.error('수업을 연 강사만 수정/취소할 수 있습니다');
+			return;
+		}
 		editTarget = slot;
 		editForm =
 			slot.slot_type === 'ENSEMBLE'
@@ -396,6 +401,10 @@
 	}
 
 	function openDeleteModal(slot: LessonSlot) {
+		if (!canManageSlot(slot, academyStore.instructorId)) {
+			toastStore.error('수업을 연 강사만 삭제할 수 있습니다');
+			return;
+		}
 		deleteTarget = slot;
 		showDeleteModal = true;
 	}
@@ -433,16 +442,20 @@
 
 	function openStatusConfirm(
 		rv: SlotReservation,
-		slotType: SlotType,
+		slot: LessonSlot,
 		newStatus: 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW'
 	) {
+		if (!canManageSlot(slot, academyStore.instructorId)) {
+			toastStore.error('수업을 연 강사만 예약을 관리할 수 있습니다');
+			return;
+		}
 		statusConfirmTarget = {
 			reservationId: rv.reservation_id,
 			memberName: rv.member_name,
 			passName: rv.pass_name ?? '',
 			passCategory: rv.pass_category,
 			ticketValue: getTicketValue(rv.ticket_value),
-			capacityWeight: getReservationWeight(rv.pass_category, rv.ticket_value, slotType),
+			capacityWeight: getReservationWeight(rv.pass_category, rv.ticket_value, slot.slot_type),
 			currentStatus: rv.status,
 			newStatus
 		};
@@ -634,46 +647,48 @@
 											{getStatusLabel(rv.status)}
 										</Badge>
 									</div>
-									<div class="reservation-row__actions">
-										{#if rv.status === 'PENDING'}
-											<button
-												class="action-btn action-btn--confirm"
-												disabled={actionLoading}
-												onclick={() => openStatusConfirm(rv, slot.slot_type, 'CONFIRMED')}
-											>
-												승인
-											</button>
-											<button
-												class="action-btn action-btn--cancel"
-												disabled={actionLoading}
-												onclick={() => openStatusConfirm(rv, slot.slot_type, 'CANCELLED')}
-											>
-												취소
-											</button>
-										{:else if rv.status === 'CONFIRMED'}
-											<button
-												class="action-btn action-btn--complete"
-												disabled={actionLoading}
-												onclick={() => openStatusConfirm(rv, slot.slot_type, 'COMPLETED')}
-											>
-												완료
-											</button>
-											<button
-												class="action-btn action-btn--noshow"
-												disabled={actionLoading}
-												onclick={() => openStatusConfirm(rv, slot.slot_type, 'NO_SHOW')}
-											>
-												노쇼
-											</button>
-											<button
-												class="action-btn action-btn--cancel"
-												disabled={actionLoading}
-												onclick={() => openStatusConfirm(rv, slot.slot_type, 'CANCELLED')}
-											>
-												취소
-											</button>
-										{/if}
-									</div>
+									{#if canManageSlot(slot, academyStore.instructorId)}
+										<div class="reservation-row__actions">
+											{#if rv.status === 'PENDING'}
+												<button
+													class="action-btn action-btn--confirm"
+													disabled={actionLoading}
+													onclick={() => openStatusConfirm(rv, slot, 'CONFIRMED')}
+												>
+													승인
+												</button>
+												<button
+													class="action-btn action-btn--cancel"
+													disabled={actionLoading}
+													onclick={() => openStatusConfirm(rv, slot, 'CANCELLED')}
+												>
+													취소
+												</button>
+											{:else if rv.status === 'CONFIRMED'}
+												<button
+													class="action-btn action-btn--complete"
+													disabled={actionLoading}
+													onclick={() => openStatusConfirm(rv, slot, 'COMPLETED')}
+												>
+													완료
+												</button>
+												<button
+													class="action-btn action-btn--noshow"
+													disabled={actionLoading}
+													onclick={() => openStatusConfirm(rv, slot, 'NO_SHOW')}
+												>
+													노쇼
+												</button>
+												<button
+													class="action-btn action-btn--cancel"
+													disabled={actionLoading}
+													onclick={() => openStatusConfirm(rv, slot, 'CANCELLED')}
+												>
+													취소
+												</button>
+											{/if}
+										</div>
+									{/if}
 								</div>
 							{/each}
 						</div>
@@ -681,17 +696,19 @@
 						<p class="slot-card__no-reservations">예약 없음</p>
 					{/if}
 
-					<div class="slot-card__footer">
-						<button class="slot-action-btn" onclick={() => openEditModal(slot)}>수정</button>
-						{#if slot.reservations.length === 0}
-							<button
-								class="slot-action-btn slot-action-btn--danger"
-								onclick={() => openDeleteModal(slot)}
-							>
-								삭제
-							</button>
-						{/if}
-					</div>
+					{#if canManageSlot(slot, academyStore.instructorId)}
+						<div class="slot-card__footer">
+							<button class="slot-action-btn" onclick={() => openEditModal(slot)}>수정</button>
+							{#if slot.reservations.length === 0}
+								<button
+									class="slot-action-btn slot-action-btn--danger"
+									onclick={() => openDeleteModal(slot)}
+								>
+									삭제
+								</button>
+							{/if}
+						</div>
+					{/if}
 				</div>
 			{/each}
 		</div>

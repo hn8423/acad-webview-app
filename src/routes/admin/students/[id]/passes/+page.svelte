@@ -7,6 +7,7 @@
 		getMemberPasses,
 		createMemberPass,
 		updateMemberPass,
+		deleteMemberPass,
 		getPassTypes,
 		getInstructors
 	} from '$lib/api/member';
@@ -18,7 +19,12 @@
 	import Modal from '$lib/components/ui/Modal.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import { formatDate } from '$lib/utils/format';
-	import { getPassStatusVariant, getPassStatusLabel, getTicketValue } from '$lib/utils/pass';
+	import {
+		getPassStatusVariant,
+		getPassStatusLabel,
+		getTicketValue,
+		isExpireTransition
+	} from '$lib/utils/pass';
 	import type { MemberPass, PassType, Instructor } from '$lib/types/member';
 	import { onMount } from 'svelte';
 
@@ -32,6 +38,14 @@
 	let submitting = $state(false);
 	let error = $state('');
 	let editTarget = $state<MemberPass | null>(null);
+
+	// Delete modal
+	let showDeleteModal = $state(false);
+	let deleteTarget = $state<MemberPass | null>(null);
+	let deleting = $state(false);
+
+	// Expire confirm modal (EXPIRED 전환 시 예약 자동 취소 경고)
+	let showExpireConfirmModal = $state(false);
 
 	// Create form fields
 	let selectedPassTypeId = $state('');
@@ -48,6 +62,7 @@
 
 	const memberId = $derived(Number(page.params.id));
 	let formTitle = $derived(editTarget ? '수강권 수정' : '수강권 부여');
+	let isAdmin = $derived(academyStore.memberRole === 'ADMIN');
 
 	onMount(() => fetchData());
 
@@ -145,6 +160,62 @@
 		return pt?.ticket_value ?? 1;
 	});
 
+	function confirmDelete(pass: MemberPass) {
+		deleteTarget = pass;
+		showDeleteModal = true;
+	}
+
+	async function handleDelete() {
+		if (deleting) return;
+		const academyId = academyStore.academyId;
+		if (!academyId || !deleteTarget) return;
+
+		deleting = true;
+		try {
+			const res = await deleteMemberPass(academyId, memberId, deleteTarget.id);
+			if (res.status) {
+				toastStore.success(res.message || '수강권이 삭제되었습니다.');
+				showDeleteModal = false;
+				deleteTarget = null;
+				await fetchPasses();
+			} else {
+				toastStore.error(res.message || '수강권 삭제에 실패했습니다.');
+			}
+		} catch {
+			// handled by client.ts
+		} finally {
+			deleting = false;
+		}
+	}
+
+	async function submitEdit() {
+		if (submitting) return;
+		const academyId = academyStore.academyId;
+		if (!academyId || !editTarget) return;
+
+		submitting = true;
+		try {
+			const res = await updateMemberPass(academyId, memberId, editTarget.id, {
+				start_date: startDate,
+				end_date: endDate,
+				total_lessons: Number(totalLessons),
+				remaining_lessons: Number(remainingLessons),
+				status: selectedStatus
+			});
+			if (res.status) {
+				toastStore.success(res.message || '수강권이 수정되었습니다.');
+				showFormModal = false;
+				await fetchPasses();
+			} else {
+				toastStore.error(res.message || '수강권 수정에 실패했습니다.');
+			}
+		} catch (err) {
+			error = err instanceof Error ? err.message : '수강권 수정에 실패했습니다.';
+		} finally {
+			submitting = false;
+		}
+	}
+
 	async function handleSubmit() {
 		error = '';
 		const academyId = academyStore.academyId;
@@ -156,25 +227,13 @@
 				return;
 			}
 
-			submitting = true;
-			try {
-				const res = await updateMemberPass(academyId, memberId, editTarget.id, {
-					start_date: startDate,
-					end_date: endDate,
-					total_lessons: Number(totalLessons),
-					remaining_lessons: Number(remainingLessons),
-					status: selectedStatus
-				});
-				if (res.status) {
-					toastStore.success('수강권이 수정되었습니다.');
-					showFormModal = false;
-					await fetchPasses();
-				}
-			} catch (err) {
-				error = err instanceof Error ? err.message : '수강권 수정에 실패했습니다.';
-			} finally {
-				submitting = false;
+			// 만료 전환은 미처리 예약 자동 취소를 동반하므로 확인 후 진행
+			if (isExpireTransition(editTarget.status, selectedStatus)) {
+				showExpireConfirmModal = true;
+				return;
 			}
+
+			await submitEdit();
 		} else {
 			if (!selectedPassTypeId || !selectedInstructorId || !startDate || !endDate) {
 				error = '모든 항목을 입력해주세요.';
@@ -229,7 +288,9 @@
 								<span class="pass-item__name">
 									{pass.pass_name}
 									{#if getTicketValue(pass.ticket_value) > 1}
-										<span class="pass-item__ticket-badge">{getTicketValue(pass.ticket_value)}회 차감</span>
+										<span class="pass-item__ticket-badge"
+											>{getTicketValue(pass.ticket_value)}회 차감</span
+										>
 									{/if}
 								</span>
 								<Badge variant={getPassStatusVariant(pass.status)}
@@ -241,7 +302,7 @@
 									<div
 										class="pass-item__progress-fill"
 										style="width: {pass.total_lessons > 0
-											? ((pass.total_lessons - pass.remaining_lessons) / pass.total_lessons) * 100
+											? (pass.remaining_lessons / pass.total_lessons) * 100
 											: 0}%"
 									></div>
 								</div>
@@ -257,6 +318,11 @@
 							</div>
 							<div class="pass-item__actions">
 								<button class="action-btn" onclick={() => openEditModal(pass)}>수정</button>
+								{#if isAdmin}
+									<button class="action-btn action-btn--danger" onclick={() => confirmDelete(pass)}>
+										삭제
+									</button>
+								{/if}
 							</div>
 						</div>
 					</Card>
@@ -286,7 +352,9 @@
 					<option value="">선택하세요</option>
 					{#each passTypes as pt}
 						<option value={pt.id}>
-							{pt.pass_name} ({pt.pass_category}){pt.ticket_value > 1 ? ` [${pt.ticket_value}회 차감]` : ''}
+							{pt.pass_name} ({pt.pass_category}){pt.ticket_value > 1
+								? ` [${pt.ticket_value}회 차감]`
+								: ''}
 						</option>
 					{/each}
 				</select>
@@ -344,6 +412,44 @@
 			<Button variant="secondary" fullWidth onclick={() => (showFormModal = false)}>취소</Button>
 		</div>
 	</form>
+</Modal>
+
+<Modal isOpen={showDeleteModal} title="수강권 삭제" onclose={() => (showDeleteModal = false)}>
+	<p class="modal-message">
+		"{deleteTarget?.pass_name}" 수강권을 삭제하시겠습니까? 오늘 이후 예정된 미처리 예약이 있는 경우
+		자동 취소됩니다.
+	</p>
+	<div class="modal-actions">
+		<Button variant="danger" fullWidth onclick={handleDelete} loading={deleting}>삭제</Button>
+		<Button variant="secondary" fullWidth onclick={() => (showDeleteModal = false)}>취소</Button>
+	</div>
+</Modal>
+
+<Modal
+	isOpen={showExpireConfirmModal}
+	title="수강권 만료 처리"
+	onclose={() => (showExpireConfirmModal = false)}
+>
+	<p class="modal-message">
+		"{editTarget?.pass_name}" 수강권을 만료 처리하시겠습니까? 오늘 이후 예정된 미처리 예약이 자동
+		취소되며, 지난 예약은 그대로 유지됩니다.
+	</p>
+	<div class="modal-actions">
+		<Button
+			variant="danger"
+			fullWidth
+			loading={submitting}
+			onclick={async () => {
+				await submitEdit();
+				showExpireConfirmModal = false;
+			}}
+		>
+			만료 처리
+		</Button>
+		<Button variant="secondary" fullWidth onclick={() => (showExpireConfirmModal = false)}>
+			취소
+		</Button>
+	</div>
 </Modal>
 
 <style lang="scss">
@@ -456,6 +562,7 @@
 		&__actions {
 			display: flex;
 			justify-content: flex-end;
+			gap: var(--space-xs);
 			margin-top: var(--space-sm);
 			padding-top: var(--space-sm);
 			border-top: 1px solid var(--color-divider);
@@ -471,6 +578,14 @@
 
 		&:hover {
 			background: var(--color-primary-bg);
+		}
+
+		&--danger {
+			color: var(--color-danger);
+
+			&:hover {
+				background: var(--color-danger-bg);
+			}
 		}
 	}
 
@@ -530,5 +645,18 @@
 			flex-direction: column;
 			gap: var(--space-sm);
 		}
+	}
+
+	.modal-message {
+		font-size: var(--font-size-base);
+		color: var(--color-text-secondary);
+		line-height: var(--line-height-base);
+	}
+
+	.modal-actions {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-sm);
+		margin-top: var(--space-lg);
 	}
 </style>

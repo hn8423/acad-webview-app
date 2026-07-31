@@ -32,7 +32,7 @@ export function getMembers(
 	limit = 20,
 	search?: string,
 	role?: 'STUDENT' | 'INSTRUCTOR' | 'ADMIN',
-	passStatus?: 'ACTIVE' | 'EXPIRED',
+	passStatus?: 'ACTIVE' | 'EXPIRED' | 'ALL',
 	instructorId?: number
 ) {
 	const params = new URLSearchParams();
@@ -154,6 +154,12 @@ export function updateMemberPass(
 	return patch<ApiResponse<MemberPass>>(
 		`/academic/academies/${academyId}/members/${memberId}/passes/${passId}`,
 		data
+	);
+}
+
+export function deleteMemberPass(academyId: number, memberId: number, passId: number) {
+	return del<ApiResponse<null>>(
+		`/academic/academies/${academyId}/members/${memberId}/passes/${passId}`
 	);
 }
 

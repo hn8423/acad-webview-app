@@ -59,8 +59,7 @@
 			toastStore.success('회원 탈퇴가 완료되었습니다.');
 			goto('/auth/login', { replaceState: true });
 		} catch (error) {
-			deleteError =
-				error instanceof Error ? error.message : '회원 탈퇴에 실패했습니다.';
+			deleteError = error instanceof Error ? error.message : '회원 탈퇴에 실패했습니다.';
 		} finally {
 			deleteLoading = false;
 		}
@@ -70,11 +69,7 @@
 <div class="profile-page">
 	<div class="profile-page__content">
 		{#if user}
-			<button
-				type="button"
-				class="profile-header"
-				onclick={() => goto('/app/profile/edit')}
-			>
+			<button type="button" class="profile-header" onclick={() => goto('/app/profile/edit')}>
 				<div class="profile-header__avatar">
 					{#if user.profile_img}
 						<img src={user.profile_img} alt={user.user_name} />
@@ -93,6 +88,23 @@
 		<div class="profile-menu">
 			<button type="button" class="profile-menu__item" onclick={() => goto('/app/notice')}>
 				<span class="profile-menu__label">공지사항</span>
+				<svg
+					class="profile-menu__chevron"
+					width="20"
+					height="20"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="var(--color-text-muted)"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				>
+					<polyline points="9 18 15 12 9 6" />
+				</svg>
+			</button>
+			<div class="profile-menu__divider"></div>
+			<button type="button" class="profile-menu__item" onclick={() => goto('/app/suggestion')}>
+				<span class="profile-menu__label">건의사항</span>
 				<svg
 					class="profile-menu__chevron"
 					width="20"
@@ -156,12 +168,7 @@
 
 		<div class="delete-modal__actions">
 			<Button variant="secondary" fullWidth onclick={closeDeleteModal}>취소</Button>
-			<Button
-				variant="danger"
-				fullWidth
-				loading={deleteLoading}
-				onclick={handleDeleteAccount}
-			>
+			<Button variant="danger" fullWidth loading={deleteLoading} onclick={handleDeleteAccount}>
 				탈퇴하기
 			</Button>
 		</div>

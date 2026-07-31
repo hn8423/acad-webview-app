@@ -6,6 +6,7 @@ function makeSlot(overrides: Partial<LessonSlot> = {}): LessonSlot {
 	return {
 		id: 1,
 		slot_type: 'REGULAR',
+		instructor_id: null,
 		instructor_name: 'Test',
 		slot_date: '2026-04-01',
 		start_time: '10:00',

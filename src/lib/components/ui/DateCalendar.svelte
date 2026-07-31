@@ -13,9 +13,24 @@
 		onmonthchange?: (year: number, month: number) => void;
 		markedDates?: Set<string>;
 		dateIndicators?: Map<string, DateIndicators>;
+		/** date → 팔레트 인덱스 배열 (0~7, -1 = 중립색). 강사별 일정 dot 표시용 */
+		dateDots?: Map<string, number[]>;
 	}
 
-	let { selectedDate, onselect, onmonthchange, markedDates, dateIndicators }: Props = $props();
+	let { selectedDate, onselect, onmonthchange, markedDates, dateIndicators, dateDots }: Props =
+		$props();
+
+	const MAX_DOTS = 4;
+
+	function visibleDots(indices: number[]): { index: number; isMore: boolean }[] {
+		if (indices.length <= MAX_DOTS) {
+			return indices.map((index) => ({ index, isMore: false }));
+		}
+		return [
+			...indices.slice(0, MAX_DOTS - 1).map((index) => ({ index, isMore: false })),
+			{ index: -1, isMore: true }
+		];
+	}
 
 	const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
 	const today = getTodayString();
@@ -129,8 +144,13 @@
 		if (selectedDate !== prevSelectedDate) {
 			prevSelectedDate = selectedDate;
 			const d = new Date(selectedDate);
-			currentYear = d.getFullYear();
-			currentMonth = d.getMonth() + 1;
+			const year = d.getFullYear();
+			const month = d.getMonth() + 1;
+			if (year !== currentYear || month !== currentMonth) {
+				currentYear = year;
+				currentMonth = month;
+				onmonthchange?.(year, month);
+			}
 		}
 	});
 </script>
@@ -203,17 +223,33 @@
 						{@const indicators = dateIndicators.get(cell.fullDate)!}
 						<span class="date-calendar__indicators">
 							{#if indicators.has_confirmed}
-								<span class="date-calendar__indicator date-calendar__indicator--confirmed"
-								></span>
+								<span class="date-calendar__indicator date-calendar__indicator--confirmed"></span>
 							{/if}
 							{#if indicators.has_pending}
-								<span class="date-calendar__indicator date-calendar__indicator--pending"
-								></span>
+								<span class="date-calendar__indicator date-calendar__indicator--pending"></span>
 							{/if}
 							{#if indicators.has_available}
-								<span class="date-calendar__indicator date-calendar__indicator--open"
-								></span>
+								<span class="date-calendar__indicator date-calendar__indicator--open"></span>
 							{/if}
+						</span>
+					{:else if dateDots?.get(cell.fullDate)?.length}
+						{@const dots = dateDots.get(cell.fullDate) ?? []}
+						<span class="date-calendar__indicators">
+							{#each visibleDots(dots) as dot}
+								<span
+									class="date-calendar__multi-dot"
+									class:date-calendar__multi-dot--more={dot.isMore}
+									class:date-calendar__multi-dot--neutral={dot.index < 0 && !dot.isMore}
+									class:date-calendar__multi-dot--c0={dot.index === 0}
+									class:date-calendar__multi-dot--c1={dot.index === 1}
+									class:date-calendar__multi-dot--c2={dot.index === 2}
+									class:date-calendar__multi-dot--c3={dot.index === 3}
+									class:date-calendar__multi-dot--c4={dot.index === 4}
+									class:date-calendar__multi-dot--c5={dot.index === 5}
+									class:date-calendar__multi-dot--c6={dot.index === 6}
+									class:date-calendar__multi-dot--c7={dot.index === 7}
+								></span>
+							{/each}
 						</span>
 					{:else if markedDates?.has(cell.fullDate)}
 						<span class="date-calendar__dot"></span>
@@ -346,6 +382,10 @@
 				.date-calendar__indicator--open {
 					background-color: var(--color-on-primary);
 				}
+
+				.date-calendar__multi-dot {
+					background-color: var(--color-on-primary);
+				}
 			}
 		}
 
@@ -394,6 +434,26 @@
 				height: 5px;
 				border-radius: 0;
 				background-color: var(--color-danger);
+			}
+		}
+
+		&__multi-dot {
+			width: 5px;
+			height: 5px;
+			border-radius: 50%;
+			flex-shrink: 0;
+			background-color: var(--instructor-color-neutral);
+
+			@for $i from 0 through 7 {
+				&--c#{$i} {
+					background-color: var(--instructor-color-#{$i});
+				}
+			}
+
+			// 표시 한도 초과분을 나타내는 dot (강사 미지정 중립색과 구분)
+			&--more {
+				background-color: transparent;
+				border: 1px solid var(--color-text-muted);
 			}
 		}
 	}

@@ -2,12 +2,125 @@ import { describe, it, expect } from 'vitest';
 import {
 	getPassStatusVariant,
 	getPassStatusLabel,
+	getPassBadgeVariant,
 	getTicketValue,
 	getCapacityWeight,
 	getReservationWeight,
 	isActiveReservationStatus,
-	isCapacityOccupyingStatus
+	isCapacityOccupyingStatus,
+	getPassDisplayName,
+	getEffectivePassStatus,
+	isExpireTransition,
+	isPassUsable
 } from './pass';
+
+describe('isExpireTransition', () => {
+	it('should return true only when status newly becomes EXPIRED', () => {
+		expect(isExpireTransition('ACTIVE', 'EXPIRED')).toBe(true);
+		expect(isExpireTransition('HOLDING', 'EXPIRED')).toBe(true);
+		expect(isExpireTransition('USED_UP', 'EXPIRED')).toBe(true);
+	});
+
+	it('should return false when already EXPIRED or not changing to EXPIRED', () => {
+		expect(isExpireTransition('EXPIRED', 'EXPIRED')).toBe(false);
+		expect(isExpireTransition('ACTIVE', 'HOLDING')).toBe(false);
+		expect(isExpireTransition('EXPIRED', 'ACTIVE')).toBe(false);
+	});
+});
+
+describe('isPassUsable', () => {
+	const TODAY = '2026-07-30';
+
+	function createPass(overrides: Partial<Parameters<typeof isPassUsable>[0]> = {}) {
+		return {
+			status: 'ACTIVE',
+			remaining_lessons: 5,
+			start_date: '2026-07-01',
+			end_date: '2026-08-31',
+			...overrides
+		};
+	}
+
+	it('should return true for active pass within period', () => {
+		expect(isPassUsable(createPass(), TODAY)).toBe(true);
+	});
+
+	it('should return true on the expiry date itself (inclusive)', () => {
+		expect(isPassUsable(createPass({ end_date: '2026-07-30' }), TODAY)).toBe(true);
+	});
+
+	it('should return true on the start date itself (inclusive)', () => {
+		expect(isPassUsable(createPass({ start_date: '2026-07-30' }), TODAY)).toBe(true);
+	});
+
+	it('should return false when end_date has passed', () => {
+		expect(isPassUsable(createPass({ end_date: '2026-07-29' }), TODAY)).toBe(false);
+	});
+
+	it('should return false before the pass starts', () => {
+		expect(isPassUsable(createPass({ start_date: '2026-07-31' }), TODAY)).toBe(false);
+	});
+
+	it('should handle ISO datetime date strings on both sides', () => {
+		expect(isPassUsable(createPass({ end_date: '2026-07-29T00:00:00.000Z' }), TODAY)).toBe(false);
+		expect(isPassUsable(createPass({ end_date: '2026-07-30T00:00:00.000Z' }), TODAY)).toBe(true);
+		expect(isPassUsable(createPass(), '2026-07-30T00:00:00.000Z')).toBe(true);
+		expect(isPassUsable(createPass({ end_date: '2026-07-29' }), '2026-07-30T00:00:00.000Z')).toBe(
+			false
+		);
+	});
+
+	it('should evaluate against a future target date (slot date), not just today', () => {
+		const pass = createPass({ end_date: '2026-08-31' });
+		expect(isPassUsable(pass, '2026-08-31')).toBe(true);
+		expect(isPassUsable(pass, '2026-09-01')).toBe(false);
+	});
+
+	it('should return false for EXPIRED, HOLDING, and USED_UP statuses', () => {
+		expect(isPassUsable(createPass({ status: 'EXPIRED' }), TODAY)).toBe(false);
+		expect(isPassUsable(createPass({ status: 'HOLDING' }), TODAY)).toBe(false);
+		expect(isPassUsable(createPass({ status: 'USED_UP' }), TODAY)).toBe(false);
+	});
+
+	it('should return false when no lessons remain', () => {
+		expect(isPassUsable(createPass({ remaining_lessons: 0 }), TODAY)).toBe(false);
+	});
+
+	it('should return true when period dates are missing', () => {
+		expect(isPassUsable(createPass({ start_date: undefined, end_date: undefined }), TODAY)).toBe(
+			true
+		);
+	});
+});
+
+describe('getEffectivePassStatus', () => {
+	const TODAY = '2026-07-30';
+
+	it('should keep ACTIVE while within period', () => {
+		expect(getEffectivePassStatus({ status: 'ACTIVE', end_date: '2026-07-30' }, TODAY)).toBe(
+			'ACTIVE'
+		);
+	});
+
+	it('should treat date-expired ACTIVE pass as EXPIRED (pre-cron window)', () => {
+		expect(getEffectivePassStatus({ status: 'ACTIVE', end_date: '2026-07-29' }, TODAY)).toBe(
+			'EXPIRED'
+		);
+	});
+
+	it('should keep non-ACTIVE statuses as-is', () => {
+		expect(getEffectivePassStatus({ status: 'HOLDING', end_date: '2026-07-01' }, TODAY)).toBe(
+			'HOLDING'
+		);
+		expect(getEffectivePassStatus({ status: 'USED_UP', end_date: '2026-07-01' }, TODAY)).toBe(
+			'USED_UP'
+		);
+	});
+
+	it('should keep ACTIVE when end_date is missing', () => {
+		expect(getEffectivePassStatus({ status: 'ACTIVE' }, TODAY)).toBe('ACTIVE');
+	});
+});
 
 describe('getCapacityWeight', () => {
 	it('should return 0.5 for ROTATION', () => {
@@ -224,5 +337,46 @@ describe('getPassStatusLabel', () => {
 
 	it('should return raw status for unknown', () => {
 		expect(getPassStatusLabel('UNKNOWN')).toBe('UNKNOWN');
+	});
+});
+
+describe('getPassBadgeVariant', () => {
+	it('should return danger when remaining lessons is at threshold (2)', () => {
+		expect(getPassBadgeVariant('FULL', 2)).toBe('danger');
+	});
+
+	it('should return danger when remaining lessons is 0', () => {
+		expect(getPassBadgeVariant('ROTATION', 0)).toBe('danger');
+	});
+
+	it('should return category variant when remaining lessons is above threshold', () => {
+		expect(getPassBadgeVariant('FULL', 3)).toBe('success');
+		expect(getPassBadgeVariant('ROTATION', 3)).toBe('info');
+	});
+
+	it('should return neutral for unknown category above threshold', () => {
+		expect(getPassBadgeVariant('UNKNOWN', 10)).toBe('neutral');
+	});
+});
+
+describe('getPassDisplayName', () => {
+	it('should return 취미반 for ROTATION', () => {
+		expect(getPassDisplayName('로테이션 4회', 'ROTATION')).toBe('취미반');
+	});
+
+	it('should return 전문반 for FULL', () => {
+		expect(getPassDisplayName('풀 수강권', 'FULL')).toBe('전문반');
+	});
+
+	it('should fall back to pass name for unknown category', () => {
+		expect(getPassDisplayName('풀 수강권', 'UNKNOWN')).toBe('풀 수강권');
+	});
+
+	it('should fall back to pass name when category is missing', () => {
+		expect(getPassDisplayName('풀 수강권', undefined)).toBe('풀 수강권');
+	});
+
+	it('should return empty string when both are missing', () => {
+		expect(getPassDisplayName(undefined, undefined)).toBe('');
 	});
 });

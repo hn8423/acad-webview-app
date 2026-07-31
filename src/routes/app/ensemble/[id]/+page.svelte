@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import { onMount, untrack } from 'svelte';
+	import { onMount } from 'svelte';
 	import { academyStore } from '$lib/stores/academy.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import {
@@ -16,7 +16,7 @@
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
-	import EnsembleChat from '$lib/components/ensemble/EnsembleChat.svelte';
+	import EnsembleComments from '$lib/components/ensemble/EnsembleComments.svelte';
 	import EnsembleApplyModal from '$lib/components/ensemble/EnsembleApplyModal.svelte';
 	import { formatDate } from '$lib/utils/format';
 	import { z } from 'zod';
@@ -57,15 +57,9 @@
 
 	$effect(() => {
 		const token = headerStore.showBackHeader({
-			title: untrack(() => ensemble?.group_name) ?? '합주조'
+			title: ensemble?.group_name ?? '합주조'
 		});
 		return () => headerStore.hideBackHeader(token);
-	});
-
-	$effect(() => {
-		if (ensemble?.group_name) {
-			headerStore.showBackHeader({ title: ensemble.group_name });
-		}
 	});
 
 	onMount(() => {
@@ -401,8 +395,8 @@
 					</section>
 				{/if}
 
-				<!-- Chat -->
-				<EnsembleChat {ensembleId} {isMember} />
+				<!-- Comments -->
+				<EnsembleComments {ensembleId} />
 
 				<!-- Leave/Cancel Confirm Dialog -->
 				{#if confirmAction && (confirmAction.type === 'leave' || confirmAction.type === 'cancel')}

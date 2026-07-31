@@ -53,6 +53,7 @@ export interface SlotReservation {
 export interface LessonSlot {
 	id: number;
 	slot_type: SlotType;
+	instructor_id: number | null;
 	instructor_name: string | null;
 	slot_date: string;
 	start_time: string;
@@ -103,6 +104,28 @@ export interface BulkCreateSlotResponse {
 	created_count: number;
 	skipped_count: number;
 	skipped_dates: string[];
+}
+
+export interface ScheduleSlot {
+	slot_id: number;
+	instructor_id: number | null;
+	instructor_name: string | null;
+	slot_type: SlotType;
+	start_time: string;
+	end_time: string;
+	max_capacity: number | null;
+	current_count: number;
+	status: SlotStatus;
+}
+
+export interface ScheduleInstructor {
+	instructor_id: number;
+	instructor_name: string;
+}
+
+export interface InstructorScheduleData {
+	instructors: ScheduleInstructor[];
+	days: Record<string, ScheduleSlot[]>;
 }
 
 export interface DateIndicators {

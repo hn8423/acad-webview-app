@@ -12,6 +12,7 @@
 	import type { CalendarEvent } from '$lib/types/academy';
 	import type { MyReservation, ReservationStatus } from '$lib/types/reservation';
 	import { isReservationDay } from '$lib/utils/reservation';
+	import { getPassDisplayName } from '$lib/utils/pass';
 	import Spinner from './Spinner.svelte';
 
 	interface Props {
@@ -84,9 +85,7 @@
 
 	function getReservationLabel(reservation: MyReservation): string {
 		if (reservation.slot_type === 'ENSEMBLE') return '합주 수업';
-		return reservation.instructor_name
-			? `${reservation.instructor_name} 선생님`
-			: '강사 미지정';
+		return reservation.instructor_name ? `${reservation.instructor_name} 선생님` : '강사 미지정';
 	}
 
 	function getStatusLabel(status: ReservationStatus): string {
@@ -283,7 +282,6 @@
 	$effect(() => {
 		fetchEvents(currentYear, currentMonth);
 	});
-
 </script>
 
 <div class="section-card">
@@ -375,8 +373,9 @@
 			{#if selectedReservations.length > 0}
 				<div class="reservation-cards">
 					{#each selectedReservations as reservation}
-						{@const canCancel = reservation.status === 'PENDING' || reservation.status === 'CONFIRMED'}
-					{@const isSameDay = canCancel && isReservationDay(reservation.slot_date)}
+						{@const canCancel =
+							reservation.status === 'PENDING' || reservation.status === 'CONFIRMED'}
+						{@const isSameDay = canCancel && isReservationDay(reservation.slot_date)}
 						<div class="reservation-card">
 							<div class="reservation-card__header">
 								<span
@@ -407,7 +406,7 @@
 							</div>
 							{#if reservation.pass_name}
 								<div class="reservation-card__pass">
-									{reservation.pass_name}
+									{getPassDisplayName(reservation.pass_name, reservation.pass_category)}
 								</div>
 							{/if}
 							{#if reservation.cancel_reason}

@@ -7,9 +7,9 @@
 		getFeedbackDetail,
 		deleteFeedback,
 		updateWeeklyFeedback,
-		updateLevelTestFeedback,
-		getCategories
+		updateLevelTestFeedback
 	} from '$lib/api/feedback';
+	import { buildSkillEditState, buildSkillDetailsPayload } from '$lib/utils/feedback-edit';
 	import BackHeader from '$lib/components/layout/BackHeader.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -23,8 +23,7 @@
 	import type {
 		FeedbackDetail,
 		WeeklyFeedbackDetail,
-		LevelTestFeedbackDetail,
-		FeedbackCategory
+		LevelTestFeedbackDetail
 	} from '$lib/types/feedback';
 	import { onMount } from 'svelte';
 
@@ -46,7 +45,6 @@
 
 	// 레벨테스트 수정 모달
 	let showEditLevelTestModal = $state(false);
-	let categories = $state<FeedbackCategory[]>([]);
 	let editScores = $state<Record<number, number>>({});
 	let editComments = $state<Record<number, string>>({});
 	let editGoals = $state('');
@@ -122,28 +120,13 @@
 		}
 	}
 
-	async function openEditLevelTest() {
+	function openEditLevelTest() {
 		if (!levelTest) return;
-		const academyId = academyStore.academyId;
-		if (!academyId) return;
 
-		try {
-			const catRes = await getCategories(academyId, academyStore.instructorId ?? undefined);
-			if (catRes.status && catRes.data) {
-				categories = [...catRes.data].sort((a, b) => a.sort_order - b.sort_order);
-			}
-		} catch {
-			// handled by client.ts
-		}
-
-		const newScores: Record<number, number> = {};
-		const newComments: Record<number, string> = {};
-		for (const detail of levelTest.skill_details) {
-			newScores[detail.category_id] = detail.score;
-			newComments[detail.category_id] = detail.comment ?? '';
-		}
-		editScores = newScores;
-		editComments = newComments;
+		// 카테고리 재조회 없이 피드백에 저장된 skill_details만 편집 (조회 실패/필터 불일치로 인한 데이터 유실 방지)
+		const { scores, comments } = buildSkillEditState(levelTest.skill_details);
+		editScores = scores;
+		editComments = comments;
 		editGoals = levelTest.instructor_goals ?? '';
 		editMessage = levelTest.instructor_message ?? '';
 		editLevelTestVideoUrl = levelTest.video_url ?? '';
@@ -153,13 +136,13 @@
 
 	async function handleEditLevelTest() {
 		const academyId = academyStore.academyId;
-		if (!academyId) return;
+		if (!academyId || !levelTest) return;
 
-		const skillDetails = categories.map((cat) => ({
-			category_id: cat.id,
-			score: editScores[cat.id] ?? 3,
-			comment: editComments[cat.id]?.trim() || undefined
-		}));
+		const skillDetails = buildSkillDetailsPayload(
+			levelTest.skill_details,
+			editScores,
+			editComments
+		);
 
 		saving = true;
 		try {
@@ -425,15 +408,15 @@
 			handleEditLevelTest();
 		}}
 	>
-		{#if categories.length > 0}
+		{#if levelTest && levelTest.skill_details.length > 0}
 			<div class="score-list">
-				{#each categories as cat (cat.id)}
+				{#each levelTest.skill_details as detail (detail.category_id)}
 					<ScoreInput
-						categoryName={cat.category_name}
-						score={editScores[cat.id] ?? 3}
-						comment={editComments[cat.id] ?? ''}
-						onscorechange={(s) => (editScores = { ...editScores, [cat.id]: s })}
-						oncommentchange={(c) => (editComments = { ...editComments, [cat.id]: c })}
+						categoryName={detail.category_name ?? ''}
+						score={editScores[detail.category_id] ?? detail.score}
+						comment={editComments[detail.category_id] ?? ''}
+						onscorechange={(s) => (editScores = { ...editScores, [detail.category_id]: s })}
+						oncommentchange={(c) => (editComments = { ...editComments, [detail.category_id]: c })}
 					/>
 				{/each}
 			</div>
