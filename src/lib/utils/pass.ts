@@ -74,12 +74,22 @@ export function isPassUsable(
 	return !pass.end_date || pass.end_date.slice(0, 10) >= date;
 }
 
+// 관리자 수강권 수정에서 만료 '전환' 판정 — EXPIRED로 새로 바뀔 때만 true
+// (백엔드가 이 전환 시 미처리 예약을 자동 취소하므로 확인 모달 노출 기준으로 사용)
+export function isExpireTransition(oldStatus: string, newStatus: string): boolean {
+	return newStatus === 'EXPIRED' && oldStatus !== 'EXPIRED';
+}
+
 // 표시용 상태 — status가 ACTIVE라도 기간이 지났으면 만료로 취급 (크론 실행 전 시간창 방어)
 export function getEffectivePassStatus(
 	pass: { status: string; end_date?: string },
 	today: string
 ): string {
-	if (pass.status === 'ACTIVE' && pass.end_date && pass.end_date.slice(0, 10) < today.slice(0, 10)) {
+	if (
+		pass.status === 'ACTIVE' &&
+		pass.end_date &&
+		pass.end_date.slice(0, 10) < today.slice(0, 10)
+	) {
 		return 'EXPIRED';
 	}
 	return pass.status;
@@ -127,7 +137,5 @@ export function getPassCategoryVariant(category: string): BadgeVariant {
 export const LOW_REMAINING_THRESHOLD = 2;
 
 export function getPassBadgeVariant(category: string, remainingLessons: number): BadgeVariant {
-	return remainingLessons <= LOW_REMAINING_THRESHOLD
-		? 'danger'
-		: getPassCategoryVariant(category);
+	return remainingLessons <= LOW_REMAINING_THRESHOLD ? 'danger' : getPassCategoryVariant(category);
 }

@@ -3,11 +3,7 @@ import { getTodayString, toLocalDateString } from '$lib/utils/format';
 
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'] as const;
 
-export function countSlotDates(
-	startDate: string,
-	endDate: string,
-	daysOfWeek: number[]
-): number {
+export function countSlotDates(startDate: string, endDate: string, daysOfWeek: number[]): number {
 	if (daysOfWeek.length === 0) return 0;
 	const start = new Date(startDate);
 	const end = new Date(endDate);
@@ -68,9 +64,7 @@ export function buildDateIndicators(
 			const hasConfirmedOrCompleted = slot.reservations.some(
 				(rv) => rv.status === 'CONFIRMED' || rv.status === 'COMPLETED'
 			);
-			const hasPendingReservation = slot.reservations.some(
-				(rv) => rv.status === 'PENDING'
-			);
+			const hasPendingReservation = slot.reservations.some((rv) => rv.status === 'PENDING');
 			const hasActiveReservation = hasConfirmedOrCompleted || hasPendingReservation;
 
 			if (hasConfirmedOrCompleted) hasConfirmed = true;

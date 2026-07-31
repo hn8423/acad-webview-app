@@ -119,9 +119,15 @@
 	function getTypeLabel(type: NotificationType): string {
 		switch (type) {
 			case 'RESERVATION':
+			case 'RESERVATION_REQUEST':
+			case 'RESERVATION_CANCELLED':
+			case 'WEEKLY_RESERVATION_REMINDER':
 				return '예약';
 			case 'FEEDBACK':
 				return '피드백';
+			case 'PASS_RENEWAL':
+			case 'PASS_EXPIRED':
+				return '수강권';
 			default:
 				return '일반';
 		}
@@ -130,6 +136,9 @@
 	function getTypeBadgeVariant(type: NotificationType): 'success' | 'warning' | 'neutral' {
 		switch (type) {
 			case 'RESERVATION':
+			case 'RESERVATION_REQUEST':
+			case 'RESERVATION_CANCELLED':
+			case 'WEEKLY_RESERVATION_REMINDER':
 				return 'warning';
 			case 'FEEDBACK':
 				return 'success';
@@ -181,7 +190,9 @@
 							</span>
 						</div>
 						<h3 class="notification-row__title">{notification.title}</h3>
-						<div class="notification-row__body">{@html processNoticeContent(notification.content)}</div>
+						<div class="notification-row__body">
+							{@html processNoticeContent(notification.content)}
+						</div>
 					</button>
 					{#if i < notifications.length - 1}
 						<div class="notification-list__divider"></div>
@@ -208,15 +219,15 @@
 
 {#if selectedNotification}
 	<Modal isOpen={isModalOpen} title={selectedNotification.title} onclose={closeModal}>
-		<div class="notification-detail__content">{@html processNoticeContent(selectedNotification.content)}</div>
+		<div class="notification-detail__content">
+			{@html processNoticeContent(selectedNotification.content)}
+		</div>
 		<p class="notification-detail__time">
 			{getRelativeTime(selectedNotification.created_at)}
 		</p>
 		{#if selectedNotification.reference_id && selectedNotification.reference_type}
 			<div class="notification-detail__action">
-				<Button variant="primary" size="md" onclick={handleDetailNavigation}>
-					자세히 보기
-				</Button>
+				<Button variant="primary" size="md" onclick={handleDetailNavigation}>자세히 보기</Button>
 			</div>
 		{/if}
 	</Modal>

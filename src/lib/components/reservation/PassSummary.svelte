@@ -61,7 +61,9 @@
 				<span class="pass-summary-card__name">
 					{getPassDisplayName(pass.pass_name, pass.pass_category)}
 					{#if getTicketValue(pass.ticket_value) > 1}
-						<span class="pass-summary-card__ticket-badge">{getTicketValue(pass.ticket_value)}회 차감</span>
+						<span class="pass-summary-card__ticket-badge"
+							>{getTicketValue(pass.ticket_value)}회 차감</span
+						>
 					{/if}
 				</span>
 				<Badge variant={getPassStatusVariant(effectiveStatus)}>
@@ -71,7 +73,7 @@
 			<div class="pass-summary-card__instructor">
 				{pass.instructor_name} 선생님
 			</div>
-				<div class="pass-summary-card__date">
+			<div class="pass-summary-card__date">
 				{formatDate(pass.start_date)} ~ {formatDate(pass.end_date)}
 			</div>
 		</div>
@@ -225,13 +227,11 @@
 			border-radius: var(--radius-full);
 		}
 
-
 		&__instructor {
 			font-size: var(--font-size-xs);
 			color: var(--color-text-secondary);
 			margin-bottom: var(--space-sm);
 		}
-
 
 		&__date {
 			font-size: var(--font-size-xs);

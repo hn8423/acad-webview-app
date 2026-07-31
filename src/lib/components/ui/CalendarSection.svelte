@@ -85,9 +85,7 @@
 
 	function getReservationLabel(reservation: MyReservation): string {
 		if (reservation.slot_type === 'ENSEMBLE') return '합주 수업';
-		return reservation.instructor_name
-			? `${reservation.instructor_name} 선생님`
-			: '강사 미지정';
+		return reservation.instructor_name ? `${reservation.instructor_name} 선생님` : '강사 미지정';
 	}
 
 	function getStatusLabel(status: ReservationStatus): string {
@@ -284,7 +282,6 @@
 	$effect(() => {
 		fetchEvents(currentYear, currentMonth);
 	});
-
 </script>
 
 <div class="section-card">
@@ -376,8 +373,9 @@
 			{#if selectedReservations.length > 0}
 				<div class="reservation-cards">
 					{#each selectedReservations as reservation}
-						{@const canCancel = reservation.status === 'PENDING' || reservation.status === 'CONFIRMED'}
-					{@const isSameDay = canCancel && isReservationDay(reservation.slot_date)}
+						{@const canCancel =
+							reservation.status === 'PENDING' || reservation.status === 'CONFIRMED'}
+						{@const isSameDay = canCancel && isReservationDay(reservation.slot_date)}
 						<div class="reservation-card">
 							<div class="reservation-card__header">
 								<span

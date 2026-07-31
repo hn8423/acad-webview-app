@@ -70,7 +70,11 @@
 			<div class="profile-modal__header">
 				<div class="profile-modal__avatar">
 					{#if detail.profile_img}
-						<img src={detail.profile_img} alt={detail.user_name} class="profile-modal__avatar-img" />
+						<img
+							src={detail.profile_img}
+							alt={detail.user_name}
+							class="profile-modal__avatar-img"
+						/>
 					{:else}
 						<svg
 							width="28"

@@ -10,8 +10,23 @@ import {
 	isCapacityOccupyingStatus,
 	getPassDisplayName,
 	getEffectivePassStatus,
+	isExpireTransition,
 	isPassUsable
 } from './pass';
+
+describe('isExpireTransition', () => {
+	it('should return true only when status newly becomes EXPIRED', () => {
+		expect(isExpireTransition('ACTIVE', 'EXPIRED')).toBe(true);
+		expect(isExpireTransition('HOLDING', 'EXPIRED')).toBe(true);
+		expect(isExpireTransition('USED_UP', 'EXPIRED')).toBe(true);
+	});
+
+	it('should return false when already EXPIRED or not changing to EXPIRED', () => {
+		expect(isExpireTransition('EXPIRED', 'EXPIRED')).toBe(false);
+		expect(isExpireTransition('ACTIVE', 'HOLDING')).toBe(false);
+		expect(isExpireTransition('EXPIRED', 'ACTIVE')).toBe(false);
+	});
+});
 
 describe('isPassUsable', () => {
 	const TODAY = '2026-07-30';

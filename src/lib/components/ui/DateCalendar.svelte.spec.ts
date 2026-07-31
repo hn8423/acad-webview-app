@@ -71,9 +71,7 @@ describe('DateCalendar', () => {
 		});
 
 		await vi.waitFor(() => {
-			expect(
-				baseElement.querySelectorAll('.date-calendar__indicator--confirmed').length
-			).toBe(1);
+			expect(baseElement.querySelectorAll('.date-calendar__indicator--confirmed').length).toBe(1);
 			expect(baseElement.querySelectorAll('.date-calendar__indicator--pending').length).toBe(1);
 			expect(baseElement.querySelectorAll('.date-calendar__indicator--open').length).toBe(0);
 		});

@@ -1,11 +1,11 @@
 {
-  "version": 2,
-  "buildCommand": "yarn build",
-  "outputDirectory": "build",
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/200.html"
-    }
-  ]
+	"version": 2,
+	"buildCommand": "yarn build",
+	"outputDirectory": "build",
+	"rewrites": [
+		{
+			"source": "/(.*)",
+			"destination": "/200.html"
+		}
+	]
 }

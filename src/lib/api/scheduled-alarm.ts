@@ -8,19 +8,12 @@ import type {
 
 const BASE = (academyId: number) => `/academic/academies/${academyId}/scheduled-alarms`;
 
-export function getScheduledAlarms(
-	academyId: number,
-	page = 1,
-	limit = 20,
-	isActive?: boolean
-) {
+export function getScheduledAlarms(academyId: number, page = 1, limit = 20, isActive?: boolean) {
 	const params = new URLSearchParams();
 	params.set('page', String(page));
 	params.set('limit', String(limit));
 	if (isActive !== undefined) params.set('is_active', isActive ? '1' : '0');
-	return get<ApiResponse<PaginatedList<ScheduledAlarm>>>(
-		`${BASE(academyId)}?${params.toString()}`
-	);
+	return get<ApiResponse<PaginatedList<ScheduledAlarm>>>(`${BASE(academyId)}?${params.toString()}`);
 }
 
 export function getScheduledAlarmDetail(academyId: number, alarmId: number) {

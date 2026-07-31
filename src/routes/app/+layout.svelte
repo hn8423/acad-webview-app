@@ -46,10 +46,7 @@
 
 <div class="app-layout">
 	{#if headerStore.backHeader}
-		<BackHeader
-			title={headerStore.backHeader.title}
-			onback={headerStore.backHeader.onback}
-		/>
+		<BackHeader title={headerStore.backHeader.title} onback={headerStore.backHeader.onback} />
 	{:else}
 		<Header
 			onMenuClick={handleMenuClick}

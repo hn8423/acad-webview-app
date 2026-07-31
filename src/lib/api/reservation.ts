@@ -45,9 +45,12 @@ export function cancelReservation(academyId: number, reservationId: number) {
 }
 
 export function cancelReservationAsNoShow(academyId: number, reservationId: number) {
-	return patch<ApiResponse<void>>(`/academic/academies/${academyId}/reservations/${reservationId}`, {
-		status: 'NO_SHOW'
-	});
+	return patch<ApiResponse<void>>(
+		`/academic/academies/${academyId}/reservations/${reservationId}`,
+		{
+			status: 'NO_SHOW'
+		}
+	);
 }
 
 // Admin: Lesson Slot Monthly Summary

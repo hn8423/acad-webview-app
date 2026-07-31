@@ -42,7 +42,6 @@
 		{ label: '만료', value: 'EXPIRED' }
 	];
 
-
 	onMount(() => fetchMembers());
 
 	async function fetchMembers(append = false) {

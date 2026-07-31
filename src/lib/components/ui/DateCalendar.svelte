@@ -223,16 +223,13 @@
 						{@const indicators = dateIndicators.get(cell.fullDate)!}
 						<span class="date-calendar__indicators">
 							{#if indicators.has_confirmed}
-								<span class="date-calendar__indicator date-calendar__indicator--confirmed"
-								></span>
+								<span class="date-calendar__indicator date-calendar__indicator--confirmed"></span>
 							{/if}
 							{#if indicators.has_pending}
-								<span class="date-calendar__indicator date-calendar__indicator--pending"
-								></span>
+								<span class="date-calendar__indicator date-calendar__indicator--pending"></span>
 							{/if}
 							{#if indicators.has_available}
-								<span class="date-calendar__indicator date-calendar__indicator--open"
-								></span>
+								<span class="date-calendar__indicator date-calendar__indicator--open"></span>
 							{/if}
 						</span>
 					{:else if dateDots?.get(cell.fullDate)?.length}

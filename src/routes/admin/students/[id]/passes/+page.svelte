@@ -19,7 +19,12 @@
 	import Modal from '$lib/components/ui/Modal.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import { formatDate } from '$lib/utils/format';
-	import { getPassStatusVariant, getPassStatusLabel, getTicketValue } from '$lib/utils/pass';
+	import {
+		getPassStatusVariant,
+		getPassStatusLabel,
+		getTicketValue,
+		isExpireTransition
+	} from '$lib/utils/pass';
 	import type { MemberPass, PassType, Instructor } from '$lib/types/member';
 	import { onMount } from 'svelte';
 
@@ -38,6 +43,9 @@
 	let showDeleteModal = $state(false);
 	let deleteTarget = $state<MemberPass | null>(null);
 	let deleting = $state(false);
+
+	// Expire confirm modal (EXPIRED 전환 시 예약 자동 취소 경고)
+	let showExpireConfirmModal = $state(false);
 
 	// Create form fields
 	let selectedPassTypeId = $state('');
@@ -166,7 +174,7 @@
 		try {
 			const res = await deleteMemberPass(academyId, memberId, deleteTarget.id);
 			if (res.status) {
-				toastStore.success('수강권이 삭제되었습니다.');
+				toastStore.success(res.message || '수강권이 삭제되었습니다.');
 				showDeleteModal = false;
 				deleteTarget = null;
 				await fetchPasses();
@@ -177,6 +185,34 @@
 			// handled by client.ts
 		} finally {
 			deleting = false;
+		}
+	}
+
+	async function submitEdit() {
+		if (submitting) return;
+		const academyId = academyStore.academyId;
+		if (!academyId || !editTarget) return;
+
+		submitting = true;
+		try {
+			const res = await updateMemberPass(academyId, memberId, editTarget.id, {
+				start_date: startDate,
+				end_date: endDate,
+				total_lessons: Number(totalLessons),
+				remaining_lessons: Number(remainingLessons),
+				status: selectedStatus
+			});
+			if (res.status) {
+				toastStore.success(res.message || '수강권이 수정되었습니다.');
+				showFormModal = false;
+				await fetchPasses();
+			} else {
+				toastStore.error(res.message || '수강권 수정에 실패했습니다.');
+			}
+		} catch (err) {
+			error = err instanceof Error ? err.message : '수강권 수정에 실패했습니다.';
+		} finally {
+			submitting = false;
 		}
 	}
 
@@ -191,25 +227,13 @@
 				return;
 			}
 
-			submitting = true;
-			try {
-				const res = await updateMemberPass(academyId, memberId, editTarget.id, {
-					start_date: startDate,
-					end_date: endDate,
-					total_lessons: Number(totalLessons),
-					remaining_lessons: Number(remainingLessons),
-					status: selectedStatus
-				});
-				if (res.status) {
-					toastStore.success('수강권이 수정되었습니다.');
-					showFormModal = false;
-					await fetchPasses();
-				}
-			} catch (err) {
-				error = err instanceof Error ? err.message : '수강권 수정에 실패했습니다.';
-			} finally {
-				submitting = false;
+			// 만료 전환은 미처리 예약 자동 취소를 동반하므로 확인 후 진행
+			if (isExpireTransition(editTarget.status, selectedStatus)) {
+				showExpireConfirmModal = true;
+				return;
 			}
+
+			await submitEdit();
 		} else {
 			if (!selectedPassTypeId || !selectedInstructorId || !startDate || !endDate) {
 				error = '모든 항목을 입력해주세요.';
@@ -391,10 +415,40 @@
 </Modal>
 
 <Modal isOpen={showDeleteModal} title="수강권 삭제" onclose={() => (showDeleteModal = false)}>
-	<p class="modal-message">"{deleteTarget?.pass_name}" 수강권을 삭제하시겠습니까?</p>
+	<p class="modal-message">
+		"{deleteTarget?.pass_name}" 수강권을 삭제하시겠습니까? 미처리 예약이 있는 경우 모두 자동
+		취소됩니다.
+	</p>
 	<div class="modal-actions">
 		<Button variant="danger" fullWidth onclick={handleDelete} loading={deleting}>삭제</Button>
 		<Button variant="secondary" fullWidth onclick={() => (showDeleteModal = false)}>취소</Button>
+	</div>
+</Modal>
+
+<Modal
+	isOpen={showExpireConfirmModal}
+	title="수강권 만료 처리"
+	onclose={() => (showExpireConfirmModal = false)}
+>
+	<p class="modal-message">
+		"{editTarget?.pass_name}" 수강권을 만료 처리하시겠습니까? 이 수강권의 미처리 예약이 모두 자동
+		취소됩니다.
+	</p>
+	<div class="modal-actions">
+		<Button
+			variant="danger"
+			fullWidth
+			loading={submitting}
+			onclick={async () => {
+				await submitEdit();
+				showExpireConfirmModal = false;
+			}}
+		>
+			만료 처리
+		</Button>
+		<Button variant="secondary" fullWidth onclick={() => (showExpireConfirmModal = false)}>
+			취소
+		</Button>
 	</div>
 </Modal>
 
