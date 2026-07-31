@@ -1,11 +1,14 @@
 <script lang="ts">
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
-	import { formatDate } from '$lib/utils/format';
+	import { formatDate, getTodayString } from '$lib/utils/format';
 	import {
 		getPassStatusVariant,
 		getPassStatusLabel,
-		getTicketValue
+		getTicketValue,
+		getPassDisplayName,
+		getEffectivePassStatus,
+		isPassUsable
 	} from '$lib/utils/pass';
 	import type { MemberPass } from '$lib/types/member';
 
@@ -19,14 +22,9 @@
 	let expanded = $state(true);
 	let showInactive = $state(false);
 
-	let activePasses = $derived(
-		passes.filter((p) => p.status === 'ACTIVE' && p.remaining_lessons > 0)
-	);
-
-	let inactivePasses = $derived(
-		passes.filter((p) => p.status !== 'ACTIVE' || p.remaining_lessons <= 0)
-	);
-
+	let today = $derived(getTodayString());
+	let activePasses = $derived(passes.filter((p) => isPassUsable(p, today)));
+	let inactivePasses = $derived(passes.filter((p) => !isPassUsable(p, today)));
 </script>
 
 <section class="pass-summary">
@@ -57,22 +55,25 @@
 	</button>
 
 	{#snippet passCard(pass: MemberPass)}
+		{@const effectiveStatus = getEffectivePassStatus(pass, today)}
 		<div class="pass-summary-card">
 			<div class="pass-summary-card__header">
 				<span class="pass-summary-card__name">
-					{pass.pass_name}
+					{getPassDisplayName(pass.pass_name, pass.pass_category)}
 					{#if getTicketValue(pass.ticket_value) > 1}
-						<span class="pass-summary-card__ticket-badge">{getTicketValue(pass.ticket_value)}회 차감</span>
+						<span class="pass-summary-card__ticket-badge"
+							>{getTicketValue(pass.ticket_value)}회 차감</span
+						>
 					{/if}
 				</span>
-				<Badge variant={getPassStatusVariant(pass.status)}>
-					{getPassStatusLabel(pass.status)}
+				<Badge variant={getPassStatusVariant(effectiveStatus)}>
+					{getPassStatusLabel(effectiveStatus)}
 				</Badge>
 			</div>
 			<div class="pass-summary-card__instructor">
 				{pass.instructor_name} 선생님
 			</div>
-				<div class="pass-summary-card__date">
+			<div class="pass-summary-card__date">
 				{formatDate(pass.start_date)} ~ {formatDate(pass.end_date)}
 			</div>
 		</div>
@@ -226,13 +227,11 @@
 			border-radius: var(--radius-full);
 		}
 
-
 		&__instructor {
 			font-size: var(--font-size-xs);
 			color: var(--color-text-secondary);
 			margin-bottom: var(--space-sm);
 		}
-
 
 		&__date {
 			font-size: var(--font-size-xs);

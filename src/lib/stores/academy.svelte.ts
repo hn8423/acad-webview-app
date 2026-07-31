@@ -1,5 +1,6 @@
 import * as academyApi from '$lib/api/academy';
-import { getMyMembership, getInstructors } from '$lib/api/member';
+import { getMyMembership } from '$lib/api/member';
+import { findOwnInstructorId, clearOwnInstructorCache } from '$lib/utils/own-instructor';
 import { getJson, setJson, removeItem } from '$lib/utils/storage';
 import type { Academy, AppConfig, NavItem } from '$lib/types/academy';
 import type { MemberRole } from '$lib/types/auth';
@@ -86,19 +87,10 @@ export function getAcademyStore() {
 
 		if (role === 'INSTRUCTOR' && currentMemberId) {
 			try {
-				const instructorsRes = await getInstructors(academyId);
-				if (instructorsRes.status && instructorsRes.data) {
-					const list = Array.isArray(instructorsRes.data)
-						? instructorsRes.data
-						: (instructorsRes.data.instructors ?? []);
-					const self = list.find((inst) => inst.member_id === currentMemberId);
-					if (self) {
-						const resolvedId = self.instructor_id ?? self.id ?? null;
-						currentInstructorId = resolvedId;
-						if (resolvedId !== null) {
-							setJson(INSTRUCTOR_ID_STORAGE_KEY, resolvedId);
-						}
-					}
+				const resolvedId = await findOwnInstructorId(academyId, currentMemberId);
+				if (resolvedId !== null) {
+					currentInstructorId = resolvedId;
+					setJson(INSTRUCTOR_ID_STORAGE_KEY, resolvedId);
 				}
 			} catch {
 				// instructor_id 조회 실패 시 전체 학생 표시 (graceful degradation)
@@ -151,6 +143,7 @@ export function getAcademyStore() {
 		memberRole = null;
 		currentMemberId = null;
 		currentInstructorId = null;
+		clearOwnInstructorCache();
 		removeItem(ACADEMY_STORAGE_KEY);
 		removeItem(APP_CONFIG_STORAGE_KEY);
 		removeItem(MEMBER_ROLE_STORAGE_KEY);

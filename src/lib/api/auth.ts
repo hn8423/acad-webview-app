@@ -8,6 +8,7 @@ import type {
 	SignupResponse,
 	SendVerificationRequest,
 	VerifyCodeRequest,
+	ChangePhoneRequest,
 	UserAcademy
 } from '$lib/types/auth';
 
@@ -50,6 +51,10 @@ export function updateMe(
 	}
 ) {
 	return patch<ApiResponse<User>>('/academic/auth/me', data);
+}
+
+export function updateMyPhone(data: ChangePhoneRequest) {
+	return patch<ApiResponse<User>>('/academic/auth/me/phone', data);
 }
 
 export function deleteMe(password: string) {

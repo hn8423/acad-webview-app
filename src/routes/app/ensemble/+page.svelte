@@ -7,11 +7,7 @@
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import EnsembleCreateForm from '$lib/components/ensemble/EnsembleCreateForm.svelte';
 	import { formatDate } from '$lib/utils/format';
-	import type {
-		EnsembleListItem,
-		EnsembleMyStatus,
-		MyEnsembleListItem
-	} from '$lib/types/ensemble';
+	import type { EnsembleListItem, EnsembleMyStatus, MyEnsembleListItem } from '$lib/types/ensemble';
 	import { onMount } from 'svelte';
 
 	let activeTab = $state<'recruiting' | 'my'>('recruiting');
@@ -35,7 +31,7 @@
 		loading = true;
 		try {
 			if (activeTab === 'recruiting') {
-				const res = await getEnsembles(academyId, 'RECRUITING', currentPage, LIMIT);
+				const res = await getEnsembles(academyId, undefined, currentPage, LIMIT);
 				if (res.status && res.data) {
 					recruitingList = res.data.list;
 					totalPages = Math.ceil(res.data.meta.total / LIMIT);
@@ -154,9 +150,7 @@
 		{:else if isEmpty}
 			<div class="ensemble-page__empty">
 				<p>
-					{activeTab === 'recruiting'
-						? '모집중인 합주조가 없습니다.'
-						: '참여중인 합주조가 없습니다.'}
+					{activeTab === 'recruiting' ? '합주조가 없습니다.' : '참여중인 합주조가 없습니다.'}
 				</p>
 				{#if activeTab === 'recruiting'}
 					<button class="ensemble-page__empty-action" onclick={() => (showCreateSheet = true)}>

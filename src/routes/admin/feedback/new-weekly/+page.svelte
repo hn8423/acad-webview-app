@@ -375,7 +375,8 @@
 							<Button
 								variant="secondary"
 								fullWidth
-								onclick={() => goto(completingReservation ? '/admin/reservations' : '/admin/feedback')}
+								onclick={() =>
+									goto(completingReservation ? '/admin/reservations' : '/admin/feedback')}
 								>취소</Button
 							>
 						</div>

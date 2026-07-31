@@ -130,8 +130,8 @@
 		}
 
 		&__item--active &__icon--img {
-			filter: brightness(0) saturate(100%) invert(42%) sepia(93%) saturate(4226%)
-				hue-rotate(240deg) brightness(100%) contrast(96%);
+			filter: brightness(0) saturate(100%) invert(42%) sepia(93%) saturate(4226%) hue-rotate(240deg)
+				brightness(100%) contrast(96%);
 		}
 
 		&__label {

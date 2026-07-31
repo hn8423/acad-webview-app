@@ -160,8 +160,7 @@
 <style lang="scss">
 	.detail-page {
 		&__content {
-			padding: var(--space-md) var(--space-md)
-				calc(var(--bottom-nav-height) + var(--space-lg));
+			padding: var(--space-md) var(--space-md) calc(var(--bottom-nav-height) + var(--space-lg));
 		}
 
 		&__loading {
@@ -222,7 +221,6 @@
 			line-height: var(--line-height-base);
 			white-space: pre-wrap;
 		}
-
 	}
 
 	.skill-list {

@@ -18,7 +18,12 @@
 	import PassSummary from '$lib/components/reservation/PassSummary.svelte';
 	import ReservationCalendar from '$lib/components/reservation/ReservationCalendar.svelte';
 	import { formatDate, formatTimeRange, getDayOfWeek, getTodayString } from '$lib/utils/format';
-	import { getTicketValue, getReservationWeight } from '$lib/utils/pass';
+	import {
+		getTicketValue,
+		getReservationWeight,
+		getPassDisplayName,
+		isPassUsable
+	} from '$lib/utils/pass';
 	import { isReservationDay } from '$lib/utils/reservation';
 	import type {
 		AvailableSlot,
@@ -62,9 +67,13 @@
 		selectedReservation ? isReservationDay(selectedReservation.slot_date) : false
 	);
 
-	let activePasses = $derived(
-		memberPasses.filter((p) => p.status === 'ACTIVE' && p.remaining_lessons > 0)
-	);
+	// 오늘 기준 이용 가능 수강권 (월 인디케이터의 강사 필터용)
+	let activePasses = $derived(memberPasses.filter((p) => isPassUsable(p, getTodayString())));
+
+	// 슬롯 날짜 기준 이용 가능 수강권 — 미래 슬롯 예약 시 해당 날짜에 유효한 수강권만 노출
+	function getUsablePassesForDate(date: string): MemberPass[] {
+		return memberPasses.filter((p) => isPassUsable(p, date));
+	}
 
 	const ACTIVE_STATUSES: ReadonlySet<ReservationStatus> = new Set(['PENDING', 'CONFIRMED']);
 
@@ -85,11 +94,12 @@
 	}
 
 	function getPassesForSlot(slot: AvailableSlot | null): MemberPass[] {
-		if (!slot) return activePasses;
-		if (slot.slot_type === 'ENSEMBLE') return activePasses;
-		if (!slot.instructor_name) return activePasses;
-		const matched = activePasses.filter((p) => p.instructor_name === slot.instructor_name);
-		return matched.length > 0 ? matched : activePasses;
+		const usable = getUsablePassesForDate(slot?.slot_date ?? selectedDate);
+		if (!slot) return usable;
+		if (slot.slot_type === 'ENSEMBLE') return usable;
+		if (!slot.instructor_name) return usable;
+		const matched = usable.filter((p) => p.instructor_name === slot.instructor_name);
+		return matched.length > 0 ? matched : usable;
 	}
 
 	let filteredPasses = $derived(getPassesForSlot(selectedSlot));
@@ -107,7 +117,7 @@
 	let exceedsCapacity = $derived(
 		selectedSlot && selectedPass
 			? selectedSlot.slot_type !== 'ENSEMBLE' &&
-				selectedSlot.remaining_capacity < selectedPassWeight
+					selectedSlot.remaining_capacity < selectedPassWeight
 			: false
 	);
 
@@ -182,9 +192,7 @@
 
 		const instructorIds = [
 			...new Set(
-				activePasses
-					.map((p) => p.instructor_id)
-					.filter((id): id is number => id !== undefined)
+				activePasses.map((p) => p.instructor_id).filter((id): id is number => id !== undefined)
 			)
 		];
 
@@ -303,9 +311,7 @@
 				? await cancelReservationAsNoShow(academyId, selectedReservation.reservation_id)
 				: await cancelReservation(academyId, selectedReservation.reservation_id);
 			if (res.status) {
-				toastStore.success(
-					noShow ? '당일 취소로 노쇼 처리되었습니다.' : '예약이 취소되었습니다.'
-				);
+				toastStore.success(noShow ? '당일 취소로 노쇼 처리되었습니다.' : '예약이 취소되었습니다.');
 				cancelSheetOpen = false;
 				selectedReservation = null;
 				loadMyReservations();
@@ -353,7 +359,10 @@
 		}
 	}
 
-	function getInstructorLabel(slot: { slot_type: SlotType; instructor_name: string | null }): string {
+	function getInstructorLabel(slot: {
+		slot_type: SlotType;
+		instructor_name: string | null;
+	}): string {
 		if (slot.slot_type === 'ENSEMBLE') return '합주 수업';
 		return slot.instructor_name ? `${slot.instructor_name} 선생님` : '강사 미지정';
 	}
@@ -472,9 +481,11 @@
 									</span>
 									{#if reservation.pass_name}
 										<span class="reservation-card__pass">
-											{reservation.pass_name}
+											{getPassDisplayName(reservation.pass_name, reservation.pass_category)}
 											{#if getTicketValue(reservation.ticket_value) > 1}
-												<span class="reservation-card__ticket">({getTicketValue(reservation.ticket_value)}회 차감)</span>
+												<span class="reservation-card__ticket"
+													>({getTicketValue(reservation.ticket_value)}회 차감)</span
+												>
 											{/if}
 										</span>
 									{/if}
@@ -519,7 +530,9 @@
 					</span>
 				</div>
 				<div class="booking-sheet__row">
-					<span class="booking-sheet__label">{selectedSlot.slot_type === 'ENSEMBLE' ? '유형' : '강사'}</span>
+					<span class="booking-sheet__label"
+						>{selectedSlot.slot_type === 'ENSEMBLE' ? '유형' : '강사'}</span
+					>
 					<span class="booking-sheet__value">{getInstructorLabel(selectedSlot)}</span>
 				</div>
 			</div>
@@ -533,10 +546,21 @@
 					aria-label="사용할 수강권 선택"
 				>
 					{#each filteredPasses as pass}
-						{@const passWeight = getReservationWeight(pass.pass_category, pass.ticket_value, selectedSlot?.slot_type)}
-						{@const fits = !selectedSlot || selectedSlot.slot_type === 'ENSEMBLE' || selectedSlot.remaining_capacity >= passWeight}
+						{@const passWeight = getReservationWeight(
+							pass.pass_category,
+							pass.ticket_value,
+							selectedSlot?.slot_type
+						)}
+						{@const fits =
+							!selectedSlot ||
+							selectedSlot.slot_type === 'ENSEMBLE' ||
+							selectedSlot.remaining_capacity >= passWeight}
 						<option value={pass.id} disabled={!fits}>
-							{pass.pass_name} (잔여 {pass.remaining_lessons}회){getTicketValue(pass.ticket_value) > 1 ? ` [${getTicketValue(pass.ticket_value)}회 차감]` : ''}{!fits ? ' (마감)' : ''}
+							{getPassDisplayName(pass.pass_name, pass.pass_category)} (잔여 {pass.remaining_lessons}회){getTicketValue(
+								pass.ticket_value
+							) > 1
+								? ` [${getTicketValue(pass.ticket_value)}회 차감]`
+								: ''}{!fits ? ' (마감)' : ''}
 						</option>
 					{/each}
 				</select>
@@ -546,12 +570,11 @@
 				<p class="booking-sheet__pass-notice booking-sheet__pass-notice--info">
 					합주 수업은 모든 수강권으로 예약할 수 있습니다.
 				</p>
-			{:else if selectedSlot?.instructor_name && filteredPasses.length < activePasses.length}
+			{:else if selectedSlot?.instructor_name && filteredPasses.length < getUsablePassesForDate(selectedSlot.slot_date).length}
 				<p class="booking-sheet__pass-notice">
 					{selectedSlot.instructor_name} 선생님 담당 수강권만 표시됩니다.
 				</p>
 			{/if}
-
 
 			{#if selectedPass && getTicketValue(selectedPass.ticket_value) > 1}
 				<div class="booking-sheet__ticket-notice">
@@ -560,12 +583,15 @@
 			{/if}
 
 			{#if exceedsCapacity}
-				<div class="booking-sheet__capacity-warning">
-					해당 시간은 예약이 마감되었습니다.
-				</div>
+				<div class="booking-sheet__capacity-warning">해당 시간은 예약이 마감되었습니다.</div>
 			{/if}
 
-			<Button fullWidth loading={submitting} disabled={exceedsCapacity} onclick={handleConfirmBooking}>
+			<Button
+				fullWidth
+				loading={submitting}
+				disabled={exceedsCapacity}
+				onclick={handleConfirmBooking}
+			>
 				{#if selectedPass && getTicketValue(selectedPass.ticket_value) > 1}
 					예약하기 ({getTicketValue(selectedPass.ticket_value)}회 차감)
 				{:else}
@@ -607,7 +633,9 @@
 					</span>
 				</div>
 				<div class="cancel-sheet__row">
-					<span class="cancel-sheet__label">{selectedReservation.slot_type === 'ENSEMBLE' ? '유형' : '강사'}</span>
+					<span class="cancel-sheet__label"
+						>{selectedReservation.slot_type === 'ENSEMBLE' ? '유형' : '강사'}</span
+					>
 					<span class="cancel-sheet__value">{getInstructorLabel(selectedReservation)}</span>
 				</div>
 				{#if selectedReservation.pass_name}
@@ -619,11 +647,14 @@
 			</div>
 			{#if isSameDayCancel}
 				<div class="cancel-sheet__noshow-warning">
-					당일 취소는 노쇼(No-Show)로 처리됩니다.
-					수강권이 차감되며 환불되지 않습니다.
+					당일 취소는 노쇼(No-Show)로 처리됩니다. 수강권이 차감되며 환불되지 않습니다.
 				</div>
 			{:else}
-				{@const cancelWeight = getReservationWeight(selectedReservation.pass_category, selectedReservation.ticket_value, selectedReservation.slot_type)}
+				{@const cancelWeight = getReservationWeight(
+					selectedReservation.pass_category,
+					selectedReservation.ticket_value,
+					selectedReservation.slot_type
+				)}
 				{#if getTicketValue(selectedReservation.ticket_value) > 1}
 					<p class="cancel-sheet__refund-notice">
 						취소 시 {getTicketValue(selectedReservation.ticket_value)}회가 환불됩니다.
@@ -897,7 +928,6 @@
 			background: var(--color-warning-bg);
 			border-radius: var(--radius-sm);
 		}
-
 
 		&__capacity-warning {
 			font-size: var(--font-size-sm);

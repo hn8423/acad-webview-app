@@ -104,6 +104,8 @@ export interface Instructor {
 	specialties: string;
 	introduction: string;
 	is_admin: number;
+	user_phone?: string;
+	student_count?: number;
 }
 
 export interface CreateInstructorRequest {
