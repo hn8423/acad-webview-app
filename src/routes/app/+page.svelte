@@ -298,7 +298,8 @@
 											<div
 												class="progress-bar__fill"
 												style="width: {pass.total_lessons > 0
-													? (pass.remaining_lessons / pass.total_lessons) * 100
+													? ((pass.total_lessons - pass.remaining_lessons) / pass.total_lessons) *
+														100
 													: 0}%"
 											></div>
 										</div>
