@@ -416,8 +416,8 @@
 
 <Modal isOpen={showDeleteModal} title="수강권 삭제" onclose={() => (showDeleteModal = false)}>
 	<p class="modal-message">
-		"{deleteTarget?.pass_name}" 수강권을 삭제하시겠습니까? 미처리 예약이 있는 경우 모두 자동
-		취소됩니다.
+		"{deleteTarget?.pass_name}" 수강권을 삭제하시겠습니까? 오늘 이후 예정된 미처리 예약이 있는 경우
+		자동 취소됩니다.
 	</p>
 	<div class="modal-actions">
 		<Button variant="danger" fullWidth onclick={handleDelete} loading={deleting}>삭제</Button>
@@ -431,8 +431,8 @@
 	onclose={() => (showExpireConfirmModal = false)}
 >
 	<p class="modal-message">
-		"{editTarget?.pass_name}" 수강권을 만료 처리하시겠습니까? 이 수강권의 미처리 예약이 모두 자동
-		취소됩니다.
+		"{editTarget?.pass_name}" 수강권을 만료 처리하시겠습니까? 오늘 이후 예정된 미처리 예약이 자동
+		취소되며, 지난 예약은 그대로 유지됩니다.
 	</p>
 	<div class="modal-actions">
 		<Button
