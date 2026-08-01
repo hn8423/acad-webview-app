@@ -9,9 +9,13 @@ import {
 	isActiveReservationStatus,
 	isCapacityOccupyingStatus,
 	getPassDisplayName,
+	getPassCategoryLabel,
 	getEffectivePassStatus,
 	isExpireTransition,
-	isPassUsable
+	isPassUsable,
+	isPassBookable,
+	getAvailableLessons,
+	getPendingCount
 } from './pass';
 
 describe('isExpireTransition', () => {
@@ -356,6 +360,75 @@ describe('getPassBadgeVariant', () => {
 
 	it('should return neutral for unknown category above threshold', () => {
 		expect(getPassBadgeVariant('UNKNOWN', 10)).toBe('neutral');
+	});
+});
+
+describe('getAvailableLessons / getPendingCount', () => {
+	it('should prefer available_lessons when the server provides it', () => {
+		expect(getAvailableLessons({ remaining_lessons: 4, available_lessons: 1 })).toBe(1);
+	});
+
+	it('should fall back to remaining_lessons for responses without the field', () => {
+		expect(getAvailableLessons({ remaining_lessons: 4 })).toBe(4);
+	});
+
+	it('should treat available_lessons 0 as 0, not as missing', () => {
+		expect(getAvailableLessons({ remaining_lessons: 4, available_lessons: 0 })).toBe(0);
+	});
+
+	it('should default pending count to 0', () => {
+		expect(getPendingCount({})).toBe(0);
+		expect(getPendingCount({ pending_count: 3 })).toBe(3);
+	});
+});
+
+describe('isPassBookable', () => {
+	const usable = {
+		status: 'ACTIVE',
+		remaining_lessons: 4,
+		start_date: '2026-07-01',
+		end_date: '2026-07-31'
+	};
+
+	it('should allow booking when unbooked lessons remain', () => {
+		expect(isPassBookable({ ...usable, available_lessons: 1 }, '2026-07-10')).toBe(true);
+	});
+
+	// 잔여는 남아 있지만 전부 예약으로 묶인 경우 — 추가 예약은 막아야 한다
+	it('should block booking when every remaining lesson is already reserved', () => {
+		expect(isPassBookable({ ...usable, available_lessons: 0 }, '2026-07-10')).toBe(false);
+	});
+
+	it('should still treat the pass as usable for display purposes', () => {
+		expect(isPassUsable({ ...usable, available_lessons: 0 }, '2026-07-10')).toBe(true);
+	});
+
+	it('should fall back to remaining_lessons when the server omits available_lessons', () => {
+		expect(isPassBookable(usable, '2026-07-10')).toBe(true);
+	});
+
+	it('should block booking outside the validity period regardless of availability', () => {
+		expect(isPassBookable({ ...usable, available_lessons: 4 }, '2026-08-01')).toBe(false);
+	});
+});
+
+describe('getPassCategoryLabel', () => {
+	// 관리자/강사 화면도 수강생 화면과 같은 표시명을 쓴다 (로테이션/풀타임 → 취미반/전문반)
+	it('should return 취미반 for ROTATION', () => {
+		expect(getPassCategoryLabel('ROTATION')).toBe('취미반');
+	});
+
+	it('should return 전문반 for FULL', () => {
+		expect(getPassCategoryLabel('FULL')).toBe('전문반');
+	});
+
+	it('should fall back to the raw category when unknown', () => {
+		expect(getPassCategoryLabel('UNKNOWN')).toBe('UNKNOWN');
+	});
+
+	it('should match getPassDisplayName for known categories', () => {
+		expect(getPassCategoryLabel('ROTATION')).toBe(getPassDisplayName(undefined, 'ROTATION'));
+		expect(getPassCategoryLabel('FULL')).toBe(getPassDisplayName(undefined, 'FULL'));
 	});
 });
 

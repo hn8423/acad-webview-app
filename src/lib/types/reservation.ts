@@ -27,6 +27,10 @@ export interface MyReservation {
 	pass_category?: string;
 	cancel_reason?: string | null;
 	created_at: string;
+	// 같은 슬롯에서의 선착순 순번(1부터). 활성 예약이 아니면 null
+	sequence?: number | null;
+	// 같은 슬롯의 활성 예약 총 인원
+	slot_total_count?: number;
 }
 
 export interface CreateReservationRequest {
@@ -48,6 +52,8 @@ export interface SlotReservation {
 	ticket_value?: number;
 	pass_name?: string;
 	pass_category?: string;
+	// 서버가 매기는 선착순 순번. 취소/노쇼는 null
+	sequence?: number | null;
 }
 
 export interface LessonSlot {
@@ -106,6 +112,15 @@ export interface BulkCreateSlotResponse {
 	skipped_dates: string[];
 }
 
+export interface ScheduleSlotReservation {
+	reservation_id: number;
+	member_name: string;
+	pass_category: string | null;
+	status: ReservationStatus;
+	// 선착순 순번. 취소/노쇼는 null
+	sequence: number | null;
+}
+
 export interface ScheduleSlot {
 	slot_id: number;
 	instructor_id: number | null;
@@ -116,6 +131,7 @@ export interface ScheduleSlot {
 	max_capacity: number | null;
 	current_count: number;
 	status: SlotStatus;
+	reservations?: ScheduleSlotReservation[];
 }
 
 export interface ScheduleInstructor {

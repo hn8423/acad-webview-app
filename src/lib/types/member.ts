@@ -60,6 +60,10 @@ export interface MemberPass {
 	end_date: string;
 	total_lessons: number;
 	remaining_lessons: number;
+	// 아직 차감되지 않은 예약(PENDING/CONFIRMED) 수. 차감은 수업 완료/노쇼 시점에 일어난다.
+	pending_count?: number;
+	// remaining_lessons - pending_count. 실제로 추가 예약 가능한 횟수
+	available_lessons?: number;
 	status: 'ACTIVE' | 'EXPIRED' | 'HOLDING' | 'USED_UP';
 }
 

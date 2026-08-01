@@ -23,7 +23,8 @@
 		getPassStatusVariant,
 		getPassStatusLabel,
 		getTicketValue,
-		getPassDisplayName
+		getPassDisplayName,
+		getPendingCount
 	} from '$lib/utils/pass';
 	import type { MemberPass, DrinkTicket } from '$lib/types/member';
 	import type { MyReservation } from '$lib/types/reservation';
@@ -305,6 +306,9 @@
 										</div>
 										<span class="pass-card__remaining">
 											잔여 {pass.remaining_lessons}/{pass.total_lessons}회
+											{#if getPendingCount(pass) > 0}
+												<span class="pass-card__pending">(예약중 {getPendingCount(pass)}회)</span>
+											{/if}
 										</span>
 									</div>
 									<div class="pass-card__date">
@@ -639,6 +643,10 @@
 			font-size: var(--font-size-sm);
 			color: var(--color-text-secondary);
 			white-space: nowrap;
+		}
+
+		&__pending {
+			color: var(--color-warning);
 		}
 
 		&__date {

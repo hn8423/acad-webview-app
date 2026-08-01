@@ -23,7 +23,9 @@
 		getPassStatusVariant,
 		getPassStatusLabel,
 		getTicketValue,
-		isExpireTransition
+		isExpireTransition,
+		getPassCategoryLabel,
+		getPendingCount
 	} from '$lib/utils/pass';
 	import type { MemberPass, PassType, Instructor } from '$lib/types/member';
 	import { onMount } from 'svelte';
@@ -306,9 +308,12 @@
 											: 0}%"
 									></div>
 								</div>
-								<span class="pass-item__progress-text"
-									>잔여 {pass.remaining_lessons}/{pass.total_lessons}회</span
-								>
+								<span class="pass-item__progress-text">
+									잔여 {pass.remaining_lessons}/{pass.total_lessons}회
+									{#if getPendingCount(pass) > 0}
+										<span class="pass-item__pending">(예약중 {getPendingCount(pass)}회)</span>
+									{/if}
+								</span>
 							</div>
 							<div class="pass-item__body">
 								<span>{pass.instructor_name} 선생님</span>
@@ -352,7 +357,7 @@
 					<option value="">선택하세요</option>
 					{#each passTypes as pt}
 						<option value={pt.id}>
-							{pt.pass_name} ({pt.pass_category}){pt.ticket_value > 1
+							{pt.pass_name} ({getPassCategoryLabel(pt.pass_category)}){pt.ticket_value > 1
 								? ` [${pt.ticket_value}회 차감]`
 								: ''}
 						</option>
@@ -544,6 +549,10 @@
 			font-size: var(--font-size-xs);
 			color: var(--color-text-secondary);
 			font-weight: var(--font-weight-medium);
+		}
+
+		&__pending {
+			color: var(--color-warning);
 		}
 
 		&__body {
