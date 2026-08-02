@@ -7,7 +7,10 @@
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
+	import Badge from '$lib/components/ui/Badge.svelte';
+	import SuggestionReplies from '$lib/components/suggestion/SuggestionReplies.svelte';
 	import { formatDateTime } from '$lib/utils/format';
+	import { getSuggestionStatusBadge } from '$lib/utils/suggestion';
 	import { goto } from '$app/navigation';
 	import type { SuggestionDetail } from '$lib/types/academy';
 	import { onMount } from 'svelte';
@@ -134,15 +137,23 @@
 				<Spinner />
 			</div>
 		{:else if suggestion}
+			{@const statusBadge = getSuggestionStatusBadge(suggestion.status)}
 			<article class="article">
 				<header class="article__header">
-					<h1 class="article__title">{suggestion.title}</h1>
+					<div class="article__title-row">
+						<Badge variant={statusBadge.variant}>{statusBadge.label}</Badge>
+						<h1 class="article__title">{suggestion.title}</h1>
+					</div>
 					<div class="article__meta">
 						<span>{formatDateTime(suggestion.created_at)}</span>
 					</div>
 				</header>
 				<div class="article__body">{suggestion.content}</div>
 			</article>
+
+			<div class="suggestion-detail__replies">
+				<SuggestionReplies suggestionId={suggestion.id} />
+			</div>
 		{:else}
 			<p class="suggestion-detail__empty">건의사항을 찾을 수 없습니다.</p>
 		{/if}
@@ -165,6 +176,10 @@
 			text-align: center;
 			color: var(--color-text-muted);
 			padding: var(--space-2xl);
+		}
+
+		&__replies {
+			margin-top: var(--space-md);
 		}
 	}
 
@@ -240,12 +255,18 @@
 			border-bottom: 1px solid var(--color-divider);
 		}
 
+		&__title-row {
+			display: flex;
+			align-items: center;
+			gap: var(--space-sm);
+			margin-bottom: var(--space-sm);
+		}
+
 		&__title {
 			font-size: var(--font-size-2xl);
 			font-weight: var(--font-weight-bold);
 			letter-spacing: var(--letter-spacing-tight);
 			line-height: var(--line-height-tight);
-			margin-bottom: var(--space-sm);
 		}
 
 		&__meta {
