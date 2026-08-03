@@ -27,7 +27,12 @@
 		getAvailableLessons,
 		getPendingCount
 	} from '$lib/utils/pass';
-	import { isReservationDay } from '$lib/utils/reservation';
+	import {
+		buildActiveReservationMap,
+		buildSlotKey,
+		hasVisibleSequence,
+		isReservationDay
+	} from '$lib/utils/reservation';
 	import type {
 		AvailableSlot,
 		DateIndicators,
@@ -78,22 +83,16 @@
 		return memberPasses.filter((p) => isPassBookable(p, date));
 	}
 
-	const ACTIVE_STATUSES: ReadonlySet<ReservationStatus> = new Set(['PENDING', 'CONFIRMED']);
-
-	let activeReservationKeys = $derived(
-		new Set(
-			myReservations
-				.filter((r) => ACTIVE_STATUSES.has(r.status))
-				.map(
-					(r) =>
-						`${r.slot_date}|${r.start_time}|${r.end_time}|${r.slot_type}|${r.instructor_name ?? ''}`
-				)
-		)
-	);
+	let activeReservationMap = $derived(buildActiveReservationMap(myReservations));
 
 	function isSlotAlreadyBooked(slot: AvailableSlot): boolean {
-		const key = `${slot.slot_date}|${slot.start_time}|${slot.end_time}|${slot.slot_type}|${slot.instructor_name ?? ''}`;
-		return activeReservationKeys.has(key);
+		return activeReservationMap.has(buildSlotKey(slot));
+	}
+
+	// 로테이션 수업처럼 한 시간대에 여러 명이 들어갈 때만 내 순번을 노출한다
+	function getSequenceForSlot(slot: AvailableSlot): MyReservation | null {
+		const reservation = activeReservationMap.get(buildSlotKey(slot));
+		return hasVisibleSequence(reservation) ? (reservation ?? null) : null;
 	}
 
 	function getPassesForSlot(slot: AvailableSlot | null): MemberPass[] {
@@ -418,6 +417,7 @@
 				<div class="slot-list">
 					{#each availableSlots as slot}
 						{@const alreadyBooked = isSlotAlreadyBooked(slot)}
+						{@const mySequence = getSequenceForSlot(slot)}
 						<Card padding="sm" onclick={() => handleSlotClick(slot)}>
 							<div class="slot-card" class:slot-card--booked={alreadyBooked}>
 								<div class="slot-card__info">
@@ -427,12 +427,27 @@
 									<span class="slot-card__instructor">
 										{getInstructorLabel(slot)}
 									</span>
+									{#if mySequence}
+										<span class="slot-card__sequence">
+											내 순서 {mySequence.sequence}번째 / 총 {mySequence.slot_total_count}명
+										</span>
+									{/if}
 									{#if slot.slot_type === 'ENSEMBLE'}
 										<span class="slot-card__tag">모든 수강권 가능</span>
 									{/if}
 								</div>
 								{#if alreadyBooked}
-									<Badge variant="info">예약됨</Badge>
+									<div class="slot-card__badges">
+										<Badge variant="info">예약됨</Badge>
+										{#if mySequence}
+											<span
+												class="slot-card__seq"
+												aria-label="내 수업 순서 {mySequence.sequence}번째"
+											>
+												{mySequence.sequence}
+											</span>
+										{/if}
+									</div>
 								{/if}
 							</div>
 						</Card>
@@ -793,6 +808,33 @@
 		&__tag {
 			font-size: var(--font-size-xs);
 			color: var(--color-info);
+		}
+
+		&__sequence {
+			font-size: var(--font-size-sm);
+			font-weight: var(--font-weight-medium);
+			color: var(--color-primary);
+		}
+
+		&__badges {
+			display: flex;
+			align-items: center;
+			gap: var(--space-xs);
+			flex-shrink: 0;
+		}
+
+		&__seq {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			flex-shrink: 0;
+			width: 18px;
+			height: 18px;
+			border-radius: var(--radius-full);
+			background: var(--color-primary);
+			color: var(--color-white);
+			font-size: var(--font-size-xs);
+			font-weight: var(--font-weight-semibold);
 		}
 	}
 
