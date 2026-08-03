@@ -1,30 +1,65 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { academyStore } from '$lib/stores/academy.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
-	import { createEnsemble } from '$lib/api/ensemble';
+	import { createEnsemble, updateEnsemble } from '$lib/api/ensemble';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
+	import type { EnsembleDetail } from '$lib/types/ensemble';
 	import { z } from 'zod';
 
 	interface Props {
 		oncreate: () => void;
+		// 수정 모드일 때 대상 합주조. 없으면 생성 모드.
+		editTarget?: EnsembleDetail | null;
 	}
 
-	let { oncreate }: Props = $props();
+	let { oncreate, editTarget = null }: Props = $props();
 
-	let groupName = $state('');
+	let isEditMode = $derived(editTarget !== null);
+
+	// 폼 초기값은 마운트 시점의 editTarget으로 한 번만 채운다.
+	// (수정 시트를 여닫을 때마다 이 컴포넌트가 새로 생성되므로 값이 갱신된다)
+	const initial = untrack(() => editTarget);
+
+	let groupName = $state(initial?.group_name ?? '');
 	let role = $state('');
-	let description = $state('');
-	let maxMembers = $state('5');
+	let description = $state(initial?.description ?? '');
+	let maxMembers = $state(String(initial?.max_members ?? 5));
 	let errors = $state<Record<string, string>>({});
 	let submitting = $state(false);
 
-	const schema = z.object({
-		group_name: z.string().min(1, '그룹명을 입력해주세요').max(50, '50자 이내로 입력해주세요'),
+	const groupNameField = z
+		.string()
+		.min(1, '그룹명을 입력해주세요')
+		.max(50, '50자 이내로 입력해주세요');
+	const descriptionField = z.string().max(500, '500자 이내로 입력해주세요').optional();
+	const maxMembersField = z.number().int().min(2, '최소 2명 이상');
+
+	const createSchema = z.object({
+		group_name: groupNameField,
 		role: z.string().min(1, '파트를 입력해주세요').max(20, '20자 이내로 입력해주세요'),
-		description: z.string().max(500, '500자 이내로 입력해주세요').optional(),
-		max_members: z.number().int().min(2, '최소 2명 이상')
+		description: descriptionField,
+		max_members: maxMembersField
 	});
+
+	// 백엔드 PATCH는 role(내 파트)을 처리하지 않으므로 수정 모드에서는 제외한다.
+	const updateSchema = z.object({
+		group_name: groupNameField,
+		description: descriptionField,
+		max_members: maxMembersField
+	});
+
+	function collectFieldErrors(error: z.ZodError): Record<string, string> {
+		const fieldErrors: Record<string, string> = {};
+		for (const issue of error.issues) {
+			const field = String(issue.path[0]);
+			if (!fieldErrors[field]) {
+				fieldErrors[field] = issue.message;
+			}
+		}
+		return fieldErrors;
+	}
 
 	async function handleSubmit() {
 		errors = {};
@@ -32,30 +67,28 @@
 		if (!academyId) return;
 
 		const parsedMax = Number.parseInt(maxMembers, 10);
-		const parsed = schema.safeParse({
+		const input = {
 			group_name: groupName.trim(),
 			role: role.trim(),
 			description: description.trim() || undefined,
 			max_members: Number.isNaN(parsedMax) ? 5 : parsedMax
-		});
+		};
+
+		const parsed = isEditMode ? updateSchema.safeParse(input) : createSchema.safeParse(input);
 
 		if (!parsed.success) {
-			const fieldErrors: Record<string, string> = {};
-			for (const issue of parsed.error.issues) {
-				const field = String(issue.path[0]);
-				if (!fieldErrors[field]) {
-					fieldErrors[field] = issue.message;
-				}
-			}
-			errors = fieldErrors;
+			errors = collectFieldErrors(parsed.error);
 			return;
 		}
 
 		submitting = true;
 		try {
-			const res = await createEnsemble(academyId, parsed.data);
+			const res =
+				isEditMode && editTarget
+					? await updateEnsemble(academyId, editTarget.id, parsed.data)
+					: await createEnsemble(academyId, parsed.data as z.infer<typeof createSchema>);
 			if (res.status) {
-				toastStore.success('합주조가 만들어졌습니다.');
+				toastStore.success(isEditMode ? '합주조가 수정되었습니다.' : '합주조가 만들어졌습니다.');
 				oncreate();
 			}
 		} catch {
@@ -74,13 +107,15 @@
 		error={errors.group_name}
 		maxlength={50}
 	/>
-	<Input
-		label="내 파트"
-		placeholder="예: 기타, 드럼, 보컬"
-		bind:value={role}
-		error={errors.role}
-		maxlength={20}
-	/>
+	{#if !isEditMode}
+		<Input
+			label="내 파트"
+			placeholder="예: 기타, 드럼, 보컬"
+			bind:value={role}
+			error={errors.role}
+			maxlength={20}
+		/>
+	{/if}
 	<div class="create-form__field">
 		<!-- svelte-ignore a11y_label_has_associated_control -->
 		<label class="create-form__label">소개 (선택)</label>
@@ -104,7 +139,9 @@
 		error={errors.max_members}
 	/>
 	<div class="create-form__actions">
-		<Button type="submit" fullWidth loading={submitting}>만들기</Button>
+		<Button type="submit" fullWidth loading={submitting}>
+			{isEditMode ? '수정하기' : '만들기'}
+		</Button>
 	</div>
 </form>
 

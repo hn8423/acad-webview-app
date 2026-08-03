@@ -5,13 +5,21 @@
 	import BackHeader from '$lib/components/layout/BackHeader.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
+	import SuggestionReplies from '$lib/components/suggestion/SuggestionReplies.svelte';
 	import { formatDateTime } from '$lib/utils/format';
+	import { getSuggestionStatusBadge } from '$lib/utils/suggestion';
 	import { goto } from '$app/navigation';
 	import type { SuggestionDetail } from '$lib/types/academy';
 	import { onMount } from 'svelte';
 
 	let suggestion = $state<SuggestionDetail | null>(null);
 	let loading = $state(true);
+
+	// 관리자가 답글을 달면 백엔드가 ANSWERED로 전이시키므로 배지를 즉시 맞춰준다.
+	function markAnswered() {
+		if (!suggestion) return;
+		suggestion = { ...suggestion, status: 'ANSWERED' };
+	}
 
 	onMount(async () => {
 		const academyId = academyStore.academyId;
@@ -42,12 +50,11 @@
 			<Spinner />
 		</div>
 	{:else if suggestion}
+		{@const statusBadge = getSuggestionStatusBadge(suggestion.status)}
 		<article class="article">
 			<header class="article__header">
 				<div class="article__title-row">
-					{#if suggestion.status === 'PENDING'}
-						<Badge variant="warning">대기</Badge>
-					{/if}
+					<Badge variant={statusBadge.variant}>{statusBadge.label}</Badge>
 					<h1 class="article__title">{suggestion.title}</h1>
 				</div>
 				<div class="article__meta">
@@ -58,6 +65,10 @@
 			</header>
 			<div class="article__body">{suggestion.content}</div>
 		</article>
+
+		<div class="suggestion-detail__replies">
+			<SuggestionReplies suggestionId={suggestion.id} onreplied={markAnswered} />
+		</div>
 	{:else}
 		<p class="suggestion-detail__empty">건의사항을 찾을 수 없습니다.</p>
 	{/if}
@@ -75,6 +86,10 @@
 			text-align: center;
 			color: var(--color-text-muted);
 			padding: var(--space-2xl);
+		}
+
+		&__replies {
+			margin-top: var(--space-md);
 		}
 	}
 

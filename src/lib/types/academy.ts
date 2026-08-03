@@ -52,15 +52,40 @@ export interface NoticeFile {
 	file_size: number;
 }
 
+export type SuggestionStatus = 'PENDING' | 'ANSWERED';
+
 export interface Suggestion {
 	id: number;
 	title: string;
-	status: string;
+	status: SuggestionStatus;
 	author_name: string;
 	created_at: string;
+	reply_count: number;
 }
 
 export interface SuggestionDetail extends Suggestion {
+	content: string;
+}
+
+/** 건의사항 작성 응답. 목록/상세와 필드 구성이 달라 별도 타입으로 둔다. */
+export interface CreatedSuggestion {
+	id: number;
+	title: string;
+	content: string;
+	status: SuggestionStatus;
+	created_at: string;
+}
+
+export interface SuggestionReply {
+	id: number;
+	author_member_id: number;
+	author_name: string;
+	author_role: string;
+	content: string;
+	created_at: string;
+}
+
+export interface CreateSuggestionReplyRequest {
 	content: string;
 }
 

@@ -55,6 +55,22 @@ export function getReservationWeight(
 	return getCapacityWeight(passCategory) * getTicketValue(ticketValue);
 }
 
+// 추가 예약이 가능한 잔여 횟수.
+// remaining_lessons는 수업 완료/노쇼 전환 시점에만 줄어들기 때문에, 아직 처리되지 않은
+// 예약(PENDING/CONFIRMED)이 그대로 포함돼 있다. 서버가 보류분을 반영한 available_lessons를
+// 내려주면 그것을 쓰고, 아직 내려주지 않는 응답(구버전)은 remaining_lessons로 폴백한다.
+export function getAvailableLessons(pass: {
+	remaining_lessons: number;
+	available_lessons?: number;
+}): number {
+	return pass.available_lessons ?? pass.remaining_lessons;
+}
+
+// 아직 차감되지 않은 예약(보류)이 몇 건인지. 서버가 안 내려주면 0으로 본다.
+export function getPendingCount(pass: { pending_count?: number }): number {
+	return pass.pending_count ?? 0;
+}
+
 // targetDate 날짜에 사용 가능한 수강권 판정 (유효기간 양끝 포함).
 // 백엔드 크론이 만료 수강권을 EXPIRED로 전환하지만, 크론 실행 전 시간창과
 // stale 클라이언트 상태를 대비해 start_date/end_date도 함께 방어적으로 검사한다.
@@ -63,6 +79,8 @@ export function isPassUsable(
 	pass: {
 		status: string;
 		remaining_lessons: number;
+		// 보류분은 여기서 보지 않는다 (예약 가능 판정은 isPassBookable)
+		available_lessons?: number;
 		start_date?: string;
 		end_date?: string;
 	},
@@ -72,6 +90,22 @@ export function isPassUsable(
 	const date = targetDate.slice(0, 10);
 	if (pass.start_date && pass.start_date.slice(0, 10) > date) return false;
 	return !pass.end_date || pass.end_date.slice(0, 10) >= date;
+}
+
+// 추가 예약을 걸 수 있는지 판정 — 유효한 수강권이면서 보류분을 뺀 잔여가 남아 있어야 한다.
+// isPassUsable과 분리한 이유: 잔여가 전부 예약으로 묶인 수강권도 '유효한 수강권'이므로
+// 목록에서는 이용 가능으로 보여야 하고, 예약 화면에서만 선택 불가로 막아야 한다.
+export function isPassBookable(
+	pass: {
+		status: string;
+		remaining_lessons: number;
+		available_lessons?: number;
+		start_date?: string;
+		end_date?: string;
+	},
+	targetDate: string
+): boolean {
+	return isPassUsable(pass, targetDate) && getAvailableLessons(pass) > 0;
 }
 
 // 관리자 수강권 수정에서 만료 '전환' 판정 — EXPIRED로 새로 바뀔 때만 true
@@ -106,9 +140,11 @@ export function isCapacityOccupyingStatus(status: string): boolean {
 export type PassCategory = 'ROTATION' | 'FULL';
 export type BadgeVariant = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
 
+// 표시명은 수강생/강사/관리자 화면 전부 동일하다.
+// DB에 저장되는 값(ROTATION/FULL)은 정원 가중치 계산에 쓰이므로 그대로 두고 라벨만 바꾼다.
 const CATEGORY_LABELS: Record<PassCategory, string> = {
-	ROTATION: '로테이션',
-	FULL: '풀타임'
+	ROTATION: '취미반',
+	FULL: '전문반'
 };
 
 const CATEGORY_VARIANTS: Record<PassCategory, BadgeVariant> = {
@@ -120,14 +156,9 @@ export function getPassCategoryLabel(category: string): string {
 	return CATEGORY_LABELS[category as PassCategory] ?? category;
 }
 
-// 유저(/app) 화면 전용 표시명 — DB pass_name 대신 카테고리 기반 이름으로 대체
-const CATEGORY_DISPLAY_NAMES: Record<PassCategory, string> = {
-	ROTATION: '취미반',
-	FULL: '전문반'
-};
-
+// 카테고리를 알 수 없을 때만 DB의 pass_name으로 대체한다.
 export function getPassDisplayName(passName?: string, passCategory?: string): string {
-	return CATEGORY_DISPLAY_NAMES[passCategory as PassCategory] ?? passName ?? '';
+	return CATEGORY_LABELS[passCategory as PassCategory] ?? passName ?? '';
 }
 
 export function getPassCategoryVariant(category: string): BadgeVariant {
