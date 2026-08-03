@@ -4,7 +4,9 @@
 	import { headerStore } from '$lib/stores/header.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
+	import Badge from '$lib/components/ui/Badge.svelte';
 	import { formatDate } from '$lib/utils/format';
+	import { getSuggestionStatusBadge } from '$lib/utils/suggestion';
 	import { goto } from '$app/navigation';
 	import type { Suggestion } from '$lib/types/academy';
 	import { onMount } from 'svelte';
@@ -62,13 +64,18 @@
 		{:else}
 			<div class="suggestion-section">
 				{#each suggestions as suggestion, i}
+					{@const statusBadge = getSuggestionStatusBadge(suggestion.status)}
 					<button
 						type="button"
 						class="suggestion-row"
 						onclick={() => goto(`/app/suggestion/${suggestion.id}`)}
 					>
 						<div class="suggestion-row__left">
+							<Badge variant={statusBadge.variant}>{statusBadge.label}</Badge>
 							<h3 class="suggestion-row__title">{suggestion.title}</h3>
+							{#if suggestion.reply_count > 0}
+								<span class="suggestion-row__replies">답글 {suggestion.reply_count}</span>
+							{/if}
 						</div>
 						<div class="suggestion-row__right">
 							<span class="suggestion-row__date">{formatDate(suggestion.created_at)}</span>
@@ -169,6 +176,12 @@
 			text-overflow: ellipsis;
 			white-space: nowrap;
 			color: var(--color-text);
+		}
+
+		&__replies {
+			font-size: var(--font-size-xs);
+			color: var(--color-primary);
+			white-space: nowrap;
 		}
 
 		&__date {

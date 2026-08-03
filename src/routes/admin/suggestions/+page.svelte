@@ -4,6 +4,7 @@
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import { formatDate } from '$lib/utils/format';
+	import { getSuggestionStatusBadge } from '$lib/utils/suggestion';
 	import { goto } from '$app/navigation';
 	import type { Suggestion } from '$lib/types/academy';
 	import { onMount } from 'svelte';
@@ -54,16 +55,18 @@
 	{:else}
 		<div class="suggestion-list">
 			{#each suggestions as suggestion, i}
+				{@const statusBadge = getSuggestionStatusBadge(suggestion.status)}
 				<button
 					type="button"
 					class="suggestion-row"
 					onclick={() => goto(`/admin/suggestions/${suggestion.id}`)}
 				>
 					<div class="suggestion-row__left">
-						{#if suggestion.status === 'PENDING'}
-							<Badge variant="warning">대기</Badge>
-						{/if}
+						<Badge variant={statusBadge.variant}>{statusBadge.label}</Badge>
 						<h3 class="suggestion-row__title">{suggestion.title}</h3>
+						{#if suggestion.reply_count > 0}
+							<span class="suggestion-row__replies">답글 {suggestion.reply_count}</span>
+						{/if}
 					</div>
 					<div class="suggestion-row__right">
 						<span class="suggestion-row__author">{suggestion.author_name}</span>
@@ -167,6 +170,12 @@
 			text-overflow: ellipsis;
 			white-space: nowrap;
 			color: var(--color-text);
+		}
+
+		&__replies {
+			font-size: var(--font-size-xs);
+			color: var(--color-primary);
+			white-space: nowrap;
 		}
 
 		&__right {

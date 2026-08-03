@@ -22,7 +22,10 @@
 		getTicketValue,
 		getReservationWeight,
 		getPassDisplayName,
-		isPassUsable
+		isPassUsable,
+		isPassBookable,
+		getAvailableLessons,
+		getPendingCount
 	} from '$lib/utils/pass';
 	import { isReservationDay } from '$lib/utils/reservation';
 	import type {
@@ -70,9 +73,9 @@
 	// 오늘 기준 이용 가능 수강권 (월 인디케이터의 강사 필터용)
 	let activePasses = $derived(memberPasses.filter((p) => isPassUsable(p, getTodayString())));
 
-	// 슬롯 날짜 기준 이용 가능 수강권 — 미래 슬롯 예약 시 해당 날짜에 유효한 수강권만 노출
+	// 슬롯 날짜 기준 예약 가능 수강권 — 해당 날짜에 유효하고, 보류분을 뺀 잔여가 남은 것만 노출
 	function getUsablePassesForDate(date: string): MemberPass[] {
-		return memberPasses.filter((p) => isPassUsable(p, date));
+		return memberPasses.filter((p) => isPassBookable(p, date));
 	}
 
 	const ACTIVE_STATUSES: ReadonlySet<ReservationStatus> = new Set(['PENDING', 'CONFIRMED']);
@@ -479,6 +482,12 @@
 									<span class="reservation-card__instructor">
 										{getInstructorLabel(reservation)}
 									</span>
+									{#if reservation.sequence && (reservation.slot_total_count ?? 0) > 1}
+										<!-- 로테이션 수업처럼 한 시간대에 여러 명이 들어갈 때 들어가는 순서 안내 -->
+										<span class="reservation-card__sequence">
+											수업 순서 {reservation.sequence}번째 / 총 {reservation.slot_total_count}명
+										</span>
+									{/if}
 									{#if reservation.pass_name}
 										<span class="reservation-card__pass">
 											{getPassDisplayName(reservation.pass_name, reservation.pass_category)}
@@ -555,8 +564,11 @@
 							!selectedSlot ||
 							selectedSlot.slot_type === 'ENSEMBLE' ||
 							selectedSlot.remaining_capacity >= passWeight}
+						{@const pendingCount = getPendingCount(pass)}
 						<option value={pass.id} disabled={!fits}>
-							{getPassDisplayName(pass.pass_name, pass.pass_category)} (잔여 {pass.remaining_lessons}회){getTicketValue(
+							{getPassDisplayName(pass.pass_name, pass.pass_category)} (예약 가능 {getAvailableLessons(
+								pass
+							)}회{pendingCount > 0 ? `, 예약중 ${pendingCount}회` : ''}){getTicketValue(
 								pass.ticket_value
 							) > 1
 								? ` [${getTicketValue(pass.ticket_value)}회 차감]`
@@ -580,6 +592,13 @@
 				<div class="booking-sheet__ticket-notice">
 					이 수강권은 1회 수업당 {getTicketValue(selectedPass.ticket_value)}회가 차감됩니다.
 				</div>
+			{/if}
+
+			{#if selectedPass && getPendingCount(selectedPass) > 0}
+				<p class="booking-sheet__pass-notice booking-sheet__pass-notice--info">
+					잔여 {selectedPass.remaining_lessons}회 중 {getPendingCount(selectedPass)}회는 이미
+					예약되어 있습니다. (수업 완료 처리 시 차감)
+				</p>
 			{/if}
 
 			{#if exceedsCapacity}
@@ -852,6 +871,12 @@
 		&__pass {
 			font-size: var(--font-size-sm);
 			color: var(--color-text-secondary);
+		}
+
+		&__sequence {
+			font-size: var(--font-size-sm);
+			color: var(--color-primary);
+			font-weight: var(--font-weight-medium);
 		}
 
 		&__ticket {

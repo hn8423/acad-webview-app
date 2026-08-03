@@ -19,7 +19,9 @@
 		getTicketValue,
 		getCapacityWeight,
 		getReservationWeight,
-		isCapacityOccupyingStatus
+		isCapacityOccupyingStatus,
+		getPassCategoryLabel,
+		getPassCategoryVariant
 	} from '$lib/utils/pass';
 	import { countSlotDates, formatDayLabels } from '$lib/utils/reservation';
 	import { canManageSlot } from '$lib/utils/slot-permission';
@@ -621,15 +623,15 @@
 							{#each slot.reservations as rv, i (rv.reservation_id)}
 								<div class="reservation-row">
 									<div class="reservation-row__info">
-										<span class="reservation-row__number">{i + 1}</span>
+										<!-- 선착순 순번은 서버가 계산 (취소 건은 번호 없음). 미지원 응답은 목록 순서로 폴백 -->
+										<span class="reservation-row__number">{rv.sequence ?? i + 1}</span>
 										<span class="reservation-row__name">{rv.member_name}</span>
-										{#if rv.pass_name}
+										{#if rv.pass_category}
+											<Badge variant={getPassCategoryVariant(rv.pass_category)}>
+												{getPassCategoryLabel(rv.pass_category)}
+											</Badge>
+										{:else if rv.pass_name}
 											<span class="reservation-row__pass">{rv.pass_name}</span>
-										{/if}
-										{#if rv.pass_category === 'ROTATION'}
-											<Badge variant="info">로테이션</Badge>
-										{:else if rv.pass_category === 'FULL'}
-											<Badge variant="warning">풀타임</Badge>
 										{/if}
 										{#if getReservationWeight(rv.pass_category, rv.ticket_value, slot.slot_type) !== 1}
 											<span class="reservation-row__weight"

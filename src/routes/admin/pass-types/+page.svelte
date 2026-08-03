@@ -215,14 +215,14 @@
 			handleSubmit();
 		}}
 	>
-		<Input label="수강권 이름" bind:value={passName} placeholder="예: 로테이션 4회" />
+		<Input label="수강권 이름" bind:value={passName} placeholder="예: 취미반 4회" />
 
 		<div class="pass-type-form__field">
 			<label class="pass-type-form__label" for="pass-category">카테고리</label>
 			<select id="pass-category" class="pass-type-form__select" bind:value={passCategory}>
 				<option value="">선택하세요</option>
-				<option value="ROTATION">로테이션</option>
-				<option value="FULL">풀타임</option>
+				<option value="ROTATION">{getPassCategoryLabel('ROTATION')}</option>
+				<option value="FULL">{getPassCategoryLabel('FULL')}</option>
 			</select>
 		</div>
 

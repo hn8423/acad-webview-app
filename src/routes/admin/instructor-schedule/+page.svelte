@@ -5,7 +5,13 @@
 	import { getInstructorSchedule } from '$lib/api/reservation';
 	import { getInstructors } from '$lib/api/member';
 	import type { Instructor } from '$lib/types/member';
-	import type { InstructorScheduleData, ScheduleSlot, SlotStatus } from '$lib/types/reservation';
+	import type {
+		InstructorScheduleData,
+		ScheduleSlot,
+		ScheduleSlotReservation,
+		SlotStatus
+	} from '$lib/types/reservation';
+	import { getPassCategoryLabel } from '$lib/utils/pass';
 	import { formatTimeRange, getTodayString, getDayOfWeek } from '$lib/utils/format';
 	import { buildInstructorColorMap, getInstructorColorIndex } from '$lib/utils/instructor-colors';
 	import Badge from '$lib/components/ui/Badge.svelte';
@@ -168,6 +174,18 @@
 		if (slot.max_capacity === null) return `${slot.current_count}명`;
 		return `${slot.current_count}/${slot.max_capacity}명`;
 	}
+
+	// 취소/노쇼 예약은 자리를 비우므로 명단에서 제외한다
+	function bookedReservations(slot: ScheduleSlot): ScheduleSlotReservation[] {
+		return (slot.reservations ?? []).filter(
+			(rv) => rv.status !== 'CANCELLED' && rv.status !== 'NO_SHOW'
+		);
+	}
+
+	function reservationLabel(rv: ScheduleSlotReservation): string {
+		const category = rv.pass_category ? ` · ${getPassCategoryLabel(rv.pass_category)}` : '';
+		return `${rv.member_name}${category}`;
+	}
 </script>
 
 <div class="instructor-schedule">
@@ -235,16 +253,37 @@
 						</div>
 						<ul class="instructor-schedule__slots">
 							{#each group.slots as slot (slot.slot_id)}
+								{@const booked = bookedReservations(slot)}
 								<li class="instructor-schedule__slot">
-									<div class="instructor-schedule__slot-info">
-										<span class="instructor-schedule__slot-time">
-											{formatTimeRange(slot.start_time, slot.end_time)}
-										</span>
-										<span class="instructor-schedule__slot-meta">
-											{slot.slot_type === 'ENSEMBLE' ? '합주' : '레슨'} · {formatCapacity(slot)}
-										</span>
+									<div class="instructor-schedule__slot-row">
+										<div class="instructor-schedule__slot-info">
+											<span class="instructor-schedule__slot-time">
+												{formatTimeRange(slot.start_time, slot.end_time)}
+											</span>
+											<span class="instructor-schedule__slot-meta">
+												{slot.slot_type === 'ENSEMBLE' ? '합주' : '레슨'} · {formatCapacity(slot)}
+											</span>
+										</div>
+										<Badge variant={statusVariant(slot.status)}>{statusLabel(slot.status)}</Badge>
 									</div>
-									<Badge variant={statusVariant(slot.status)}>{statusLabel(slot.status)}</Badge>
+									{#if booked.length > 0}
+										<ul class="instructor-schedule__students">
+											{#each booked as rv (rv.reservation_id)}
+												<li class="instructor-schedule__student">
+													{#if rv.sequence !== null && booked.length > 1}
+														<!-- 로테이션 수업에서 들어가는 순서 (예약 신청 선착순) -->
+														<span class="instructor-schedule__student-seq">{rv.sequence}</span>
+													{/if}
+													<span class="instructor-schedule__student-name">
+														{reservationLabel(rv)}
+													</span>
+													{#if rv.status === 'PENDING'}
+														<Badge variant="warning">대기</Badge>
+													{/if}
+												</li>
+											{/each}
+										</ul>
+									{/if}
 								</li>
 							{/each}
 						</ul>
@@ -375,7 +414,9 @@
 		}
 
 		&__slot {
-			@include flex-between;
+			display: flex;
+			flex-direction: column;
+			gap: var(--space-xs);
 			padding: var(--space-sm) 0;
 
 			& + & {
@@ -383,10 +424,46 @@
 			}
 		}
 
+		&__slot-row {
+			@include flex-between;
+		}
+
 		&__slot-info {
 			display: flex;
 			flex-direction: column;
 			gap: var(--space-2xs);
+		}
+
+		&__students {
+			display: flex;
+			flex-direction: column;
+			gap: var(--space-2xs);
+			padding-left: var(--space-sm);
+			border-left: 2px solid var(--color-divider);
+		}
+
+		&__student {
+			display: flex;
+			align-items: center;
+			gap: var(--space-xs);
+			font-size: var(--font-size-xs);
+			color: var(--color-text-secondary);
+		}
+
+		&__student-seq {
+			@include flex-center;
+			flex-shrink: 0;
+			width: 18px;
+			height: 18px;
+			border-radius: var(--radius-full);
+			background: var(--color-primary);
+			color: var(--color-white);
+			font-size: var(--font-size-xs);
+			font-weight: var(--font-weight-semibold);
+		}
+
+		&__student-name {
+			@include text-truncate;
 		}
 
 		&__slot-time {

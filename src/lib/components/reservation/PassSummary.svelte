@@ -8,7 +8,9 @@
 		getTicketValue,
 		getPassDisplayName,
 		getEffectivePassStatus,
-		isPassUsable
+		isPassUsable,
+		getAvailableLessons,
+		getPendingCount
 	} from '$lib/utils/pass';
 	import type { MemberPass } from '$lib/types/member';
 
@@ -69,6 +71,12 @@
 				<Badge variant={getPassStatusVariant(effectiveStatus)}>
 					{getPassStatusLabel(effectiveStatus)}
 				</Badge>
+			</div>
+			<div class="pass-summary-card__remaining">
+				예약 가능 {getAvailableLessons(pass)}회 / 잔여 {pass.remaining_lessons}회
+				{#if getPendingCount(pass) > 0}
+					<span class="pass-summary-card__pending">(예약중 {getPendingCount(pass)}회)</span>
+				{/if}
 			</div>
 			<div class="pass-summary-card__instructor">
 				{pass.instructor_name} 선생님
@@ -225,6 +233,17 @@
 			color: var(--color-warning);
 			background: var(--color-warning-bg);
 			border-radius: var(--radius-full);
+		}
+
+		&__remaining {
+			font-size: var(--font-size-xs);
+			color: var(--color-text-secondary);
+			font-weight: var(--font-weight-medium);
+			margin-bottom: var(--space-2xs);
+		}
+
+		&__pending {
+			color: var(--color-warning);
 		}
 
 		&__instructor {

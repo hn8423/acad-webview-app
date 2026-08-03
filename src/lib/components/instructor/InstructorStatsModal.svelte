@@ -3,6 +3,7 @@
 	import { academyStore } from '$lib/stores/academy.svelte';
 	import { getInstructorStats } from '$lib/api/member';
 	import { formatMonth } from '$lib/utils/format';
+	import { getPassCategoryLabel } from '$lib/utils/pass';
 	import type { InstructorStats } from '$lib/types/member';
 	import Modal from '$lib/components/ui/Modal.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
@@ -102,11 +103,14 @@
 		const rotation = stats.lessons_by_category?.ROTATION ?? { completed: 0, no_show: 0 };
 		const full = stats.lessons_by_category?.FULL ?? { completed: 0, no_show: 0 };
 
+		const rotationLabel = getPassCategoryLabel('ROTATION');
+		const fullLabel = getPassCategoryLabel('FULL');
+
 		return [
-			{ label: '로테이션 완료', value: rotation.completed, color: 'info' },
-			{ label: '풀타임 완료', value: full.completed, color: 'success' },
-			{ label: '로테이션 노쇼', value: rotation.no_show, color: 'warning' },
-			{ label: '풀타임 노쇼', value: full.no_show, color: 'warning' },
+			{ label: `${rotationLabel} 완료`, value: rotation.completed, color: 'info' },
+			{ label: `${fullLabel} 완료`, value: full.completed, color: 'success' },
+			{ label: `${rotationLabel} 노쇼`, value: rotation.no_show, color: 'warning' },
+			{ label: `${fullLabel} 노쇼`, value: full.no_show, color: 'warning' },
 			{
 				label: '(자체) 당일 취소건',
 				value: stats.self_same_day_cancelled_count ?? 0,

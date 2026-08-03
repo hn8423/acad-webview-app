@@ -18,6 +18,8 @@
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import EnsembleComments from '$lib/components/ensemble/EnsembleComments.svelte';
 	import EnsembleApplyModal from '$lib/components/ensemble/EnsembleApplyModal.svelte';
+	import EnsembleCreateForm from '$lib/components/ensemble/EnsembleCreateForm.svelte';
+	import BottomSheet from '$lib/components/ui/BottomSheet.svelte';
 	import { formatDate } from '$lib/utils/format';
 	import { z } from 'zod';
 	import type { EnsembleDetail } from '$lib/types/ensemble';
@@ -29,6 +31,7 @@
 	let loading = $state(true);
 	let loadError = $state(false);
 	let showApplyModal = $state(false);
+	let showEditSheet = $state(false);
 	let submittingApply = $state(false);
 
 	let acceptingMemberId = $state<number | null>(null);
@@ -88,6 +91,11 @@
 		} finally {
 			loading = false;
 		}
+	}
+
+	async function handleEditSuccess() {
+		showEditSheet = false;
+		await fetchData();
 	}
 
 	async function handleApply(data: { role: string; introduction?: string }) {
@@ -425,6 +433,11 @@
 
 				<!-- Action Buttons -->
 				<section class="detail__actions">
+					{#if isLeader}
+						<Button fullWidth variant="secondary" onclick={() => (showEditSheet = true)}>
+							글 수정
+						</Button>
+					{/if}
 					{#if canApply}
 						<Button fullWidth onclick={() => (showApplyModal = true)}>참가 신청</Button>
 					{:else if isPending}
@@ -442,6 +455,14 @@
 		{/if}
 	</div>
 </div>
+
+<BottomSheet
+	bind:isOpen={showEditSheet}
+	title="합주조 수정"
+	onclose={() => (showEditSheet = false)}
+>
+	<EnsembleCreateForm editTarget={ensemble} oncreate={handleEditSuccess} />
+</BottomSheet>
 
 <EnsembleApplyModal
 	isOpen={showApplyModal}
