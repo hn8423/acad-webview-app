@@ -1,7 +1,55 @@
-import type { DateIndicators, LessonSlot } from '$lib/types/reservation';
+import type {
+	DateIndicators,
+	LessonSlot,
+	MyReservation,
+	ReservationStatus,
+	SlotType
+} from '$lib/types/reservation';
 import { getTodayString, toLocalDateString } from '$lib/utils/format';
 
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'] as const;
+
+// 자리를 차지하고 있는(= 아직 살아 있는) 예약 상태
+const ACTIVE_STATUSES: ReadonlySet<ReservationStatus> = new Set(['PENDING', 'CONFIRMED']);
+
+interface SlotIdentity {
+	slot_date: string;
+	start_time: string;
+	end_time: string;
+	slot_type: SlotType;
+	instructor_name: string | null;
+}
+
+// 예약 목록 API는 slot_id를 내려주지 않으므로 날짜/시간/유형/강사 조합으로 슬롯과 매칭한다
+export function buildSlotKey(slot: SlotIdentity): string {
+	return [
+		slot.slot_date,
+		slot.start_time,
+		slot.end_time,
+		slot.slot_type,
+		slot.instructor_name ?? ''
+	].join('|');
+}
+
+export function buildActiveReservationMap(
+	reservations: MyReservation[]
+): Map<string, MyReservation> {
+	const map = new Map<string, MyReservation>();
+	for (const reservation of reservations) {
+		if (!ACTIVE_STATUSES.has(reservation.status)) continue;
+		const key = buildSlotKey(reservation);
+		// 같은 슬롯에 활성 예약이 둘일 수는 없지만, 방어적으로 먼저 온 건을 유지한다
+		if (!map.has(key)) map.set(key, reservation);
+	}
+	return map;
+}
+
+// 혼자 쓰는 시간대에는 "1번째 / 총 1명"이 의미 없으므로 2명 이상일 때만 순번을 노출한다
+export function hasVisibleSequence(reservation: MyReservation | null | undefined): boolean {
+	if (!reservation) return false;
+	if (reservation.sequence == null) return false;
+	return (reservation.slot_total_count ?? 0) > 1;
+}
 
 export function countSlotDates(startDate: string, endDate: string, daysOfWeek: number[]): number {
 	if (daysOfWeek.length === 0) return 0;
