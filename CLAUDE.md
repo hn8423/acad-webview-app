@@ -38,7 +38,7 @@ src/
       member.ts             # Membership, passes, drink tickets
       ensemble.ts           # Ensemble groups
       feedback.ts           # Feedback records (monthly/weekly)
-      holding.ts            # Holding/suspension management
+      holding.ts            # Pass holding (suspension) — apply, admin list
       notification.ts       # Push notifications
       reservation.ts        # Lesson reservations
     stores/                 # Svelte 5 rune-based state management
@@ -77,7 +77,7 @@ src/
       member.ts             # Member, MemberPass, DrinkTicket, Instructor
       ensemble.ts           # Ensemble types
       feedback.ts           # Feedback types
-      holding.ts            # Holding types
+      holding.ts            # Holding, CreateHoldingRequest/Response
       notification.ts       # Notification types
       reservation.ts        # Reservation types
     config/
@@ -119,6 +119,7 @@ static/                     # Static files
 - `/app/feedback/[id]` — Feedback detail
 - `/app/ensemble` — Ensemble groups
 - `/app/reservation` — Lesson reservation
+- `/app/holding` — Pass holding request (`?pass_id=` preselects)
 - `/app/profile` — My profile
 
 ### Admin (Header + Sidebar)
@@ -174,6 +175,27 @@ Login → fetchMyAcademies() → Select Academy (+ role) → App or Admin
 ### Multi-tenancy
 
 All API calls (except auth) require `academyId` from `academyStore.academyId`.
+
+### Pass Holding (홀딩)
+
+A member can pause a pass for a limited number of days. Rules (enforced server-side, mirrored in
+`src/lib/utils/pass.ts` for UX):
+
+- **Budget**: `PassType.hold_days` is the total allowance. It is snapshotted onto `MemberPass.hold_days`
+  at grant time, so changing the template never retroactively changes an issued pass.
+  `remaining_hold_days = hold_days - hold_used_days`. There is no limit on the number of requests.
+- **Applied immediately**, no admin approval. `end_date` extends by the holding length right away.
+- **Day count includes the end date** (2/15~2/28 = 14 days) — `calcHoldingDays()`. This must match the
+  expiry extension, so don't switch it to an exclusive diff.
+- **Booking is blocked** during the period. An in-progress holding flips the pass to `HOLDING` (which
+  `isPassBookable` already excludes); a _future-dated_ holding leaves the pass `ACTIVE`, so the period
+  itself must be checked — `isDateInHolding(pass, date)` against `MemberPass.holdings`.
+- **Existing reservations in the period are auto-cancelled** (today onward only; past slots are kept as
+  attendance history) and student + instructors get a notification.
+- **Status transitions are cron-driven** server-side (`ACTIVE → HOLDING` on start, back on end).
+
+`MemberPass.status`: `HOLDING` means holding; **`REFUNDED` means refunded**. Before this feature
+`HOLDING` was labelled 환불 — do not reintroduce that mapping.
 
 ## Code Patterns
 

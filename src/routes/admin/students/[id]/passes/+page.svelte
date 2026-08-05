@@ -25,7 +25,8 @@
 		getTicketValue,
 		isExpireTransition,
 		getPassCategoryLabel,
-		getPendingCount
+		getPendingCount,
+		getRemainingHoldDays
 	} from '$lib/utils/pass';
 	import type { MemberPass, PassType, Instructor } from '$lib/types/member';
 	import { onMount } from 'svelte';
@@ -160,6 +161,13 @@
 		if (!selectedPassTypeId) return 1;
 		const pt = passTypes.find((t) => String(t.id) === String(selectedPassTypeId));
 		return pt?.ticket_value ?? 1;
+	});
+
+	// 부여 시점의 설정값이 수강권에 스냅샷되므로 미리 안내한다
+	let selectedPassTypeHoldDays = $derived.by(() => {
+		if (!selectedPassTypeId) return 0;
+		const pt = passTypes.find((t) => String(t.id) === String(selectedPassTypeId));
+		return pt?.hold_days ?? 0;
 	});
 
 	function confirmDelete(pass: MemberPass) {
@@ -321,6 +329,13 @@
 									>{formatDate(pass.start_date)} ~ {formatDate(pass.end_date)}</span
 								>
 							</div>
+							{#if (pass.hold_days ?? 0) > 0}
+								<div class="pass-item__hold">
+									홀딩 {pass.hold_used_days ?? 0}/{pass.hold_days}일 사용 (잔여 {getRemainingHoldDays(
+										pass
+									)}일)
+								</div>
+							{/if}
 							<div class="pass-item__actions">
 								<button class="action-btn" onclick={() => openEditModal(pass)}>수정</button>
 								{#if isAdmin}
@@ -371,6 +386,10 @@
 				</p>
 			{/if}
 
+			{#if selectedPassTypeHoldDays > 0}
+				<p class="create-form__info">홀딩 {selectedPassTypeHoldDays}일이 함께 부여됩니다.</p>
+			{/if}
+
 			<div class="create-form__field">
 				<label class="create-form__label" for="instructor">담당 강사</label>
 				<select id="instructor" class="create-form__select" bind:value={selectedInstructorId}>
@@ -399,9 +418,10 @@
 				<label class="create-form__label" for="pass-status">상태</label>
 				<select id="pass-status" class="create-form__select" bind:value={selectedStatus}>
 					<option value="ACTIVE">이용중</option>
-					<option value="HOLDING">환불</option>
+					<option value="HOLDING">홀딩</option>
 					<option value="EXPIRED">만료</option>
 					<option value="USED_UP">소진</option>
+					<option value="REFUNDED">환불</option>
 				</select>
 			</div>
 		{/if}
@@ -564,6 +584,12 @@
 		}
 
 		&__date {
+			font-size: var(--font-size-xs);
+			color: var(--color-text-muted);
+		}
+
+		&__hold {
+			margin-top: var(--space-xs);
 			font-size: var(--font-size-xs);
 			color: var(--color-text-muted);
 		}
