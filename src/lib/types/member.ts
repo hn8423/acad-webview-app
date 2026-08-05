@@ -1,6 +1,10 @@
 export type MemberRole = 'STUDENT' | 'INSTRUCTOR' | 'ADMIN';
 export type StudentPassStatus = 'ALL' | 'ACTIVE' | 'EXPIRED';
 
+// HOLDING = 홀딩(일시정지), REFUNDED = 환불.
+// 과거에는 환불도 HOLDING으로 저장했으나 홀딩 기능 도입과 함께 분리했다.
+export type PassStatus = 'ACTIVE' | 'EXPIRED' | 'HOLDING' | 'USED_UP' | 'REFUNDED';
+
 export interface Member {
 	id: number;
 	academy_id: number;
@@ -47,6 +51,8 @@ export interface PassType {
 	total_lessons: number;
 	price: number;
 	allow_duplicate_booking: number;
+	// 이 종류로 부여된 수강권이 쓸 수 있는 홀딩 총 일수 (0 = 홀딩 불가)
+	hold_days: number;
 }
 
 export interface MemberPass {
@@ -64,7 +70,20 @@ export interface MemberPass {
 	pending_count?: number;
 	// remaining_lessons - pending_count. 실제로 추가 예약 가능한 횟수
 	available_lessons?: number;
-	status: 'ACTIVE' | 'EXPIRED' | 'HOLDING' | 'USED_UP';
+	// 부여 시점에 스냅샷된 홀딩 가능 일수 / 누적 사용 일수 / 잔여 일수.
+	// 구버전 응답에는 없을 수 있어 optional (getRemainingHoldDays로 폴백 계산)
+	hold_days?: number;
+	hold_used_days?: number;
+	remaining_hold_days?: number;
+	// 아직 끝나지 않은 홀딩 구간. 진행 중 홀딩은 status로도 걸러지지만,
+	// 시작 전 홀딩은 status가 ACTIVE라 이 구간으로 예약을 막아야 한다.
+	holdings?: HoldingPeriod[];
+	status: PassStatus;
+}
+
+export interface HoldingPeriod {
+	holding_start: string;
+	holding_end: string;
 }
 
 export interface CreatePassRequest {
@@ -79,7 +98,7 @@ export interface UpdatePassRequest {
 	end_date?: string;
 	total_lessons?: number;
 	remaining_lessons?: number;
-	status?: 'ACTIVE' | 'EXPIRED' | 'HOLDING' | 'USED_UP';
+	status?: PassStatus;
 }
 
 export interface DrinkTicket {
@@ -152,6 +171,7 @@ export interface CreatePassTypeRequest {
 	total_lessons?: number;
 	price?: number;
 	allow_duplicate_booking?: number;
+	hold_days?: number;
 }
 
 export interface UpdatePassTypeRequest {
@@ -162,4 +182,5 @@ export interface UpdatePassTypeRequest {
 	total_lessons?: number;
 	price?: number;
 	allow_duplicate_booking?: number;
+	hold_days?: number;
 }

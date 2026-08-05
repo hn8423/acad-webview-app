@@ -29,6 +29,7 @@
 	let durationDays = $state('');
 	let totalLessons = $state('');
 	let price = $state('');
+	let holdDays = $state('');
 	let allowDuplicateBooking = $state(false);
 
 	// 삭제 모달
@@ -65,6 +66,7 @@
 		durationDays = '';
 		totalLessons = '';
 		price = '';
+		holdDays = '';
 		allowDuplicateBooking = false;
 		error = '';
 		showFormModal = true;
@@ -78,6 +80,7 @@
 		durationDays = String(pt.duration_days);
 		totalLessons = String(pt.total_lessons);
 		price = String(pt.price);
+		holdDays = String(pt.hold_days ?? 0);
 		allowDuplicateBooking = pt.allow_duplicate_booking === 1;
 		error = '';
 		showFormModal = true;
@@ -97,6 +100,12 @@
 			return;
 		}
 
+		// 홀딩은 유효 기간 안에서만 쓸 수 있으므로 그보다 길게 설정할 수 없다
+		if (holdDays && durationDays && Number(holdDays) > Number(durationDays)) {
+			error = '홀딩 가능 일수는 유효 기간을 넘을 수 없습니다.';
+			return;
+		}
+
 		const academyId = academyStore.academyId;
 		if (!academyId) return;
 
@@ -109,6 +118,7 @@
 				duration_days: durationDays ? Number(durationDays) : undefined,
 				total_lessons: totalLessons ? Number(totalLessons) : undefined,
 				price: price ? Number(price) : undefined,
+				hold_days: holdDays ? Number(holdDays) : 0,
 				allow_duplicate_booking: allowDuplicateBooking ? 1 : 0
 			};
 
@@ -189,6 +199,9 @@
 							{#if pt.ticket_value > 1}
 								| <span class="pass-type-item__ticket-highlight">{pt.ticket_value}회 차감</span>
 							{/if}
+							{#if pt.hold_days > 0}
+								| 홀딩 {pt.hold_days}일
+							{/if}
 						</div>
 						<div class="pass-type-item__actions">
 							<button class="action-btn" onclick={() => openEditModal(pt)}>수정</button>
@@ -234,6 +247,14 @@
 		<Input type="number" label="가격 (원)" bind:value={price} placeholder="200000" />
 
 		<Input type="number" label="1회 차감 횟수" bind:value={ticketValue} placeholder="1" />
+
+		<div class="pass-type-form__field">
+			<Input type="number" label="홀딩 가능 일수" bind:value={holdDays} placeholder="0" />
+			<p class="pass-type-form__hint">
+				수강생이 이 수강권으로 쉴 수 있는 총 일수입니다. 홀딩 기간만큼 만료일이 연장되고, 그
+				기간에는 예약할 수 없습니다. 0이면 홀딩을 사용할 수 없습니다.
+			</p>
+		</div>
 
 		<label class="pass-type-form__checkbox">
 			<input type="checkbox" bind:checked={allowDuplicateBooking} />
@@ -368,6 +389,12 @@
 			font-size: var(--font-size-sm);
 			font-weight: var(--font-weight-medium);
 			color: var(--color-text-secondary);
+		}
+
+		&__hint {
+			font-size: var(--font-size-sm);
+			color: var(--color-text-muted);
+			line-height: var(--line-height-base);
 		}
 
 		&__select {

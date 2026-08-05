@@ -24,6 +24,7 @@
 		getPassDisplayName,
 		isPassUsable,
 		isPassBookable,
+		isDateInHolding,
 		getAvailableLessons,
 		getPendingCount
 	} from '$lib/utils/pass';
@@ -78,9 +79,10 @@
 	// 오늘 기준 이용 가능 수강권 (월 인디케이터의 강사 필터용)
 	let activePasses = $derived(memberPasses.filter((p) => isPassUsable(p, getTodayString())));
 
-	// 슬롯 날짜 기준 예약 가능 수강권 — 해당 날짜에 유효하고, 보류분을 뺀 잔여가 남은 것만 노출
+	// 슬롯 날짜 기준 예약 가능 수강권 — 해당 날짜에 유효하고, 보류분을 뺀 잔여가 남고,
+	// 그 날짜가 홀딩 구간에 걸리지 않은 것만 노출
 	function getUsablePassesForDate(date: string): MemberPass[] {
-		return memberPasses.filter((p) => isPassBookable(p, date));
+		return memberPasses.filter((p) => isPassBookable(p, date) && !isDateInHolding(p, date));
 	}
 
 	let activeReservationMap = $derived(buildActiveReservationMap(myReservations));
@@ -256,8 +258,11 @@
 		}
 		const passesForSlot = getPassesForSlot(slot);
 		if (passesForSlot.length === 0) {
-			const message =
-				memberPasses.length === 0
+			// 홀딩 때문에 막힌 경우는 이유를 명확히 알려준다 (그냥 "수강권 없음"은 오해를 부른다)
+			const blockedByHolding = memberPasses.some((p) => isDateInHolding(p, slot.slot_date));
+			const message = blockedByHolding
+				? '홀딩 기간에는 예약할 수 없습니다.'
+				: memberPasses.length === 0
 					? '등록된 수강권이 없습니다.'
 					: slot.slot_type === 'REGULAR' && slot.instructor_name
 						? `${slot.instructor_name} 선생님의 이용 가능한 수강권이 없습니다.`
