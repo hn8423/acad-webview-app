@@ -100,7 +100,7 @@
 				try {
 					await sendNotification(academyId, {
 						title,
-						content: content.length > 100 ? content.slice(0, 100) + '...' : content,
+						content,
 						notification_type: 'GENERAL'
 					});
 				} catch {
