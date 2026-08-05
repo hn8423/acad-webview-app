@@ -7,6 +7,9 @@
 		error?: string;
 		disabled?: boolean;
 		maxlength?: number;
+		// date/number 입력의 허용 범위 (예: 홀딩 시작일 하한)
+		min?: string;
+		max?: string;
 		oninput?: (e: Event) => void;
 		onchange?: (e: Event) => void;
 	}
@@ -19,23 +22,30 @@
 		error = '',
 		disabled = false,
 		maxlength,
+		min,
+		max,
 		oninput,
 		onchange
 	}: Props = $props();
+
+	// label과 input을 연결해 스크린리더/자동완성이 동작하게 한다
+	const inputId = $props.id();
 </script>
 
 <div class="input-group" class:input-group--error={!!error}>
 	{#if label}
-		<!-- svelte-ignore a11y_label_has_associated_control -->
-		<label class="input-group__label">{label}</label>
+		<label class="input-group__label" for={inputId}>{label}</label>
 	{/if}
 	<input
+		id={inputId}
 		class="input-group__input"
 		{type}
 		{placeholder}
 		bind:value
 		{disabled}
 		{maxlength}
+		{min}
+		{max}
 		{oninput}
 		{onchange}
 	/>

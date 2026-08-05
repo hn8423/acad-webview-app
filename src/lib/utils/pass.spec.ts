@@ -15,7 +15,11 @@ import {
 	isPassUsable,
 	isPassBookable,
 	getAvailableLessons,
-	getPendingCount
+	getPendingCount,
+	calcHoldingDays,
+	addDays,
+	getRemainingHoldDays,
+	isHoldable
 } from './pass';
 
 describe('isExpireTransition', () => {
@@ -327,8 +331,12 @@ describe('getPassStatusLabel', () => {
 		expect(getPassStatusLabel('ACTIVE')).toBe('이용중');
 	});
 
-	it('should return 환불 for HOLDING', () => {
-		expect(getPassStatusLabel('HOLDING')).toBe('환불');
+	it('should return 홀딩 for HOLDING', () => {
+		expect(getPassStatusLabel('HOLDING')).toBe('홀딩');
+	});
+
+	it('should return 환불 for REFUNDED', () => {
+		expect(getPassStatusLabel('REFUNDED')).toBe('환불');
 	});
 
 	it('should return 소진 for USED_UP', () => {
@@ -451,5 +459,95 @@ describe('getPassDisplayName', () => {
 
 	it('should return empty string when both are missing', () => {
 		expect(getPassDisplayName(undefined, undefined)).toBe('');
+	});
+});
+
+describe('calcHoldingDays', () => {
+	it('should include the end date (2/15~2/28 = 14 days)', () => {
+		expect(calcHoldingDays('2026-02-15', '2026-02-28')).toBe(14);
+	});
+
+	it('should return 1 for a single-day holding', () => {
+		expect(calcHoldingDays('2026-02-15', '2026-02-15')).toBe(1);
+	});
+
+	it('should span month boundaries', () => {
+		expect(calcHoldingDays('2026-02-25', '2026-03-02')).toBe(6);
+	});
+
+	it('should handle leap day', () => {
+		expect(calcHoldingDays('2028-02-28', '2028-03-01')).toBe(3);
+	});
+
+	it('should return 0 when end precedes start', () => {
+		expect(calcHoldingDays('2026-02-28', '2026-02-15')).toBe(0);
+	});
+
+	it('should return 0 for empty or invalid input', () => {
+		expect(calcHoldingDays('', '2026-02-28')).toBe(0);
+		expect(calcHoldingDays('2026-02-15', '')).toBe(0);
+		expect(calcHoldingDays('not-a-date', '2026-02-28')).toBe(0);
+	});
+
+	it('should tolerate ISO datetime strings', () => {
+		expect(calcHoldingDays('2026-02-15T00:00:00.000Z', '2026-02-16T00:00:00.000Z')).toBe(2);
+	});
+});
+
+describe('addDays', () => {
+	it('should add days across a month boundary', () => {
+		expect(addDays('2026-02-25', 5)).toBe('2026-03-02');
+	});
+
+	it('should return the same date when adding zero', () => {
+		expect(addDays('2026-02-25', 0)).toBe('2026-02-25');
+	});
+
+	it('should tolerate ISO datetime strings', () => {
+		expect(addDays('2026-02-25T00:00:00.000Z', 1)).toBe('2026-02-26');
+	});
+
+	it('should return empty string for invalid input', () => {
+		expect(addDays('nope', 1)).toBe('');
+	});
+});
+
+describe('getRemainingHoldDays', () => {
+	it('should prefer the server-provided value', () => {
+		expect(
+			getRemainingHoldDays({ hold_days: 30, hold_used_days: 10, remaining_hold_days: 7 })
+		).toBe(7);
+	});
+
+	it('should fall back to hold_days - hold_used_days', () => {
+		expect(getRemainingHoldDays({ hold_days: 30, hold_used_days: 10 })).toBe(20);
+	});
+
+	it('should treat missing fields as zero', () => {
+		expect(getRemainingHoldDays({})).toBe(0);
+	});
+
+	it('should never go negative', () => {
+		expect(getRemainingHoldDays({ hold_days: 5, hold_used_days: 9 })).toBe(0);
+		expect(getRemainingHoldDays({ remaining_hold_days: -3 })).toBe(0);
+	});
+});
+
+describe('isHoldable', () => {
+	it('should allow an active pass with remaining hold days', () => {
+		expect(isHoldable({ status: 'ACTIVE', hold_days: 30, hold_used_days: 0 })).toBe(true);
+	});
+
+	it('should reject a pass with no hold days configured', () => {
+		expect(isHoldable({ status: 'ACTIVE', hold_days: 0, hold_used_days: 0 })).toBe(false);
+	});
+
+	it('should reject a pass that used up its hold days', () => {
+		expect(isHoldable({ status: 'ACTIVE', hold_days: 30, hold_used_days: 30 })).toBe(false);
+	});
+
+	it('should reject a pass that is not active', () => {
+		expect(isHoldable({ status: 'HOLDING', hold_days: 30, hold_used_days: 0 })).toBe(false);
+		expect(isHoldable({ status: 'EXPIRED', hold_days: 30, hold_used_days: 0 })).toBe(false);
 	});
 });

@@ -24,7 +24,9 @@
 		getPassStatusLabel,
 		getTicketValue,
 		getPassDisplayName,
-		getPendingCount
+		getPendingCount,
+		isHoldable,
+		getRemainingHoldDays
 	} from '$lib/utils/pass';
 	import type { MemberPass, DrinkTicket } from '$lib/types/member';
 	import type { MyReservation } from '$lib/types/reservation';
@@ -314,6 +316,19 @@
 									<div class="pass-card__date">
 										{formatDate(pass.start_date)} ~ {formatDate(pass.end_date)}
 									</div>
+									{#if isHoldable(pass)}
+										<div class="pass-card__hold">
+											<span class="pass-card__hold-days">
+												홀딩 {getRemainingHoldDays(pass)}일 사용 가능
+											</span>
+											<button
+												class="pass-card__hold-btn"
+												onclick={() => goto(`/app/holding?pass_id=${pass.id}`)}
+											>
+												홀딩 신청
+											</button>
+										</div>
+									{/if}
 								</div>
 							</div>
 							{#if passes.indexOf(pass) < passes.length - 1}
@@ -652,6 +667,33 @@
 		&__date {
 			font-size: var(--font-size-xs);
 			color: var(--color-text-muted);
+		}
+
+		&__hold {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: var(--space-sm);
+			margin-top: var(--space-xs);
+		}
+
+		&__hold-days {
+			font-size: var(--font-size-xs);
+			color: var(--color-text-muted);
+		}
+
+		&__hold-btn {
+			font-size: var(--font-size-xs);
+			font-weight: var(--font-weight-medium);
+			color: var(--color-primary);
+			padding: 4px 10px;
+			border-radius: var(--radius-full);
+			background: var(--color-primary-bg);
+			transition: opacity var(--transition-fast);
+
+			&:active {
+				opacity: 0.7;
+			}
 		}
 	}
 

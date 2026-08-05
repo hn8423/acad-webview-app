@@ -16,6 +16,8 @@ export interface AvailableSlot {
 
 export interface MyReservation {
 	reservation_id: number;
+	// 홀딩 신청 시 "이 수강권의 어떤 예약이 취소되는지" 계산하는 데 쓴다
+	member_pass_id?: number;
 	slot_type: SlotType;
 	instructor_name: string | null;
 	slot_date: string;
