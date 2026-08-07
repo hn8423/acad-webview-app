@@ -108,6 +108,7 @@
 			withPasses.map((m) => getMemberPasses(academyId, m.member_id))
 		);
 
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- 새 Map을 만들어 재할당한다 (제자리 변경 없음)
 		const newMap = append ? new Map(memberPassesMap) : new Map<number, MemberPass[]>();
 		withPasses.forEach((member, i) => {
 			const result = results[i];
@@ -138,7 +139,7 @@
 	<h1 class="admin-students__title">수강생 관리</h1>
 
 	<div class="admin-students__tabs">
-		{#each tabs as tab}
+		{#each tabs as tab (tab.value)}
 			<button
 				class="admin-students__tab"
 				class:admin-students__tab--active={activeTab === tab.value}
@@ -171,7 +172,7 @@
 		</p>
 	{:else}
 		<div class="student-list">
-			{#each members as member, i}
+			{#each members as member, i (member.member_id)}
 				<div
 					class="student-row"
 					role="button"
@@ -192,7 +193,7 @@
 						{#if memberPassesMap.has(member.member_id)}
 							{#each memberPassesMap
 								.get(member.member_id)
-								?.filter((p) => p.status === 'ACTIVE') ?? [] as pass}
+								?.filter((p) => p.status === 'ACTIVE') ?? [] as pass (pass.id)}
 								{@const remaining = pass.remaining_lessons ?? 0}
 								<Badge variant={getPassBadgeVariant(pass.pass_category, remaining)}
 									>{getPassCategoryLabel(pass.pass_category)} 잔여 {remaining}회</Badge

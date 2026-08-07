@@ -71,7 +71,6 @@
 <svelte:window onkeydown={isOpen ? handleKeydown : undefined} />
 
 {#if isOpen}
-	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 	<div
 		class="sheet-backdrop"
 		onclick={handleBackdropClick}

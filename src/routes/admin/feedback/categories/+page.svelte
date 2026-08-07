@@ -172,7 +172,7 @@
 			<p class="categories-page__empty">등록된 카테고리가 없습니다.</p>
 		{:else}
 			<div class="category-list">
-				{#each categories as cat, i}
+				{#each categories as cat, i (cat.id)}
 					<div class="category-item">
 						<div class="category-item__info">
 							<span class="category-item__order">{cat.sort_order}</span>

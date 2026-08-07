@@ -45,7 +45,7 @@
 </script>
 
 <nav class="bottom-nav">
-	{#each navItems as item}
+	{#each navItems as item (item.nav_id)}
 		{@const path = getNavPath(item.nav_position)}
 		<a href={path} class="bottom-nav__item" class:bottom-nav__item--active={isActive(path)}>
 			{#if isIconUrl(item.nav_icon) && !iconErrors[item.nav_id]}

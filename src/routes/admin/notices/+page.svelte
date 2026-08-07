@@ -2,7 +2,6 @@
 	import { academyStore } from '$lib/stores/academy.svelte';
 	import { getNotices, deleteNotice } from '$lib/api/academy';
 	import Button from '$lib/components/ui/Button.svelte';
-	import Card from '$lib/components/ui/Card.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import Modal from '$lib/components/ui/Modal.svelte';
@@ -14,7 +13,6 @@
 	let notices = $state<Notice[]>([]);
 	let loading = $state(true);
 	let currentPage = $state(1);
-	let totalPages = $state(1);
 	let deleteTarget = $state<Notice | null>(null);
 	let showDeleteModal = $state(false);
 	const LIMIT = 10;
@@ -30,7 +28,6 @@
 			const res = await getNotices(academyId, currentPage, LIMIT);
 			if (res.status && res.data) {
 				notices = res.data.list;
-				totalPages = Math.ceil(res.data.meta.total / LIMIT);
 			}
 		} catch {
 			// handle error
@@ -73,7 +70,7 @@
 		<p class="admin-notices__empty">공지사항이 없습니다.</p>
 	{:else}
 		<div class="notice-list">
-			{#each notices as notice, i}
+			{#each notices as notice, i (notice.id)}
 				<div class="notice-row" role="listitem">
 					<div
 						class="notice-row__left"

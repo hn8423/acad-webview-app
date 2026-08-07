@@ -16,7 +16,7 @@
 </script>
 
 <div class="type-filter">
-	{#each tabs as tab}
+	{#each tabs as tab (tab.value)}
 		<button
 			class="type-filter__tab"
 			class:type-filter__tab--active={selected === tab.value}

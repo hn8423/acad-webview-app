@@ -25,6 +25,7 @@
 	let loading = $state(true);
 	let monthLoading = $state(false);
 
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity -- 월별 응답 캐시 — 화면 갱신은 scheduleData 재할당이 담당한다
 	const scheduleCache = new Map<string, InstructorScheduleData>();
 	let scheduleRequestId = 0;
 
@@ -110,6 +111,7 @@
 	}
 
 	let dateDots = $derived.by(() => {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- $derived 안에서 매번 새로 만들어 반환한다
 		const dots = new Map<string, number[]>();
 		if (!scheduleData) return dots;
 		for (const [date, slots] of Object.entries(scheduleData.days)) {
@@ -132,6 +134,7 @@
 
 	let dayGroups = $derived.by(() => {
 		const filtered = filterBySelected(scheduleData?.days[selectedDate] ?? []);
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- $derived 안에서 매번 새로 만들어 반환한다
 		const groups = new Map<number | null, InstructorGroup>();
 		for (const slot of filtered) {
 			const key = slot.instructor_id;

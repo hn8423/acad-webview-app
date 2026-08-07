@@ -63,7 +63,7 @@
 			<p class="suggestion-page__empty">작성한 건의사항이 없습니다.</p>
 		{:else}
 			<div class="suggestion-section">
-				{#each suggestions as suggestion, i}
+				{#each suggestions as suggestion, i (suggestion.id)}
 					{@const statusBadge = getSuggestionStatusBadge(suggestion.status)}
 					<button
 						type="button"
@@ -89,7 +89,7 @@
 
 			{#if totalPages > 1}
 				<div class="pagination">
-					{#each Array.from({ length: totalPages }, (_, i) => i + 1) as page}
+					{#each Array.from({ length: totalPages }, (_, i) => i + 1) as page (page)}
 						<button
 							class="pagination__btn"
 							class:pagination__btn--active={page === currentPage}

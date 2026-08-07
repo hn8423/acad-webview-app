@@ -171,7 +171,7 @@
 			{/if}
 
 			<div class="notification-list">
-				{#each notifications as notification, i}
+				{#each notifications as notification, i (notification.id)}
 					<button
 						type="button"
 						class="notification-row"
@@ -191,6 +191,9 @@
 						</div>
 						<h3 class="notification-row__title">{notification.title}</h3>
 						<div class="notification-row__body">
+							<!-- 알림 본문은 서버/관리자가 생성한다. processNoticeContent()는 링크 정규화만
+							     하므로, 사용자 입력이 본문에 섞이게 되면 살수정을 추가해야 한다. -->
+							<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 							{@html processNoticeContent(notification.content)}
 						</div>
 					</button>
@@ -202,7 +205,7 @@
 
 			{#if totalPages > 1}
 				<div class="pagination">
-					{#each Array.from({ length: totalPages }, (_, i) => i + 1) as page}
+					{#each Array.from({ length: totalPages }, (_, i) => i + 1) as page (page)}
 						<button
 							class="pagination__btn"
 							class:pagination__btn--active={page === currentPage}
@@ -220,6 +223,8 @@
 {#if selectedNotification}
 	<Modal isOpen={isModalOpen} title={selectedNotification.title} onclose={closeModal}>
 		<div class="notification-detail__content">
+			<!-- 위 목록과 같은 신뢰 모델 (서버/관리자 생성 본문) -->
+			<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 			{@html processNoticeContent(selectedNotification.content)}
 		</div>
 		<p class="notification-detail__time">

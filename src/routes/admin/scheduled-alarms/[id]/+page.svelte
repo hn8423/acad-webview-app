@@ -138,7 +138,7 @@
 					<!-- svelte-ignore a11y_label_has_associated_control -->
 					<label class="form__label">스케줄 타입</label>
 					<div class="schedule-type-group">
-						{#each Object.entries(SCHEDULE_TYPE_LABELS) as [value, label]}
+						{#each Object.entries(SCHEDULE_TYPE_LABELS) as [value, label] (value)}
 							<button
 								type="button"
 								class="schedule-type-btn"
@@ -160,7 +160,7 @@
 						<!-- svelte-ignore a11y_label_has_associated_control -->
 						<label class="form__label">요일</label>
 						<div class="day-group">
-							{#each DAY_LABELS as dayLabel, idx}
+							{#each DAY_LABELS as dayLabel, idx (idx)}
 								<button
 									type="button"
 									class="day-btn"

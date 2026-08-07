@@ -114,6 +114,7 @@
 	}
 
 	function addDays(dateStr: string, days: number): string {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- 포맷용 지역 변수
 		const date = new Date(dateStr);
 		date.setDate(date.getDate() + days);
 		return date.toISOString().split('T')[0];
@@ -370,7 +371,7 @@
 					onchange={handlePassTypeChange}
 				>
 					<option value="">선택하세요</option>
-					{#each passTypes as pt}
+					{#each passTypes as pt (pt.id)}
 						<option value={pt.id}>
 							{pt.pass_name} ({getPassCategoryLabel(pt.pass_category)}){pt.ticket_value > 1
 								? ` [${pt.ticket_value}회 차감]`
@@ -394,7 +395,7 @@
 				<label class="create-form__label" for="instructor">담당 강사</label>
 				<select id="instructor" class="create-form__select" bind:value={selectedInstructorId}>
 					<option value="">선택하세요</option>
-					{#each instructors as instr}
+					{#each instructors as instr (instr.member_id)}
 						<option value={instr.instructor_id ?? instr.id}
 							>{instr.user_name} ({instr.specialties})</option
 						>

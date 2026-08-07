@@ -256,7 +256,7 @@
 					<p class="empty-text">등록된 수강권이 없습니다.</p>
 				{:else}
 					<div class="pass-list">
-						{#each passes as pass}
+						{#each passes as pass (pass.id)}
 							<div class="pass-card">
 								<div class="pass-card__header">
 									<span class="pass-card__name">
@@ -362,7 +362,7 @@
 					<p class="empty-text">공지사항이 없습니다.</p>
 				{:else}
 					<div class="notice-list">
-						{#each recentNotices as notice, i}
+						{#each recentNotices as notice, i (notice.id)}
 							<button
 								type="button"
 								class="notice-item"

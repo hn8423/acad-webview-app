@@ -169,7 +169,7 @@
 			<p class="stats-modal__error">{errorMessage}</p>
 		{:else if stats}
 			<div class="stats-grid">
-				{#each statItems as item}
+				{#each statItems as item (item.label)}
 					<div class="stat-card stat-card--{item.color}">
 						<span class="stat-card__label">{item.label}</span>
 						<span class="stat-card__value">{item.value}</span>

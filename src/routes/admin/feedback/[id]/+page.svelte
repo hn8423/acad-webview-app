@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
 	import { academyStore } from '$lib/stores/academy.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import {
@@ -249,7 +248,7 @@
 					<div class="detail-card">
 						<h3 class="detail-card__title">카테고리별 평가</h3>
 						<div class="skill-list">
-							{#each levelTest.skill_details as detail}
+							{#each levelTest.skill_details as detail (detail.category_id)}
 								<ScoreDisplay
 									categoryName={detail.category_name ?? ''}
 									score={detail.score}

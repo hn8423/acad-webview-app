@@ -57,7 +57,6 @@
 	let availableSlots = $state<AvailableSlot[]>([]);
 	let slotsLoading = $state(true);
 	let rawDateIndicators = $state<Map<string, DateIndicators>>(new Map());
-	let indicatorsLoading = $state(false);
 
 	// My reservations tab state
 	let myReservations = $state<MyReservation[]>([]);
@@ -92,6 +91,7 @@
 	// 월 요약 API는 강사 단위라 수강권 유효기간을 모른다. 예약할 수 없는 날짜의 '예약 가능' 점은
 	// 여기서 걷어낸다 (기존 예약이 있는 날의 확정/대기 점은 그대로 둔다).
 	let dateIndicators = $derived.by(() => {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- $derived 안에서 매번 새로 만들어 반환한다
 		const filtered = new Map<string, DateIndicators>();
 		for (const [date, indicators] of rawDateIndicators) {
 			const hasAvailable =
@@ -121,7 +121,6 @@
 
 	let filteredPasses = $derived(getPassesForSlot(selectedSlot));
 	let selectedPass = $derived(filteredPasses.find((p) => p.id === selectedPassId) ?? null);
-	let isRotationPass = $derived(selectedPass?.pass_category === 'ROTATION');
 	let selectedPassWeight = $derived(
 		selectedPass
 			? getReservationWeight(
@@ -218,7 +217,6 @@
 			return;
 		}
 
-		indicatorsLoading = true;
 		const requestId = ++indicatorRequestId;
 
 		try {
@@ -228,6 +226,7 @@
 
 			if (requestId !== indicatorRequestId) return;
 
+			// eslint-disable-next-line svelte/prefer-svelte-reactivity -- 만든 뒤 rawDateIndicators에 통째로 재할당한다
 			const merged = new Map<string, DateIndicators>();
 			for (const result of results) {
 				if (result.status !== 'fulfilled' || !result.value.status || !result.value.data) continue;
@@ -247,10 +246,6 @@
 			rawDateIndicators = merged;
 		} catch {
 			// handled by client.ts
-		} finally {
-			if (requestId === indicatorRequestId) {
-				indicatorsLoading = false;
-			}
 		}
 	}
 
@@ -411,7 +406,6 @@
 		<ReservationCalendar
 			{selectedDate}
 			{dateIndicators}
-			{indicatorsLoading}
 			onselect={handleDateSelect}
 			onmonthchange={handleMonthChange}
 		/>
@@ -428,7 +422,7 @@
 				<p class="slots-content__empty">예약 가능한 시간이 없습니다.</p>
 			{:else}
 				<div class="slot-list">
-					{#each availableSlots as slot}
+					{#each availableSlots as slot (slot.slot_id)}
 						{@const alreadyBooked = isSlotAlreadyBooked(slot)}
 						{@const mySequence = getSequenceForSlot(slot)}
 						{@const eligibility = getSlotEligibility(memberPasses, slot)}
@@ -491,7 +485,7 @@
 				<p class="my-content__empty">예약 내역이 없습니다.</p>
 			{:else}
 				<div class="reservation-list">
-					{#each myReservations as reservation}
+					{#each myReservations as reservation (reservation.reservation_id)}
 						<Card padding="md">
 							<div class="reservation-card">
 								<div class="reservation-card__header">
@@ -592,7 +586,7 @@
 					bind:value={selectedPassId}
 					aria-label="사용할 수강권 선택"
 				>
-					{#each filteredPasses as pass}
+					{#each filteredPasses as pass (pass.id)}
 						{@const passWeight = getReservationWeight(
 							pass.pass_category,
 							pass.ticket_value,
@@ -706,17 +700,10 @@
 				<div class="cancel-sheet__noshow-warning">
 					당일 취소는 노쇼(No-Show)로 처리됩니다. 수강권이 차감되며 환불되지 않습니다.
 				</div>
-			{:else}
-				{@const cancelWeight = getReservationWeight(
-					selectedReservation.pass_category,
-					selectedReservation.ticket_value,
-					selectedReservation.slot_type
-				)}
-				{#if getTicketValue(selectedReservation.ticket_value) > 1}
-					<p class="cancel-sheet__refund-notice">
-						취소 시 {getTicketValue(selectedReservation.ticket_value)}회가 환불됩니다.
-					</p>
-				{/if}
+			{:else if getTicketValue(selectedReservation.ticket_value) > 1}
+				<p class="cancel-sheet__refund-notice">
+					취소 시 {getTicketValue(selectedReservation.ticket_value)}회가 환불됩니다.
+				</p>
 			{/if}
 			<div class="cancel-sheet__buttons">
 				<Button

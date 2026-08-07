@@ -169,7 +169,7 @@
 		<p class="admin-notifications__empty">알림이 없습니다.</p>
 	{:else}
 		<div class="notification-list">
-			{#each notifications as notification, i}
+			{#each notifications as notification, i (notification.id)}
 				<div
 					class="notification-row"
 					class:notification-row--unread={!notification.is_read}
@@ -231,7 +231,7 @@
 
 		{#if totalPages > 1}
 			<div class="pagination">
-				{#each Array.from({ length: totalPages }, (_, i) => i + 1) as page}
+				{#each Array.from({ length: totalPages }, (_, i) => i + 1) as page (page)}
 					<button
 						class="pagination__btn"
 						class:pagination__btn--active={page === currentPage}
