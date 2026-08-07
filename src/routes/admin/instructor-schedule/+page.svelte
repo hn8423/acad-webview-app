@@ -8,10 +8,10 @@
 	import type {
 		InstructorScheduleData,
 		ScheduleSlot,
-		ScheduleSlotReservation,
-		SlotStatus
+		ScheduleSlotReservation
 	} from '$lib/types/reservation';
 	import { getPassCategoryLabel } from '$lib/utils/pass';
+	import { isScheduleSlotFull } from '$lib/utils/reservation';
 	import { formatTimeRange, getTodayString, getDayOfWeek } from '$lib/utils/format';
 	import { buildInstructorColorMap, getInstructorColorIndex } from '$lib/utils/instructor-colors';
 	import Badge from '$lib/components/ui/Badge.svelte';
@@ -158,15 +158,16 @@
 		return colorIndex < 0 ? 'neutral' : `c${colorIndex}`;
 	}
 
-	function statusVariant(status: SlotStatus): 'success' | 'warning' | 'neutral' {
-		if (status === 'OPEN') return 'success';
-		if (status === 'CLOSED') return 'warning';
+	// 정원이 찬 슬롯은 status가 OPEN이어도 실제로는 예약이 안 되므로 '마감'으로 보여준다
+	function statusVariant(slot: ScheduleSlot): 'success' | 'warning' | 'neutral' {
+		if (slot.status === 'OPEN') return isScheduleSlotFull(slot) ? 'warning' : 'success';
+		if (slot.status === 'CLOSED') return 'warning';
 		return 'neutral';
 	}
 
-	function statusLabel(status: SlotStatus): string {
-		if (status === 'OPEN') return '예약 가능';
-		if (status === 'CLOSED') return '마감';
+	function statusLabel(slot: ScheduleSlot): string {
+		if (slot.status === 'OPEN') return isScheduleSlotFull(slot) ? '마감' : '예약 가능';
+		if (slot.status === 'CLOSED') return '마감';
 		return '취소됨';
 	}
 
@@ -264,7 +265,7 @@
 												{slot.slot_type === 'ENSEMBLE' ? '합주' : '레슨'} · {formatCapacity(slot)}
 											</span>
 										</div>
-										<Badge variant={statusVariant(slot.status)}>{statusLabel(slot.status)}</Badge>
+										<Badge variant={statusVariant(slot)}>{statusLabel(slot)}</Badge>
 									</div>
 									{#if booked.length > 0}
 										<ul class="instructor-schedule__students">
