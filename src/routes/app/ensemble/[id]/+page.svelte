@@ -310,7 +310,7 @@
 				<section class="detail__section">
 					<h3 class="detail__section-title">멤버</h3>
 					<div class="member-list">
-						{#each activeMembers as member}
+						{#each activeMembers as member (member.member_id)}
 							<div class="member-item">
 								<div class="member-item__info">
 									<span class="member-item__name">{member.user_name}</span>
@@ -328,7 +328,7 @@
 					<section class="detail__section">
 						<h3 class="detail__section-title">참가 신청 ({pendingMembers.length})</h3>
 						<div class="member-list">
-							{#each pendingMembers as member}
+							{#each pendingMembers as member (member.member_id)}
 								<div class="member-item member-item--pending">
 									<div class="member-item__info">
 										<span class="member-item__name">{member.user_name}</span>

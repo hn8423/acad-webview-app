@@ -58,7 +58,7 @@
 			<p class="notice-page__empty">공지사항이 없습니다.</p>
 		{:else}
 			<div class="notice-section">
-				{#each notices as notice, i}
+				{#each notices as notice, i (notice.id)}
 					<button type="button" class="notice-row" onclick={() => goto(`/app/notice/${notice.id}`)}>
 						<div class="notice-row__left">
 							{#if notice.is_pinned}
@@ -78,7 +78,7 @@
 
 			{#if totalPages > 1}
 				<div class="pagination">
-					{#each Array.from({ length: totalPages }, (_, i) => i + 1) as page}
+					{#each Array.from({ length: totalPages }, (_, i) => i + 1) as page (page)}
 						<button
 							class="pagination__btn"
 							class:pagination__btn--active={page === currentPage}

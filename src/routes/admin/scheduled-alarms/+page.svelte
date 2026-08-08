@@ -6,7 +6,6 @@
 		toggleScheduledAlarm
 	} from '$lib/api/scheduled-alarm';
 	import Button from '$lib/components/ui/Button.svelte';
-	import Badge from '$lib/components/ui/Badge.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import Modal from '$lib/components/ui/Modal.svelte';
 	import { formatTime, formatDate } from '$lib/utils/format';
@@ -115,7 +114,7 @@
 		<p class="scheduled-alarms__empty">등록된 정기 알림이 없습니다.</p>
 	{:else}
 		<div class="alarm-list">
-			{#each alarms as alarm, i}
+			{#each alarms as alarm, i (alarm.id)}
 				<div class="alarm-row" role="listitem">
 					<div
 						class="alarm-row__left"
@@ -176,7 +175,7 @@
 
 		{#if totalPages > 1}
 			<div class="pagination">
-				{#each Array.from({ length: totalPages }, (_, i) => i + 1) as pageNum}
+				{#each Array.from({ length: totalPages }, (_, i) => i + 1) as pageNum (pageNum)}
 					<button
 						class="pagination__btn"
 						class:pagination__btn--active={pageNum === currentPage}

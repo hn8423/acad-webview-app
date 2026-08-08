@@ -10,18 +10,11 @@
 	interface Props {
 		selectedDate: string;
 		dateIndicators: Map<string, DateIndicators>;
-		indicatorsLoading?: boolean;
 		onselect: (date: string) => void;
 		onmonthchange: (year: number, month: number) => void;
 	}
 
-	let {
-		selectedDate,
-		dateIndicators,
-		indicatorsLoading = false,
-		onselect,
-		onmonthchange
-	}: Props = $props();
+	let { selectedDate, dateIndicators, onselect, onmonthchange }: Props = $props();
 
 	const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
 	const today = getTodayString();
@@ -172,7 +165,7 @@
 	</div>
 
 	<div class="reservation-calendar__grid">
-		{#each DAY_NAMES as day, i}
+		{#each DAY_NAMES as day, i (i)}
 			<div
 				class="reservation-calendar__header"
 				class:reservation-calendar__header--weekend={i === 0 || i === 6}
@@ -181,8 +174,8 @@
 			</div>
 		{/each}
 
-		{#each calendarCells as row}
-			{#each row as cell}
+		{#each calendarCells as row, rowIndex (rowIndex)}
+			{#each row as cell (cell.fullDate)}
 				{@const indicators = dateIndicators.get(cell.fullDate)}
 				{@const hasIndicator = (indicators?.has_available || indicators?.has_pending) ?? false}
 				{@const isSelected = cell.fullDate === selectedDate}

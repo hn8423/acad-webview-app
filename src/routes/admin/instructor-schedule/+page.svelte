@@ -8,10 +8,10 @@
 	import type {
 		InstructorScheduleData,
 		ScheduleSlot,
-		ScheduleSlotReservation,
-		SlotStatus
+		ScheduleSlotReservation
 	} from '$lib/types/reservation';
 	import { getPassCategoryLabel } from '$lib/utils/pass';
+	import { isScheduleSlotFull } from '$lib/utils/reservation';
 	import { formatTimeRange, getTodayString, getDayOfWeek } from '$lib/utils/format';
 	import { buildInstructorColorMap, getInstructorColorIndex } from '$lib/utils/instructor-colors';
 	import Badge from '$lib/components/ui/Badge.svelte';
@@ -25,6 +25,7 @@
 	let loading = $state(true);
 	let monthLoading = $state(false);
 
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity -- 월별 응답 캐시 — 화면 갱신은 scheduleData 재할당이 담당한다
 	const scheduleCache = new Map<string, InstructorScheduleData>();
 	let scheduleRequestId = 0;
 
@@ -110,6 +111,7 @@
 	}
 
 	let dateDots = $derived.by(() => {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- $derived 안에서 매번 새로 만들어 반환한다
 		const dots = new Map<string, number[]>();
 		if (!scheduleData) return dots;
 		for (const [date, slots] of Object.entries(scheduleData.days)) {
@@ -132,6 +134,7 @@
 
 	let dayGroups = $derived.by(() => {
 		const filtered = filterBySelected(scheduleData?.days[selectedDate] ?? []);
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- $derived 안에서 매번 새로 만들어 반환한다
 		const groups = new Map<number | null, InstructorGroup>();
 		for (const slot of filtered) {
 			const key = slot.instructor_id;
@@ -158,15 +161,16 @@
 		return colorIndex < 0 ? 'neutral' : `c${colorIndex}`;
 	}
 
-	function statusVariant(status: SlotStatus): 'success' | 'warning' | 'neutral' {
-		if (status === 'OPEN') return 'success';
-		if (status === 'CLOSED') return 'warning';
+	// 정원이 찬 슬롯은 status가 OPEN이어도 실제로는 예약이 안 되므로 '마감'으로 보여준다
+	function statusVariant(slot: ScheduleSlot): 'success' | 'warning' | 'neutral' {
+		if (slot.status === 'OPEN') return isScheduleSlotFull(slot) ? 'warning' : 'success';
+		if (slot.status === 'CLOSED') return 'warning';
 		return 'neutral';
 	}
 
-	function statusLabel(status: SlotStatus): string {
-		if (status === 'OPEN') return '예약 가능';
-		if (status === 'CLOSED') return '마감';
+	function statusLabel(slot: ScheduleSlot): string {
+		if (slot.status === 'OPEN') return isScheduleSlotFull(slot) ? '마감' : '예약 가능';
+		if (slot.status === 'CLOSED') return '마감';
 		return '취소됨';
 	}
 
@@ -264,7 +268,7 @@
 												{slot.slot_type === 'ENSEMBLE' ? '합주' : '레슨'} · {formatCapacity(slot)}
 											</span>
 										</div>
-										<Badge variant={statusVariant(slot.status)}>{statusLabel(slot.status)}</Badge>
+										<Badge variant={statusVariant(slot)}>{statusLabel(slot)}</Badge>
 									</div>
 									{#if booked.length > 0}
 										<ul class="instructor-schedule__students">

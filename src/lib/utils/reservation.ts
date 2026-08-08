@@ -3,6 +3,7 @@ import type {
 	LessonSlot,
 	MyReservation,
 	ReservationStatus,
+	ScheduleSlot,
 	SlotType
 } from '$lib/types/reservation';
 import { getTodayString, toLocalDateString } from '$lib/utils/format';
@@ -74,6 +75,15 @@ export function formatDayLabels(daysOfWeek: number[]): string {
 
 export function isReservationDay(slotDate: string): boolean {
 	return toLocalDateString(slotDate) <= getTodayString();
+}
+
+// 정원이 다 찬 슬롯인지. slot.status는 정원이 차도 OPEN으로 남아 있어서 그것만 보면
+// 마감된 시간이 '예약 가능'으로 표시된다. current_count는 취미반 0.5 가중치가 반영된 값이다.
+export function isScheduleSlotFull(
+	slot: Pick<ScheduleSlot, 'max_capacity' | 'current_count'>
+): boolean {
+	if (slot.max_capacity === null) return false;
+	return slot.current_count >= slot.max_capacity;
 }
 
 export function hasActionNeeded(slot: LessonSlot, today: string): boolean {

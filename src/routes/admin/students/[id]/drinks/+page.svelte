@@ -44,6 +44,7 @@
 
 	function openCreateModal() {
 		totalCount = '';
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- 기본 만료일 계산용 지역 변수
 		const defaultExpiry = new Date();
 		defaultExpiry.setMonth(defaultExpiry.getMonth() + 1);
 		expiryDate = defaultExpiry.toISOString().split('T')[0];
@@ -105,7 +106,7 @@
 			<p class="drinks-page__empty">등록된 음료권이 없습니다.</p>
 		{:else}
 			<div class="ticket-list">
-				{#each tickets as ticket}
+				{#each tickets as ticket (ticket.id)}
 					<Card>
 						<div class="ticket-item">
 							<div class="ticket-item__header">

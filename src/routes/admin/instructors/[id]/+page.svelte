@@ -172,7 +172,7 @@
 			<h3 class="students-section__title">담당 수강생</h3>
 
 			<div class="students-section__tabs">
-				{#each tabs as tab}
+				{#each tabs as tab (tab.value)}
 					<button
 						class="students-section__tab"
 						class:students-section__tab--active={activeTab === tab.value}
@@ -205,7 +205,7 @@
 				</p>
 			{:else}
 				<div class="student-list">
-					{#each students as student, i}
+					{#each students as student, i (student.member_id)}
 						<div
 							class="student-row"
 							role="button"

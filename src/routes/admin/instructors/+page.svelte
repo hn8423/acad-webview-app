@@ -327,7 +327,7 @@
 		<p class="admin-instructors__empty">등록된 강사가 없습니다.</p>
 	{:else}
 		<div class="instructor-list">
-			{#each instructors as instructor, i}
+			{#each instructors as instructor, i (instructor.member_id)}
 				<div class="instructor-row-wrapper">
 					<button
 						type="button"
@@ -463,7 +463,7 @@
 				</p>
 			{:else}
 				<div class="member-select__list">
-					{#each memberList as member, i}
+					{#each memberList as member, i (member.member_id)}
 						<button type="button" class="member-select__row" onclick={() => selectMember(member)}>
 							<div class="member-select__info">
 								<span class="member-select__name">{member.user_name}</span>

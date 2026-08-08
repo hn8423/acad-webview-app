@@ -153,6 +153,7 @@
 	}
 
 	function indexEventsByDate(monthEvents: CalendarEvent[]): Map<string, CalendarEvent[]> {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- 지역 그룹핑용 — 만든 뒤 통째로 반환한다
 		const map = new Map<string, CalendarEvent[]>();
 		for (const event of monthEvents) {
 			const existing = map.get(event.event_date);
@@ -320,14 +321,14 @@
 	</div>
 
 	<div class="calendar-grid">
-		{#each DAY_NAMES as day, i}
+		{#each DAY_NAMES as day, i (i)}
 			<div class="calendar-header" class:calendar-header--weekend={i === 0 || i === 6}>
 				{day}
 			</div>
 		{/each}
 
-		{#each calendarCells as row}
-			{#each row as cell}
+		{#each calendarCells as row, rowIndex (rowIndex)}
+			{#each row as cell (cell.fullDate)}
 				<button
 					type="button"
 					class="calendar-cell"
@@ -347,7 +348,7 @@
 					{/if}
 					{#if cell.events.length > 0}
 						<div class="event-dots">
-							{#each cell.events.slice(0, MAX_EVENT_DOTS) as event}
+							{#each cell.events.slice(0, MAX_EVENT_DOTS) as event, eventIndex (eventIndex)}
 								<span class="event-dot" style="background-color: {getEventColor(event)}"></span>
 							{/each}
 						</div>
@@ -372,7 +373,7 @@
 		{:else}
 			{#if selectedReservations.length > 0}
 				<div class="reservation-cards">
-					{#each selectedReservations as reservation}
+					{#each selectedReservations as reservation (reservation.reservation_id)}
 						{@const canCancel =
 							reservation.status === 'PENDING' || reservation.status === 'CONFIRMED'}
 						{@const isSameDay = canCancel && isReservationDay(reservation.slot_date)}
@@ -421,7 +422,7 @@
 
 			{#if selectedOtherEvents.length > 0}
 				<div class="other-events">
-					{#each selectedOtherEvents as event}
+					{#each selectedOtherEvents as event, eventIndex (eventIndex)}
 						<div class="event-item" style="--event-color: {getEventColor(event)}">
 							<div class="event-item__header">
 								<span class="event-item__title">{event.event_title}</span>

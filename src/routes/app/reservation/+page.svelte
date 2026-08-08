@@ -23,11 +23,17 @@
 		getReservationWeight,
 		getPassDisplayName,
 		isPassUsable,
-		isPassBookable,
-		isDateInHolding,
 		getAvailableLessons,
 		getPendingCount
 	} from '$lib/utils/pass';
+	import {
+		getBookingBlockLabel,
+		getBookingBlockMessage,
+		getDateEligibility,
+		getSlotEligibility,
+		getUsablePassesForDate,
+		getUsablePassesForSlot
+	} from '$lib/utils/booking';
 	import {
 		buildActiveReservationMap,
 		buildSlotKey,
@@ -50,8 +56,7 @@
 	let selectedDate = $state(getTodayString());
 	let availableSlots = $state<AvailableSlot[]>([]);
 	let slotsLoading = $state(true);
-	let dateIndicators = $state<Map<string, DateIndicators>>(new Map());
-	let indicatorsLoading = $state(false);
+	let rawDateIndicators = $state<Map<string, DateIndicators>>(new Map());
 
 	// My reservations tab state
 	let myReservations = $state<MyReservation[]>([]);
@@ -79,11 +84,23 @@
 	// 오늘 기준 이용 가능 수강권 (월 인디케이터의 강사 필터용)
 	let activePasses = $derived(memberPasses.filter((p) => isPassUsable(p, getTodayString())));
 
-	// 슬롯 날짜 기준 예약 가능 수강권 — 해당 날짜에 유효하고, 보류분을 뺀 잔여가 남고,
-	// 그 날짜가 홀딩 구간에 걸리지 않은 것만 노출
-	function getUsablePassesForDate(date: string): MemberPass[] {
-		return memberPasses.filter((p) => isPassBookable(p, date) && !isDateInHolding(p, date));
-	}
+	// 선택한 날짜 자체가 막혀 있는지(유효기간/홀딩/잔여) — 슬롯을 하나씩 눌러보지 않아도
+	// 이유를 알 수 있도록 목록 위 배너로 노출한다
+	let dateEligibility = $derived(getDateEligibility(memberPasses, selectedDate));
+
+	// 월 요약 API는 강사 단위라 수강권 유효기간을 모른다. 예약할 수 없는 날짜의 '예약 가능' 점은
+	// 여기서 걷어낸다 (기존 예약이 있는 날의 확정/대기 점은 그대로 둔다).
+	let dateIndicators = $derived.by(() => {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- $derived 안에서 매번 새로 만들어 반환한다
+		const filtered = new Map<string, DateIndicators>();
+		for (const [date, indicators] of rawDateIndicators) {
+			const hasAvailable =
+				indicators.has_available && getDateEligibility(memberPasses, date).bookable;
+			if (!hasAvailable && !indicators.has_confirmed && !indicators.has_pending) continue;
+			filtered.set(date, { ...indicators, has_available: hasAvailable });
+		}
+		return filtered;
+	});
 
 	let activeReservationMap = $derived(buildActiveReservationMap(myReservations));
 
@@ -98,17 +115,12 @@
 	}
 
 	function getPassesForSlot(slot: AvailableSlot | null): MemberPass[] {
-		const usable = getUsablePassesForDate(slot?.slot_date ?? selectedDate);
-		if (!slot) return usable;
-		if (slot.slot_type === 'ENSEMBLE') return usable;
-		if (!slot.instructor_name) return usable;
-		const matched = usable.filter((p) => p.instructor_name === slot.instructor_name);
-		return matched.length > 0 ? matched : usable;
+		if (!slot) return getUsablePassesForDate(memberPasses, selectedDate);
+		return getUsablePassesForSlot(memberPasses, slot);
 	}
 
 	let filteredPasses = $derived(getPassesForSlot(selectedSlot));
 	let selectedPass = $derived(filteredPasses.find((p) => p.id === selectedPassId) ?? null);
-	let isRotationPass = $derived(selectedPass?.pass_category === 'ROTATION');
 	let selectedPassWeight = $derived(
 		selectedPass
 			? getReservationWeight(
@@ -201,11 +213,10 @@
 		];
 
 		if (instructorIds.length === 0) {
-			dateIndicators = new Map();
+			rawDateIndicators = new Map();
 			return;
 		}
 
-		indicatorsLoading = true;
 		const requestId = ++indicatorRequestId;
 
 		try {
@@ -215,6 +226,7 @@
 
 			if (requestId !== indicatorRequestId) return;
 
+			// eslint-disable-next-line svelte/prefer-svelte-reactivity -- 만든 뒤 rawDateIndicators에 통째로 재할당한다
 			const merged = new Map<string, DateIndicators>();
 			for (const result of results) {
 				if (result.status !== 'fulfilled' || !result.value.status || !result.value.data) continue;
@@ -231,13 +243,9 @@
 					}
 				}
 			}
-			dateIndicators = merged;
+			rawDateIndicators = merged;
 		} catch {
 			// handled by client.ts
-		} finally {
-			if (requestId === indicatorRequestId) {
-				indicatorsLoading = false;
-			}
 		}
 	}
 
@@ -256,22 +264,14 @@
 			toastStore.error('이미 예약된 시간입니다.');
 			return;
 		}
-		const passesForSlot = getPassesForSlot(slot);
-		if (passesForSlot.length === 0) {
-			// 홀딩 때문에 막힌 경우는 이유를 명확히 알려준다 (그냥 "수강권 없음"은 오해를 부른다)
-			const blockedByHolding = memberPasses.some((p) => isDateInHolding(p, slot.slot_date));
-			const message = blockedByHolding
-				? '홀딩 기간에는 예약할 수 없습니다.'
-				: memberPasses.length === 0
-					? '등록된 수강권이 없습니다.'
-					: slot.slot_type === 'REGULAR' && slot.instructor_name
-						? `${slot.instructor_name} 선생님의 이용 가능한 수강권이 없습니다.`
-						: '이용 가능한 수강권이 없습니다.';
-			toastStore.error(message);
+		// 서버가 거부할 예약은 여기서 같은 기준으로 막고, 실제 사유(유효기간/홀딩/잔여/마감)를 알려준다
+		const eligibility = getSlotEligibility(memberPasses, slot);
+		if (!eligibility.bookable) {
+			toastStore.error(getBookingBlockMessage(eligibility));
 			return;
 		}
 		selectedSlot = slot;
-		selectedPassId = passesForSlot[0].id;
+		selectedPassId = getPassesForSlot(slot)[0].id;
 		bookingSheetOpen = true;
 	}
 
@@ -406,12 +406,14 @@
 		<ReservationCalendar
 			{selectedDate}
 			{dateIndicators}
-			{indicatorsLoading}
 			onselect={handleDateSelect}
 			onmonthchange={handleMonthChange}
 		/>
 
 		<div class="slots-content">
+			{#if !passesLoading && !dateEligibility.bookable}
+				<p class="slots-content__notice">{getBookingBlockMessage(dateEligibility)}</p>
+			{/if}
 			{#if slotsLoading}
 				<div class="slots-content__loading">
 					<Spinner />
@@ -420,11 +422,17 @@
 				<p class="slots-content__empty">예약 가능한 시간이 없습니다.</p>
 			{:else}
 				<div class="slot-list">
-					{#each availableSlots as slot}
+					{#each availableSlots as slot (slot.slot_id)}
 						{@const alreadyBooked = isSlotAlreadyBooked(slot)}
 						{@const mySequence = getSequenceForSlot(slot)}
+						{@const eligibility = getSlotEligibility(memberPasses, slot)}
+						{@const blocked = !alreadyBooked && !eligibility.bookable}
 						<Card padding="sm" onclick={() => handleSlotClick(slot)}>
-							<div class="slot-card" class:slot-card--booked={alreadyBooked}>
+							<div
+								class="slot-card"
+								class:slot-card--booked={alreadyBooked}
+								class:slot-card--blocked={blocked}
+							>
 								<div class="slot-card__info">
 									<span class="slot-card__time">
 										{formatTimeRange(slot.start_time, slot.end_time)}
@@ -453,6 +461,10 @@
 											</span>
 										{/if}
 									</div>
+								{:else if blocked}
+									<div class="slot-card__badges">
+										<Badge variant="neutral">{getBookingBlockLabel(eligibility)}</Badge>
+									</div>
 								{/if}
 							</div>
 						</Card>
@@ -473,7 +485,7 @@
 				<p class="my-content__empty">예약 내역이 없습니다.</p>
 			{:else}
 				<div class="reservation-list">
-					{#each myReservations as reservation}
+					{#each myReservations as reservation (reservation.reservation_id)}
 						<Card padding="md">
 							<div class="reservation-card">
 								<div class="reservation-card__header">
@@ -574,7 +586,7 @@
 					bind:value={selectedPassId}
 					aria-label="사용할 수강권 선택"
 				>
-					{#each filteredPasses as pass}
+					{#each filteredPasses as pass (pass.id)}
 						{@const passWeight = getReservationWeight(
 							pass.pass_category,
 							pass.ticket_value,
@@ -602,7 +614,7 @@
 				<p class="booking-sheet__pass-notice booking-sheet__pass-notice--info">
 					합주 수업은 모든 수강권으로 예약할 수 있습니다.
 				</p>
-			{:else if selectedSlot?.instructor_name && filteredPasses.length < getUsablePassesForDate(selectedSlot.slot_date).length}
+			{:else if selectedSlot?.instructor_name && filteredPasses.length < getUsablePassesForDate(memberPasses, selectedSlot.slot_date).length}
 				<p class="booking-sheet__pass-notice">
 					{selectedSlot.instructor_name} 선생님 담당 수강권만 표시됩니다.
 				</p>
@@ -688,17 +700,10 @@
 				<div class="cancel-sheet__noshow-warning">
 					당일 취소는 노쇼(No-Show)로 처리됩니다. 수강권이 차감되며 환불되지 않습니다.
 				</div>
-			{:else}
-				{@const cancelWeight = getReservationWeight(
-					selectedReservation.pass_category,
-					selectedReservation.ticket_value,
-					selectedReservation.slot_type
-				)}
-				{#if getTicketValue(selectedReservation.ticket_value) > 1}
-					<p class="cancel-sheet__refund-notice">
-						취소 시 {getTicketValue(selectedReservation.ticket_value)}회가 환불됩니다.
-					</p>
-				{/if}
+			{:else if getTicketValue(selectedReservation.ticket_value) > 1}
+				<p class="cancel-sheet__refund-notice">
+					취소 시 {getTicketValue(selectedReservation.ticket_value)}회가 환불됩니다.
+				</p>
 			{/if}
 			<div class="cancel-sheet__buttons">
 				<Button
@@ -776,6 +781,17 @@
 			padding: var(--space-2xl);
 			font-size: var(--font-size-sm);
 		}
+
+		// 선택한 날짜가 통째로 막힌 이유 (유효기간/홀딩/잔여) 안내
+		&__notice {
+			margin-bottom: var(--space-sm);
+			padding: var(--space-sm) var(--space-md);
+			border-radius: var(--radius-md);
+			background: var(--color-bg);
+			color: var(--color-text-secondary);
+			font-size: var(--font-size-sm);
+			line-height: 1.5;
+		}
 	}
 
 	.slot-list {
@@ -791,6 +807,11 @@
 
 		&--booked {
 			opacity: 0.6;
+		}
+
+		// 예약할 수 없는 슬롯 — 눌러보기 전에 구분되도록 흐리게 (탭하면 사유 토스트가 뜬다)
+		&--blocked {
+			opacity: 0.5;
 		}
 
 		&__info {

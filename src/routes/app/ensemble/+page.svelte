@@ -160,7 +160,7 @@
 			</div>
 		{:else if activeTab === 'recruiting'}
 			<div class="ensemble-list">
-				{#each recruitingList as ensemble}
+				{#each recruitingList as ensemble (ensemble.id)}
 					<button class="ensemble-card" onclick={() => openDetail(ensemble.id)}>
 						<div class="ensemble-card__header">
 							<h3 class="ensemble-card__title">{ensemble.group_name}</h3>
@@ -198,7 +198,7 @@
 
 			{#if totalPages > 1}
 				<div class="pagination">
-					{#each Array.from({ length: totalPages }, (_, i) => i + 1) as page}
+					{#each Array.from({ length: totalPages }, (_, i) => i + 1) as page (page)}
 						<button
 							class="pagination__btn"
 							class:pagination__btn--active={page === currentPage}
@@ -211,7 +211,7 @@
 			{/if}
 		{:else}
 			<div class="ensemble-list">
-				{#each myList as ensemble}
+				{#each myList as ensemble (ensemble.id)}
 					<button class="ensemble-card" onclick={() => openDetail(ensemble.id)}>
 						<div class="ensemble-card__header">
 							<h3 class="ensemble-card__title">{ensemble.group_name}</h3>

@@ -7,3 +7,7 @@ bun.lockb
 
 # Miscellaneous
 /static/
+coverage/
+
+# 로컬 도구 상태 (git에서도 무시되는 파일)
+.claude/settings.local.json
