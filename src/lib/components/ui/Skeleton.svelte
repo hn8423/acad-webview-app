@@ -11,7 +11,7 @@
 
 {#if variant === 'text' && lines > 1}
 	<div class="skeleton-lines">
-		{#each Array(lines) as _, i}
+		{#each { length: lines }, i (i)}
 			<div
 				class="skeleton skeleton--text"
 				style:width={i === lines - 1 ? '60%' : width}

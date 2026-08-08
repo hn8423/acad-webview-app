@@ -99,7 +99,7 @@
 		<p class="admin-feedback__empty">작성된 피드백이 없습니다.</p>
 	{:else}
 		<div class="feedback-list">
-			{#each feedbackList as item, i}
+			{#each feedbackList as item, i (item.id)}
 				<div class="feedback-row" role="listitem">
 					<div
 						class="feedback-row__left"

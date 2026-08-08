@@ -47,7 +47,7 @@
 	</div>
 
 	<div class="score-input__levels" role="radiogroup" aria-label="{categoryName} 레벨 선택">
-		{#each SCORE_LEVELS as level}
+		{#each SCORE_LEVELS as level (level.score)}
 			<button
 				type="button"
 				class="score-input__chip"

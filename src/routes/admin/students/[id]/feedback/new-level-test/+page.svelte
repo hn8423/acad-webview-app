@@ -189,7 +189,7 @@
 							<label class="create-form__label" for="pass-select">수강권</label>
 							<select id="pass-select" class="create-form__select" bind:value={selectedPassId}>
 								<option value="">선택하세요</option>
-								{#each activePasses as pass}
+								{#each activePasses as pass (pass.id)}
 									<option value={pass.id}>{pass.pass_name} ({pass.instructor_name})</option>
 								{/each}
 							</select>

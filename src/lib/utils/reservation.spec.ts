@@ -3,7 +3,8 @@ import {
 	buildActiveReservationMap,
 	buildDateIndicators,
 	buildSlotKey,
-	hasVisibleSequence
+	hasVisibleSequence,
+	isScheduleSlotFull
 } from './reservation';
 import type { AvailableSlot, LessonSlot, MyReservation } from '$lib/types/reservation';
 
@@ -268,5 +269,22 @@ describe('hasVisibleSequence', () => {
 
 	it('should be false for a null reservation', () => {
 		expect(hasVisibleSequence(null)).toBe(false);
+	});
+});
+
+describe('isScheduleSlotFull', () => {
+	it('should be false when capacity is left', () => {
+		expect(isScheduleSlotFull({ max_capacity: 1, current_count: 0 })).toBe(false);
+		// 취미반 1명(0.5 가중치)만 들어간 1인 정원 슬롯은 아직 자리가 있다
+		expect(isScheduleSlotFull({ max_capacity: 1, current_count: 0.5 })).toBe(false);
+	});
+
+	it('should be true when the weighted count reaches capacity', () => {
+		expect(isScheduleSlotFull({ max_capacity: 1, current_count: 1 })).toBe(true);
+		expect(isScheduleSlotFull({ max_capacity: 2, current_count: 2.5 })).toBe(true);
+	});
+
+	it('should be false when the slot has no capacity limit', () => {
+		expect(isScheduleSlotFull({ max_capacity: null, current_count: 10 })).toBe(false);
 	});
 });

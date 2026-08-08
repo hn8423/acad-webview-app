@@ -200,14 +200,14 @@
 	</div>
 
 	<div class="date-calendar__grid">
-		{#each DAY_NAMES as day, i}
+		{#each DAY_NAMES as day, i (i)}
 			<div class="date-calendar__header" class:date-calendar__header--weekend={i === 0 || i === 6}>
 				{day}
 			</div>
 		{/each}
 
-		{#each calendarCells as row}
-			{#each row as cell}
+		{#each calendarCells as row, rowIndex (rowIndex)}
+			{#each row as cell (cell.fullDate)}
 				{@const isSelected = cell.fullDate === selectedDate}
 				<button
 					type="button"
@@ -235,7 +235,7 @@
 					{:else if dateDots?.get(cell.fullDate)?.length}
 						{@const dots = dateDots.get(cell.fullDate) ?? []}
 						<span class="date-calendar__indicators">
-							{#each visibleDots(dots) as dot}
+							{#each visibleDots(dots) as dot, dotIndex (dotIndex)}
 								<span
 									class="date-calendar__multi-dot"
 									class:date-calendar__multi-dot--more={dot.isMore}

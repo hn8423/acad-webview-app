@@ -177,7 +177,7 @@
 		</div>
 	{:else}
 		<div class="select-academy__list">
-			{#each academies as academy}
+			{#each academies as academy (academy.academy_id)}
 				<Card onclick={() => selectAcademy(academy)}>
 					<div class="academy-card">
 						<div class="academy-card__logo">
@@ -289,7 +289,7 @@
 				</div>
 			{:else}
 				<div class="search-step__list">
-					{#each joinableAcademies as academy}
+					{#each joinableAcademies as academy (academy.id)}
 						<Card onclick={() => selectAcademyToJoin(academy)}>
 							<div class="academy-card">
 								<div class="academy-card__logo academy-card__logo--sm">

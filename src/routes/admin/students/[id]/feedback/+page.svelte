@@ -176,7 +176,7 @@
 			<p class="feedback-page__empty">작성된 피드백이 없습니다.</p>
 		{:else}
 			<div class="feedback-list">
-				{#each feedbackList as item, i}
+				{#each feedbackList as item, i (item.id)}
 					<div
 						class="feedback-row"
 						role="button"
@@ -285,7 +285,7 @@
 			<label class="create-form__label" for="pass-select">수강권</label>
 			<select id="pass-select" class="create-form__select" bind:value={selectedPassId}>
 				<option value="">선택하세요</option>
-				{#each activePasses as pass}
+				{#each activePasses as pass (pass.id)}
 					<option value={pass.id}>{pass.pass_name} ({pass.instructor_name})</option>
 				{/each}
 			</select>

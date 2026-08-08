@@ -77,7 +77,7 @@
 			<p class="my-feedback__empty">받은 피드백이 없습니다.</p>
 		{:else}
 			<div class="feedback-list">
-				{#each feedbackList as item, i}
+				{#each feedbackList as item, i (item.id)}
 					<div
 						class="feedback-row"
 						role="button"

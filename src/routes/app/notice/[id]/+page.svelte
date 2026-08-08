@@ -55,13 +55,17 @@
 				</header>
 
 				<div class="article__body">
+					<!-- 공지 본문은 학원 관리자만 작성할 수 있고, processNoticeContent()가 링크를
+					     안전한 형태로 정규화한다. 임의 HTML 살수정은 하지 않으므로 작성자 권한이
+					     넓어지면 DOMPurify 도입이 필요하다. -->
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 					{@html processedContent}
 				</div>
 
 				{#if notice.files.length > 0}
 					<div class="article__files">
 						<h3 class="article__files-title">첨부파일</h3>
-						{#each notice.files as file}
+						{#each notice.files as file, fileIndex (fileIndex)}
 							<a href={file.file_url} class="file-item" download={file.file_name}>
 								<svg
 									width="16"

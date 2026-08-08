@@ -103,7 +103,7 @@
 					<div class="detail-card">
 						<h3 class="detail-card__title">카테고리별 평가</h3>
 						<div class="skill-list">
-							{#each levelTest.skill_details as detail}
+							{#each levelTest.skill_details as detail (detail.category_id)}
 								<ScoreDisplay
 									categoryName={detail.category_name ?? ''}
 									score={detail.score}

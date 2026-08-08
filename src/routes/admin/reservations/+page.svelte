@@ -17,7 +17,6 @@
 	import { formatTimeRange, getTodayString } from '$lib/utils/format';
 	import {
 		getTicketValue,
-		getCapacityWeight,
 		getReservationWeight,
 		isCapacityOccupyingStatus,
 		getPassCategoryLabel,
@@ -52,6 +51,7 @@
 
 	// Date indicators for calendar lesson status shapes
 	let dateIndicators = $state<Map<string, DateIndicators>>(new Map());
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity -- 월별 인디케이터 캐시 — 반응형 대상이 아니다
 	const dateIndicatorsCache = new Map<string, Map<string, DateIndicators>>();
 
 	// Create slot modal
@@ -67,6 +67,7 @@
 
 	// Bulk create form
 	function getDefaultEndDate(startDate: string): string {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- 날짜 계산용 지역 변수
 		const d = new Date(startDate);
 		d.setMonth(d.getMonth() + 3);
 		return d.toISOString().split('T')[0];
@@ -168,7 +169,7 @@
 			if (res.status) {
 				slots = res.data;
 			}
-		} catch (error) {
+		} catch {
 			toastStore.error('슬롯 목록을 불러올 수 없습니다');
 		} finally {
 			loading = false;
@@ -328,7 +329,7 @@
 				await fetchSlots(selectedDate);
 				invalidateMonthCache(selectedDate);
 			}
-		} catch (error) {
+		} catch {
 			toastStore.error('슬롯 생성에 실패했습니다');
 		} finally {
 			actionLoading = false;
@@ -352,7 +353,7 @@
 				await fetchSlots(selectedDate);
 				invalidateMonthCache(selectedDate);
 			}
-		} catch (error) {
+		} catch {
 			toastStore.error('일괄 슬롯 생성에 실패했습니다');
 		} finally {
 			actionLoading = false;
@@ -395,7 +396,7 @@
 				await fetchSlots(selectedDate);
 				invalidateMonthCache(selectedDate);
 			}
-		} catch (error) {
+		} catch {
 			toastStore.error('슬롯 수정에 실패했습니다');
 		} finally {
 			actionLoading = false;
@@ -424,7 +425,7 @@
 				await fetchSlots(selectedDate);
 				invalidateMonthCache(selectedDate);
 			}
-		} catch (error) {
+		} catch {
 			toastStore.error('슬롯 삭제에 실패했습니다');
 		} finally {
 			actionLoading = false;
@@ -507,7 +508,7 @@
 				await fetchSlots(selectedDate);
 				invalidateMonthCache(selectedDate);
 			}
-		} catch (error) {
+		} catch {
 			toastStore.error('예약 상태 변경에 실패했습니다');
 		} finally {
 			actionLoading = false;
@@ -800,7 +801,7 @@
 						<div class="modal-form__notice">강사가 없습니다. 강사를 추가해주세요.</div>
 					{:else}
 						<select class="modal-form__input" bind:value={createForm.instructor_id}>
-							{#each instructors as inst}
+							{#each instructors as inst (inst.member_id)}
 								<option value={getInstructorId(inst)}>{inst.user_name}</option>
 							{/each}
 						</select>
@@ -865,7 +866,7 @@
 			<div class="modal-form__field">
 				<span class="modal-form__label">반복 요일</span>
 				<div class="day-chips" role="group" aria-label="요일 선택">
-					{#each DAY_OPTIONS as { value, label }}
+					{#each DAY_OPTIONS as { value, label } (value)}
 						<button
 							type="button"
 							class="day-chip"
@@ -916,7 +917,7 @@
 						<div class="modal-form__notice">강사가 없습니다. 강사를 추가해주세요.</div>
 					{:else}
 						<select class="modal-form__input" bind:value={bulkForm.instructor_id}>
-							{#each instructors as inst}
+							{#each instructors as inst (inst.member_id)}
 								<option value={getInstructorId(inst)}>{inst.user_name}</option>
 							{/each}
 						</select>
