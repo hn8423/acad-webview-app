@@ -17,8 +17,6 @@ export default defineConfig(
 	...svelte.configs.recommended,
 	prettier,
 	...svelte.configs.prettier,
-	// 커버리지 리포트는 생성물이라 린트 대상이 아니다
-	{ ignores: ['coverage/'] },
 	{
 		languageOptions: { globals: { ...globals.browser, ...globals.node } },
 		rules: {
