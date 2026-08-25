@@ -2,10 +2,16 @@
 	import Modal from '$lib/components/ui/Modal.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
+	import { formatDate } from '$lib/utils/format';
 
 	interface Props {
 		isOpen: boolean;
+		// 사용 가능한(만료되지 않은) 잔수만 넘어온다
 		totalDrinks: number;
+		// 사용 가능한 음료권 중 가장 빠른 만료일. 없으면 표시하지 않는다.
+		soonestExpiry?: string | null;
+		// 이미 만료돼 못 쓰는 잔수
+		expiredCount?: number;
 		onclose: () => void;
 		onsubmit: (data: { phone: string; password: string }) => void;
 		submitting?: boolean;
@@ -15,6 +21,8 @@
 	let {
 		isOpen = $bindable(false),
 		totalDrinks,
+		soonestExpiry = null,
+		expiredCount = 0,
 		onclose,
 		onsubmit,
 		submitting = false,
@@ -59,7 +67,18 @@
 	>
 		<div class="redeem-form__info">
 			<span class="redeem-form__remaining">남은 음료권: {totalDrinks}잔</span>
-			<span class="redeem-form__desc">관리자 인증 후 1잔이 차감됩니다.</span>
+			{#if soonestExpiry}
+				<span class="redeem-form__desc"
+					>{formatDate(soonestExpiry)} 만료 예정분부터 차감됩니다.</span
+				>
+			{:else}
+				<span class="redeem-form__desc">관리자 인증 후 1잔이 차감됩니다.</span>
+			{/if}
+			{#if expiredCount > 0}
+				<span class="redeem-form__expired">
+					유효기간이 지난 {expiredCount}잔은 사용할 수 없습니다.
+				</span>
+			{/if}
 		</div>
 
 		<Input type="tel" label="관리자 전화번호" placeholder="01012345678" bind:value={phone} />
@@ -100,6 +119,11 @@
 		&__desc {
 			font-size: var(--font-size-sm);
 			color: var(--color-text-muted);
+		}
+
+		&__expired {
+			font-size: var(--font-size-sm);
+			color: var(--color-danger);
 		}
 
 		&__error {
