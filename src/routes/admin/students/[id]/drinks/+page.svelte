@@ -10,7 +10,16 @@
 	import Input from '$lib/components/ui/Input.svelte';
 	import Modal from '$lib/components/ui/Modal.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
-	import { formatDate } from '$lib/utils/format';
+	import { formatDate, getTodayString } from '$lib/utils/format';
+	import {
+		sortDrinkTickets,
+		getDrinkTicketState,
+		getDrinkTicketStateVariant,
+		getDrinkTicketStateLabel,
+		getDaysUntilExpiry,
+		countUsableDrinks,
+		countExpiredDrinks
+	} from '$lib/utils/drink';
 	import type { DrinkTicket } from '$lib/types/member';
 	import { onMount } from 'svelte';
 
@@ -18,7 +27,9 @@
 	let loading = $state(true);
 	let showCreateModal = $state(false);
 	let creating = $state(false);
+	// 부여 폼 에러와 목록 조회 실패는 표시 위치가 달라 따로 둔다.
 	let error = $state('');
+	let loadError = $state('');
 
 	// Form
 	let totalCount = $state('');
@@ -26,17 +37,25 @@
 
 	const memberId = $derived(Number(page.params.id));
 
+	// 만료 판정 기준일 — 학생 화면(app/+page.svelte)과 같은 규칙을 쓴다.
+	const today = getTodayString();
+
+	let sortedTickets = $derived(sortDrinkTickets(tickets, today));
+	let usableCount = $derived(countUsableDrinks(tickets, today));
+	let expiredCount = $derived(countExpiredDrinks(tickets, today));
+
 	onMount(async () => {
 		const academyId = academyStore.academyId;
-		if (!academyId) return;
+		if (!academyId || !memberId) return;
 
 		try {
-			const res = await getMemberDrinkTickets(academyId);
+			const res = await getMemberDrinkTickets(academyId, memberId);
 			if (res.status && res.data) {
 				tickets = res.data;
 			}
-		} catch {
-			// handle error
+		} catch (err) {
+			console.error('음료권 조회 실패:', err);
+			loadError = '음료권을 불러오지 못했습니다.';
 		} finally {
 			loading = false;
 		}
@@ -75,7 +94,8 @@
 				expiry_date: expiryDate
 			});
 			if (res.status && res.data) {
-				tickets = [...tickets, res.data];
+				// 서버 목록은 created_at desc — 새 음료권이 맨 앞에 오도록 맞춘다.
+				tickets = [res.data, ...tickets];
 				showCreateModal = false;
 			}
 		} catch (err) {
@@ -83,10 +103,6 @@
 		} finally {
 			creating = false;
 		}
-	}
-
-	function isExpired(date: string): boolean {
-		return new Date(date) < new Date();
 	}
 </script>
 
@@ -102,22 +118,29 @@
 			<div class="drinks-page__loading">
 				<Spinner />
 			</div>
+		{:else if loadError}
+			<p class="drinks-page__error">{loadError}</p>
 		{:else if tickets.length === 0}
 			<p class="drinks-page__empty">등록된 음료권이 없습니다.</p>
 		{:else}
+			<p class="drinks-page__summary">
+				사용 가능 <strong>{usableCount}잔</strong>
+				{#if expiredCount > 0}
+					<span class="drinks-page__summary-expired">· 만료 {expiredCount}잔</span>
+				{/if}
+			</p>
 			<div class="ticket-list">
-				{#each tickets as ticket (ticket.id)}
+				{#each sortedTickets as ticket (ticket.id)}
+					{@const state = getDrinkTicketState(ticket, today)}
 					<Card>
-						<div class="ticket-item">
+						<div class="ticket-item" class:ticket-item--dimmed={state === 'EXPIRED'}>
 							<div class="ticket-item__header">
 								<span class="ticket-item__count">
 									{ticket.remaining_count}/{ticket.total_count}잔
 								</span>
-								{#if isExpired(ticket.expiry_date)}
-									<Badge variant="danger">만료</Badge>
-								{:else}
-									<Badge variant="success">사용가능</Badge>
-								{/if}
+								<Badge variant={getDrinkTicketStateVariant(state)}>
+									{getDrinkTicketStateLabel(state, getDaysUntilExpiry(ticket.expiry_date, today))}
+								</Badge>
 							</div>
 							<span class="ticket-item__expiry">유효기간: {formatDate(ticket.expiry_date)}</span>
 						</div>
@@ -173,6 +196,27 @@
 			color: var(--color-text-muted);
 			padding: var(--space-2xl);
 		}
+
+		&__error {
+			text-align: center;
+			color: var(--color-danger);
+			padding: var(--space-2xl);
+		}
+
+		&__summary {
+			font-size: var(--font-size-sm);
+			color: var(--color-text-secondary);
+			margin-bottom: var(--space-sm);
+
+			strong {
+				color: var(--color-text);
+				font-weight: var(--font-weight-bold);
+			}
+		}
+
+		&__summary-expired {
+			color: var(--color-text-muted);
+		}
 	}
 
 	.ticket-list {
@@ -182,6 +226,10 @@
 	}
 
 	.ticket-item {
+		&--dimmed {
+			opacity: 0.6;
+		}
+
 		&__header {
 			display: flex;
 			align-items: center;
