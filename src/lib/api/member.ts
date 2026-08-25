@@ -170,9 +170,10 @@ export function getMyDrinkTickets(academyId: number) {
 	);
 }
 
-export function getMemberDrinkTickets(academyId: number) {
+// 관리자/강사가 특정 회원의 음료권을 조회한다. 본인 조회(getMyDrinkTickets)와 엔드포인트가 다르다.
+export function getMemberDrinkTickets(academyId: number, memberId: number) {
 	return get<ApiResponse<DrinkTicket[]>>(
-		`/academic/academies/${academyId}/members/me/drink-tickets`
+		`/academic/academies/${academyId}/members/${memberId}/drink-tickets`
 	);
 }
 

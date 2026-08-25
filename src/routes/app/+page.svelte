@@ -16,8 +16,17 @@
 	import CalendarSection from '$lib/components/ui/CalendarSection.svelte';
 	import BottomSheet from '$lib/components/ui/BottomSheet.svelte';
 	import DrinkRedeemModal from '$lib/components/drink/DrinkRedeemModal.svelte';
+	import DrinkHistorySheet from '$lib/components/drink/DrinkHistorySheet.svelte';
 	import InstructorProfileModal from '$lib/components/instructor/InstructorProfileModal.svelte';
-	import { formatDate, formatTimeRange, getDayOfWeek } from '$lib/utils/format';
+	import { formatDate, formatTimeRange, getDayOfWeek, getTodayString } from '$lib/utils/format';
+	import {
+		countUsableDrinks,
+		countExpiredDrinks,
+		getSoonestExpiry,
+		getDaysUntilExpiry,
+		isExpiringSoon,
+		pickTicketToUse
+	} from '$lib/utils/drink';
 	import { isReservationDay } from '$lib/utils/reservation';
 	import {
 		getPassStatusVariant,
@@ -49,8 +58,12 @@
 	let isSameDayCancel = $derived(cancelTarget ? isReservationDay(cancelTarget.slot_date) : false);
 
 	let showDrinkRedeemModal = $state(false);
+	let showDrinkHistorySheet = $state(false);
 	let drinkRedeemSubmitting = $state(false);
 	let drinkRedeemError = $state('');
+
+	// 만료 판정 기준일. 페이지가 살아 있는 동안 자정을 넘겨도 새로고침 전까지는 이 값을 유지한다.
+	const today = getTodayString();
 
 	let instructorProfileOpen = $state(false);
 	let selectedInstructor = $state<{ id: number; name: string } | null>(null);
@@ -92,10 +105,15 @@
 		}
 	});
 
-	let totalDrinks = $derived(drinkTickets.reduce((sum, t) => sum + t.remaining_count, 0));
+	// 만료된 음료권은 사용할 수 없으므로 카드 숫자에서 제외한다.
+	let usableDrinks = $derived(countUsableDrinks(drinkTickets, today));
+	let expiredDrinks = $derived(countExpiredDrinks(drinkTickets, today));
+	let soonestExpiry = $derived(getSoonestExpiry(drinkTickets, today));
+	let expiringSoon = $derived(!!soonestExpiry && isExpiringSoon(soonestExpiry, today));
+	let daysUntilExpiry = $derived(soonestExpiry ? getDaysUntilExpiry(soonestExpiry, today) : 0);
 
 	function openDrinkRedeemModal() {
-		if (totalDrinks <= 0) return;
+		if (usableDrinks <= 0) return;
 		drinkRedeemError = '';
 		showDrinkRedeemModal = true;
 	}
@@ -143,7 +161,8 @@
 				return;
 			}
 
-			const ticket = drinkTickets.find((t) => t.remaining_count > 0);
+			// 만료가 임박한 음료권부터 차감해서 소멸을 줄인다 (서버 목록은 최신 발급순).
+			const ticket = pickTicketToUse(drinkTickets, today);
 			if (!ticket) {
 				drinkRedeemError = '사용 가능한 음료권이 없습니다.';
 				return;
@@ -219,8 +238,8 @@
 				<button
 					type="button"
 					class="drink-card"
-					class:drink-card--disabled={totalDrinks <= 0}
-					disabled={totalDrinks <= 0}
+					class:drink-card--disabled={usableDrinks <= 0}
+					disabled={usableDrinks <= 0}
 					onclick={openDrinkRedeemModal}
 				>
 					<div class="drink-card__icon">
@@ -238,13 +257,41 @@
 						</svg>
 					</div>
 					<div class="drink-card__info">
-						<span class="drink-card__count">{totalDrinks}</span>
+						<span class="drink-card__count">{usableDrinks}</span>
 						<span class="drink-card__label">잔 남음</span>
 					</div>
-					{#if totalDrinks > 0}
+					{#if usableDrinks > 0}
 						<span class="drink-card__action">사용하기</span>
 					{/if}
 				</button>
+
+				{#if soonestExpiry || expiredDrinks > 0}
+					<p class="drink-notice" class:drink-notice--warning={expiringSoon}>
+						{#if expiringSoon && soonestExpiry}
+							<span class="drink-notice__mark" aria-hidden="true">⚠</span>
+							{formatDate(soonestExpiry)} 만료 임박 ({daysUntilExpiry === 0
+								? '오늘'
+								: `D-${daysUntilExpiry}`})
+						{:else if soonestExpiry}
+							{formatDate(soonestExpiry)}까지 사용 가능
+						{/if}
+						{#if expiredDrinks > 0}
+							<span class="drink-notice__expired">
+								{soonestExpiry ? '· ' : ''}만료 {expiredDrinks}잔
+							</span>
+						{/if}
+					</p>
+				{/if}
+
+				{#if drinkTickets.length > 0}
+					<button
+						type="button"
+						class="drink-history-link"
+						onclick={() => (showDrinkHistorySheet = true)}
+					>
+						내역 보기 ›
+					</button>
+				{/if}
 			</div>
 		</section>
 
@@ -384,7 +431,9 @@
 
 <DrinkRedeemModal
 	isOpen={showDrinkRedeemModal}
-	{totalDrinks}
+	totalDrinks={usableDrinks}
+	{soonestExpiry}
+	expiredCount={expiredDrinks}
 	onclose={() => {
 		showDrinkRedeemModal = false;
 		drinkRedeemError = '';
@@ -392,6 +441,13 @@
 	onsubmit={handleDrinkRedeem}
 	submitting={drinkRedeemSubmitting}
 	error={drinkRedeemError}
+/>
+
+<DrinkHistorySheet
+	isOpen={showDrinkHistorySheet}
+	tickets={drinkTickets}
+	{today}
+	onclose={() => (showDrinkHistorySheet = false)}
 />
 
 <InstructorProfileModal
@@ -587,6 +643,42 @@
 			font-weight: var(--font-weight-medium);
 			color: var(--color-primary);
 			white-space: nowrap;
+		}
+	}
+
+	.drink-notice {
+		margin-top: var(--space-sm);
+		font-size: var(--font-size-xs);
+		color: var(--color-text-muted);
+		line-height: var(--line-height-tight);
+
+		&--warning {
+			color: var(--color-danger);
+			font-weight: var(--font-weight-medium);
+		}
+
+		&__mark {
+			margin-right: 2px;
+		}
+
+		&__expired {
+			color: var(--color-text-muted);
+		}
+	}
+
+	.drink-history-link {
+		display: block;
+		margin-left: auto;
+		margin-top: var(--space-xs);
+		background: none;
+		border: none;
+		padding: var(--space-2xs) 0;
+		font-size: var(--font-size-xs);
+		color: var(--color-text-secondary);
+		cursor: pointer;
+
+		&:active {
+			opacity: 0.6;
 		}
 	}
 
