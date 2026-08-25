@@ -39,6 +39,7 @@ src/
       ensemble.ts           # Ensemble groups
       feedback.ts           # Feedback records (monthly/weekly)
       holding.ts            # Pass holding (suspension) — apply, admin list
+      subscription.ts       # Installment plans, subscriptions, payments (분할 납부)
       notification.ts       # Push notifications
       reservation.ts        # Lesson reservations
     stores/                 # Svelte 5 rune-based state management
@@ -66,6 +67,10 @@ src/
       ensemble/             # Ensemble domain components
         EnsembleCreateForm.svelte
         EnsembleDetailModal.svelte
+      subscription/         # Installment payment components
+        InstallmentScheduleEditor.svelte  # Per-round due date + amount table
+        PaymentRegisterSheet.svelte       # Offline payment registration sheet
+        InstallmentCard.svelte            # Dashboard list card
       feedback/             # Feedback domain components
         FeedbackTypeFilter.svelte
         ScoreDisplay.svelte
@@ -78,6 +83,7 @@ src/
       ensemble.ts           # Ensemble types
       feedback.ts           # Feedback types
       holding.ts            # Holding, CreateHoldingRequest/Response
+      subscription.ts       # SubscriptionPlan, MemberSubscription, Installment, payments
       notification.ts       # Notification types
       reservation.ts        # Reservation types
     config/
@@ -86,6 +92,7 @@ src/
       format.ts             # Date/time/phone/number formatters
       storage.ts            # localStorage wrapper with 'acad_' prefix
       feedback.ts           # Score level classification (Beginner→Master)
+      subscription.ts       # Installment amount/due-date math, status labels
     styles/
       _variables.scss       # Design tokens (colors, spacing, radius, shadows, z-index)
       _reset.scss           # CSS reset + base styles
@@ -120,6 +127,7 @@ static/                     # Static files
 - `/app/ensemble` — Ensemble groups
 - `/app/reservation` — Lesson reservation
 - `/app/holding` — Pass holding request (`?pass_id=` preselects)
+- `/app/subscriptions` — My installment payment status (linked from profile)
 - `/app/profile` — My profile
 
 ### Admin (Header + Sidebar)
@@ -138,6 +146,9 @@ static/                     # Static files
 - `/admin/feedback/categories` — Feedback categories
 - `/admin/feedback/new-level-test` — Create level test feedback
 - `/admin/feedback/new-weekly` — Create weekly feedback
+- `/admin/subscription-plans` — Installment plan templates (CRUD) `[ADMIN only]`
+- `/admin/subscriptions` — Payment collection dashboard `[ADMIN only]`
+- `/admin/subscriptions/[id]` — Subscription detail (rounds + payment history)
 
 ## Architecture
 
@@ -196,6 +207,32 @@ A member can pause a pass for a limited number of days. Rules (enforced server-s
 
 `MemberPass.status`: `HOLDING` means holding; **`REFUNDED` means refunded**. Before this feature
 `HOLDING` was labelled 환불 — do not reintroduce that mapping.
+
+### Installment Payments (분할 납부 / 구독)
+
+An admin defines reusable **plans** (`SubscriptionPlan`: total / count / monthly) and applies one when
+granting a pass. There is no PG integration — this is a bookkeeping ledger for offline payments.
+
+- **Amounts**: rounds `1..N-1` cost `monthly_amount`; the last round takes the remainder
+  `total - monthly × (N-1)`. e.g. `954,000 / 4회 / 230,000` → `230,000 × 3 + 264,000`.
+  Rejected when `monthly × (N-1) >= total` (last round would be ≤ 0). A last round _smaller_ than
+  `monthly_amount` is legal — don't assume the last one is the biggest.
+- **The client never sends amounts.** It sends `plan_id` + `due_dates[]`; the server recalculates.
+  `src/lib/utils/subscription.ts` mirrors the math for live preview only.
+- **Due dates**: round 1 defaults to the pass start date (선납), then monthly on the same day with
+  end-of-month clamping (1/31 → 2/28). Always compute from the **anchor**, never chain off the
+  previous round — chaining collapses 1/31 to 2/28 → 3/28 instead of restoring 3/31, 4/30.
+  Each date is individually editable before submit, and afterwards only while a round is `UNPAID`.
+- **Overdue is never stored** — it is derived (`status != 'PAID' && due_date < today`).
+- **Partial payment** is allowed; a round holds many `InstallmentPayment` rows and
+  `paid_amount`/`status` are a `SUM()` cache. Deleting a payment walks the round back to
+  `PARTIAL`/`UNPAID` and revives a `COMPLETED` subscription to `ACTIVE`.
+- **Cancelling** a subscription removes only rounds with nothing paid; partially-paid rounds stay
+  untouched and drop out of the dashboard via `subscription.status`.
+- Deleting a pass or setting it to `REFUNDED` cancels its subscription. `EXPIRED` does **not** —
+  the outstanding balance is still owed.
+- Both admin pages are ADMIN-only (`ROUTE_ROLES`), and a non-ADMIN sending a `subscription` payload
+  to the pass-grant endpoint is rejected server-side. `memo` is never returned to students.
 
 ## Code Patterns
 

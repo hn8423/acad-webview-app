@@ -29,7 +29,12 @@
 		getRemainingHoldDays
 	} from '$lib/utils/pass';
 	import type { MemberPass, PassType, Instructor } from '$lib/types/member';
-	import { onMount } from 'svelte';
+	import { getSubscriptionPlans } from '$lib/api/subscription';
+	import InstallmentScheduleEditor from '$lib/components/subscription/InstallmentScheduleEditor.svelte';
+	import { formatCurrency } from '$lib/utils/format';
+	import { buildDueDates, calcInstallmentAmounts, validateDueDates } from '$lib/utils/subscription';
+	import type { SubscriptionPlan } from '$lib/types/subscription';
+	import { onMount, untrack } from 'svelte';
 
 	let passes = $state<MemberPass[]>([]);
 	let passTypes = $state<PassType[]>([]);
@@ -58,6 +63,12 @@
 	let startDate = $state('');
 	let endDate = $state('');
 
+	// 분할 납부 (부여 시에만, 원장 전용)
+	let subscriptionPlans = $state<SubscriptionPlan[]>([]);
+	let applySubscription = $state(false);
+	let selectedPlanId = $state('');
+	let dueDates = $state<string[]>([]);
+
 	// Edit-only form fields
 	let totalLessons = $state('');
 	let remainingLessons = $state('');
@@ -75,10 +86,12 @@
 
 		loading = true;
 		try {
-			const [passRes, typesRes, instrRes] = await Promise.allSettled([
+			const [passRes, typesRes, instrRes, plansRes] = await Promise.allSettled([
 				getMemberPasses(academyId, memberId),
 				getPassTypes(academyId),
-				getInstructors(academyId)
+				getInstructors(academyId),
+				// 구독 아이템은 원장만 조회할 수 있다 — 강사는 실패해도 무시된다
+				isAdmin ? getSubscriptionPlans(academyId) : Promise.resolve(null)
 			]);
 
 			if (passRes.status === 'fulfilled' && passRes.value.status) {
@@ -91,6 +104,9 @@
 			if (instrRes.status === 'fulfilled' && instrRes.value.status) {
 				const data = instrRes.value.data;
 				instructors = Array.isArray(data) ? data : (data.instructors ?? []);
+			}
+			if (plansRes.status === 'fulfilled' && plansRes.value?.status) {
+				subscriptionPlans = plansRes.value.data ?? [];
 			}
 		} catch {
 			// handled by client.ts
@@ -133,6 +149,9 @@
 		selectedInstructorId = '';
 		startDate = new Date().toISOString().split('T')[0];
 		endDate = '';
+		applySubscription = false;
+		selectedPlanId = '';
+		dueDates = [];
 		error = '';
 		showFormModal = true;
 	}
@@ -169,6 +188,37 @@
 		if (!selectedPassTypeId) return 0;
 		const pt = passTypes.find((t) => String(t.id) === String(selectedPassTypeId));
 		return pt?.hold_days ?? 0;
+	});
+
+	let selectedPlan = $derived(
+		subscriptionPlans.find((p) => String(p.id) === String(selectedPlanId)) ?? null
+	);
+
+	// 아이템과 시작일이 정해지면 1회차를 시작일 당일로 두고 매월 같은 날로 자동 생성한다.
+	// 생성 후 각 회차 날짜는 개별 수정 가능하다.
+	$effect(() => {
+		if (!applySubscription || !selectedPlan || !startDate) return;
+		const count = selectedPlan.installment_count;
+		const anchor = startDate;
+		untrack(() => {
+			dueDates = buildDueDates(anchor, count);
+		});
+	});
+
+	let installmentAmounts = $derived(
+		selectedPlan
+			? calcInstallmentAmounts({
+					total_amount: selectedPlan.total_amount,
+					installment_count: selectedPlan.installment_count,
+					monthly_amount: selectedPlan.monthly_amount
+				})
+			: []
+	);
+
+	let subscriptionError = $derived.by(() => {
+		if (!applySubscription) return '';
+		if (!selectedPlan) return '구독 아이템을 선택해주세요.';
+		return validateDueDates(dueDates, selectedPlan.installment_count) ?? '';
 	});
 
 	function confirmDelete(pass: MemberPass) {
@@ -251,18 +301,29 @@
 				return;
 			}
 
+			if (applySubscription && subscriptionError) {
+				error = subscriptionError;
+				return;
+			}
+
 			submitting = true;
 			try {
 				const res = await createMemberPass(academyId, memberId, {
 					pass_type_id: Number(selectedPassTypeId),
 					instructor_id: Number(selectedInstructorId),
 					start_date: startDate,
-					end_date: endDate
+					end_date: endDate,
+					// 회차 금액은 서버가 계산한다 — 어떤 아이템을 언제 낼지만 보낸다
+					...(applySubscription && selectedPlan
+						? { subscription: { plan_id: selectedPlan.id, due_dates: dueDates } }
+						: {})
 				});
 				if (res.status) {
-					toastStore.success('수강권이 부여되었습니다.');
+					toastStore.success(res.message || '수강권이 부여되었습니다.');
 					showFormModal = false;
 					await fetchPasses();
+				} else {
+					error = res.message || '수강권 부여에 실패했습니다.';
 				}
 			} catch (err) {
 				error = err instanceof Error ? err.message : '수강권 부여에 실패했습니다.';
@@ -337,6 +398,26 @@
 									)}일)
 								</div>
 							{/if}
+							{#if pass.subscription_id}
+								<button
+									type="button"
+									class="pass-item__subscription"
+									onclick={() => goto(`/admin/subscriptions/${pass.subscription_id}`)}
+								>
+									<span class="pass-item__subscription-label">
+										분납 {(pass.subscription_installment_count ?? 0) -
+											(pass.subscription_unpaid_count ?? 0)}/{pass.subscription_installment_count}회
+										납부
+									</span>
+									{#if (pass.subscription_unpaid_count ?? 0) > 0}
+										<span class="pass-item__subscription-unpaid">
+											미납 {formatCurrency(pass.subscription_remaining_total ?? 0)}
+										</span>
+									{:else}
+										<span class="pass-item__subscription-done">완납</span>
+									{/if}
+								</button>
+							{/if}
 							<div class="pass-item__actions">
 								<button class="action-btn" onclick={() => openEditModal(pass)}>수정</button>
 								{#if isAdmin}
@@ -407,6 +488,64 @@
 		<Input type="date" label="시작일" bind:value={startDate} />
 
 		<Input type="date" label="종료일" bind:value={endDate} />
+
+		{#if !editTarget && isAdmin}
+			<div class="subscription-section">
+				<label class="subscription-section__toggle">
+					<input type="checkbox" bind:checked={applySubscription} />
+					<span>수강료를 나눠서 받기</span>
+				</label>
+
+				{#if applySubscription}
+					{#if subscriptionPlans.length === 0}
+						<p class="create-form__info">
+							등록된 구독 아이템이 없습니다. 먼저 구독 아이템을 추가해주세요.
+						</p>
+						<button
+							type="button"
+							class="passes-page__link"
+							onclick={() => goto('/admin/subscription-plans')}
+						>
+							구독 아이템 관리로 이동
+						</button>
+					{:else}
+						<div class="create-form__field">
+							<label class="create-form__label" for="subscription-plan">구독 아이템</label>
+							<select
+								id="subscription-plan"
+								class="create-form__select"
+								bind:value={selectedPlanId}
+							>
+								<option value="">선택하세요</option>
+								{#each subscriptionPlans as plan (plan.id)}
+									<option value={plan.id}>
+										{plan.plan_name} ({formatCurrency(plan.total_amount)} / {plan.installment_count}회)
+									</option>
+								{/each}
+							</select>
+						</div>
+
+						{#if selectedPlan}
+							<p class="create-form__info">
+								{#if selectedPlan.installment_count > 1}
+									{selectedPlan.installment_count - 1}회는 {formatCurrency(
+										selectedPlan.monthly_amount
+									)}씩, 마지막 회차에 나머지 {formatCurrency(selectedPlan.final_amount)}을 냅니다.
+								{:else}
+									1회에 {formatCurrency(selectedPlan.total_amount)}을 냅니다.
+								{/if}
+							</p>
+
+							<InstallmentScheduleEditor
+								bind:dueDates
+								amounts={installmentAmounts}
+								error={subscriptionError}
+							/>
+						{/if}
+					{/if}
+				{/if}
+			</div>
+		{/if}
 
 		{#if editTarget}
 			<Input type="number" label="총 수업횟수" bind:value={totalLessons} />
@@ -479,6 +618,60 @@
 </Modal>
 
 <style lang="scss">
+	.subscription-section {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-sm);
+		padding: var(--space-md);
+		background: var(--color-bg);
+		border-radius: var(--radius-md);
+
+		&__toggle {
+			display: flex;
+			align-items: center;
+			gap: var(--space-sm);
+			font-size: var(--font-size-sm);
+			font-weight: var(--font-weight-semibold);
+			cursor: pointer;
+
+			input {
+				width: 18px;
+				height: 18px;
+				accent-color: var(--color-primary);
+			}
+		}
+	}
+
+	.pass-item__subscription {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-sm);
+		width: 100%;
+		margin-top: var(--space-xs);
+		padding: var(--space-sm);
+		border: none;
+		border-radius: var(--radius-sm);
+		background: var(--color-bg);
+		font-family: inherit;
+		font-size: var(--font-size-xs);
+		cursor: pointer;
+
+		&-label {
+			color: var(--color-text-secondary);
+		}
+
+		&-unpaid {
+			font-weight: var(--font-weight-semibold);
+			color: var(--color-danger);
+		}
+
+		&-done {
+			font-weight: var(--font-weight-semibold);
+			color: var(--color-success);
+		}
+	}
+
 	.passes-page {
 		&__content {
 			padding: calc(var(--header-height) + var(--space-md)) var(--space-md) var(--space-md);
