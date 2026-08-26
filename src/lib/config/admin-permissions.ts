@@ -18,6 +18,8 @@ const ROUTE_ROLES: Record<string, readonly MemberRole[]> = {
 	'/admin/reservations': ['INSTRUCTOR'],
 	'/admin/instructor-schedule': ['ADMIN'],
 	'/admin/pass-types': ['ADMIN'],
+	'/admin/subscription-plans': ['ADMIN'],
+	'/admin/subscriptions': ['ADMIN'],
 	'/admin/nav': ['ADMIN', 'INSTRUCTOR'],
 	'/admin/notifications': ['ADMIN', 'INSTRUCTOR'],
 	'/admin/scheduled-alarms': ['ADMIN'],

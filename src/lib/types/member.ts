@@ -1,3 +1,5 @@
+import type { ApplySubscriptionRequest } from './subscription';
+
 export type MemberRole = 'STUDENT' | 'INSTRUCTOR' | 'ADMIN';
 export type StudentPassStatus = 'ALL' | 'ACTIVE' | 'EXPIRED';
 
@@ -78,6 +80,14 @@ export interface MemberPass {
 	// 아직 끝나지 않은 홀딩 구간. 진행 중 홀딩은 status로도 걸러지지만,
 	// 시작 전 홀딩은 status가 ACTIVE라 이 구간으로 예약을 막아야 한다.
 	holdings?: HoldingPeriod[];
+	// 이 수강권에 적용된 분할 납부 요약. 분납이 없으면 필드 자체가 내려오지 않는다.
+	subscription_id?: number;
+	subscription_total_amount?: number;
+	subscription_paid_total?: number;
+	subscription_remaining_total?: number;
+	subscription_installment_count?: number;
+	subscription_unpaid_count?: number;
+	subscription_next_due_date?: string | null;
 	status: PassStatus;
 }
 
@@ -91,6 +101,8 @@ export interface CreatePassRequest {
 	instructor_id: number;
 	start_date: string;
 	end_date: string;
+	// 분할 납부 적용 (원장 전용). 회차 금액은 서버가 계산한다.
+	subscription?: ApplySubscriptionRequest;
 }
 
 export interface UpdatePassRequest {

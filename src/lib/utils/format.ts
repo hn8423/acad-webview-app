@@ -28,6 +28,11 @@ export function formatNumber(num: number): string {
 	return num.toLocaleString('ko-KR');
 }
 
+// 금액 표시용. 화면 전반에서 `{formatNumber(n)}원` 을 반복하던 것을 한 곳으로 모은다.
+export function formatCurrency(num: number): string {
+	return `${formatNumber(num)}원`;
+}
+
 export function formatFileSize(bytes: number): string {
 	if (bytes < 1024) return `${bytes}B`;
 	if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
