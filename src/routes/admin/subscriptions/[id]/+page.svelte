@@ -46,6 +46,8 @@
 
 	let showDeletePaymentModal = $state(false);
 	let deletePaymentTarget = $state<InstallmentPayment | null>(null);
+	// 삭제하려는 결제가 속한 회차. 회수될 수강 회차를 경고에 쓴다.
+	let deletePaymentInstallment = $state<Installment | null>(null);
 
 	let showDueDateModal = $state(false);
 	let dueDateTarget = $state<Installment | null>(null);
@@ -89,7 +91,8 @@
 			paid_amount: installment.paid_amount,
 			remaining_amount: installment.remaining_amount,
 			member_name: subscription.member_name,
-			pass_name: subscription.pass_name
+			pass_name: subscription.pass_name,
+			grant_lessons: installment.grant_lessons
 		};
 	}
 
@@ -121,10 +124,19 @@
 		}
 	}
 
-	function confirmDeletePayment(payment: InstallmentPayment) {
+	function confirmDeletePayment(payment: InstallmentPayment, installment: Installment) {
 		deletePaymentTarget = payment;
+		deletePaymentInstallment = installment;
 		showDeletePaymentModal = true;
 	}
+
+	// 이 결제를 지우면 회차가 완납에서 풀려 지급했던 수강 회차가 회수된다.
+	// 이미 쓴 회차는 되돌릴 수 없으므로 삭제 전에 반드시 알린다.
+	let revokeWarning = $derived.by(() => {
+		const target = deletePaymentInstallment;
+		if (!target || !target.lessons_granted || target.grant_lessons <= 0) return '';
+		return `지급된 수강 ${target.grant_lessons}회차가 회수됩니다. 학생이 이미 사용한 회차는 회수되지 않습니다.`;
+	});
 
 	async function handleDeletePayment() {
 		if (submitting) return;
@@ -238,6 +250,11 @@
 							{formatCurrency(subscription.remaining_total)} 남음
 						</span>
 					</div>
+					{#if subscription.total_lessons > 0}
+						<p class="overview__lessons">
+							수강 회차 {subscription.granted_lessons_total}/{subscription.total_lessons}회 지급
+						</p>
+					{/if}
 				</div>
 			</section>
 
@@ -263,6 +280,19 @@
 							</span>
 						</div>
 
+						{#if installment.grant_lessons > 0}
+							<p
+								class="installment__lessons"
+								class:installment__lessons--granted={installment.lessons_granted}
+							>
+								{#if installment.lessons_granted}
+									수강 {installment.grant_lessons}회차 지급 완료
+								{:else}
+									납부하면 수강 {installment.grant_lessons}회차 지급
+								{/if}
+							</p>
+						{/if}
+
 						{#if installment.payments && installment.payments.length > 0}
 							<ul class="payments">
 								{#each installment.payments as payment (payment.payment_id)}
@@ -281,7 +311,7 @@
 										<button
 											type="button"
 											class="payments__delete"
-											onclick={() => confirmDeletePayment(payment)}
+											onclick={() => confirmDeletePayment(payment, installment)}
 										>
 											삭제
 										</button>
@@ -333,6 +363,9 @@
 			{deletePaymentTarget ? formatCurrency(deletePaymentTarget.paid_amount) : ''} 결제 기록을 삭제할까요?
 		</p>
 		<p class="confirm__note">삭제하면 해당 회차가 다시 미납 목록에 나타납니다.</p>
+		{#if revokeWarning}
+			<p class="confirm__warn">{revokeWarning}</p>
+		{/if}
 		<div class="confirm__actions">
 			<Button variant="secondary" fullWidth onclick={() => (showDeletePaymentModal = false)}>
 				취소
@@ -458,6 +491,12 @@
 			font-weight: var(--font-weight-semibold);
 			color: var(--color-text);
 		}
+
+		&__lessons {
+			margin: var(--space-xs) 0 0;
+			font-size: var(--font-size-xs);
+			color: var(--color-primary);
+		}
 	}
 
 	.installments {
@@ -470,6 +509,17 @@
 	}
 
 	.installment {
+		&__lessons {
+			margin: var(--space-xs) 0 0;
+			font-size: var(--font-size-xs);
+			color: var(--color-text-secondary);
+
+			/* 실제로 지급된 회차만 강조한다 */
+			&--granted {
+				color: var(--color-primary);
+			}
+		}
+
 		padding: var(--space-md);
 		background: var(--color-surface);
 		border-radius: var(--radius-md);
@@ -579,6 +629,17 @@
 			margin: 0;
 			font-size: var(--font-size-xs);
 			color: var(--color-text-secondary);
+			line-height: 1.5;
+		}
+
+		/* 이미 지급한 수강 회차가 회수된다는 건 되돌리기 어려운 결과라 눈에 띄게 */
+		&__warn {
+			margin: 0;
+			padding: var(--space-sm) var(--space-md);
+			border-radius: var(--radius-sm);
+			background: var(--color-bg);
+			color: var(--color-danger);
+			font-size: var(--font-size-xs);
 			line-height: 1.5;
 		}
 

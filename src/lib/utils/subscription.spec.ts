@@ -13,7 +13,11 @@ import {
 	getPaymentMethodLabel,
 	getSubscriptionStatusLabel,
 	validateDueDates,
-	validatePlanAmounts
+	validatePlanAmounts,
+	suggestLessonGrants,
+	validateLessonGrants,
+	normalizeLessonGrants,
+	sumLessonGrants
 } from './subscription';
 
 describe('calcInstallmentAmounts', () => {
@@ -150,10 +154,10 @@ describe('buildInstallmentSchedule', () => {
 				monthly_amount: 230000
 			})
 		).toEqual([
-			{ seq: 1, due_date: '2026-03-01', amount: 230000 },
-			{ seq: 2, due_date: '2026-04-01', amount: 230000 },
-			{ seq: 3, due_date: '2026-05-01', amount: 230000 },
-			{ seq: 4, due_date: '2026-06-01', amount: 264000 }
+			{ seq: 1, due_date: '2026-03-01', amount: 230000, lessons: 0 },
+			{ seq: 2, due_date: '2026-04-01', amount: 230000, lessons: 0 },
+			{ seq: 3, due_date: '2026-05-01', amount: 230000, lessons: 0 },
+			{ seq: 4, due_date: '2026-06-01', amount: 264000, lessons: 0 }
 		]);
 	});
 });
@@ -254,5 +258,124 @@ describe('getDueGroup', () => {
 
 	it('다음 달 이후면 예정', () => {
 		expect(getDueGroup('2026-04-01', '2026-03-10')).toBe('UPCOMING');
+	});
+});
+
+// 실제 운영 가격표. 금액 규칙(월 정액 + 마지막 잔금)이 납부 횟수를 정하고,
+// 회차 배분은 그 횟수에 맞춰 floor 로 나눈 뒤 나머지를 마지막 회차에 몰아준다.
+describe('가격표 기반 회차 배분', () => {
+	const cases: Array<[string, number, number, number, number, number[]]> = [
+		['전문 1개월', 270000, 270000, 4, 1, [4]],
+		['전문 3개월', 657000, 270000, 12, 3, [4, 4, 4]],
+		['전문 6개월', 1194000, 270000, 24, 5, [4, 4, 4, 4, 8]],
+		['전문 12개월', 2268000, 270000, 48, 9, [5, 5, 5, 5, 5, 5, 5, 5, 8]],
+		['취미 1개월', 230000, 230000, 4, 1, [4]],
+		['취미 3개월', 540000, 230000, 12, 3, [4, 4, 4]],
+		['취미 6개월', 954000, 230000, 24, 4, [6, 6, 6, 6]],
+		['취미 12개월', 1788000, 230000, 48, 8, [6, 6, 6, 6, 6, 6, 6, 6]]
+	];
+
+	it.each(cases)(
+		'%s: 총 회차를 납부 횟수에 맞춰 나누고 나머지를 마지막에 준다',
+		(_name, total, monthly, lessons, count, expected) => {
+			const amounts = calcInstallmentAmounts({
+				total_amount: total,
+				installment_count: count,
+				monthly_amount: monthly
+			});
+			expect(amounts).toHaveLength(count);
+			expect(amounts.reduce((a, b) => a + b, 0)).toBe(total);
+
+			const grants = suggestLessonGrants({
+				total_lessons: lessons,
+				installment_count: count
+			});
+			expect(grants).toEqual(expected);
+			expect(sumLessonGrants(grants)).toBe(lessons);
+		}
+	);
+
+	it('ceil 로 나누면 마지막 회차가 0회가 되는 조합을 floor 가 막는다', () => {
+		// 전문 12개월: ceil(48/9) = 6 -> 6 * 8 = 48 -> 마지막 0회
+		const grants = suggestLessonGrants({ total_lessons: 48, installment_count: 9 });
+		expect(grants[grants.length - 1]).toBeGreaterThan(0);
+	});
+});
+
+describe('suggestLessonGrants', () => {
+	it('1회 납부면 전액을 1회차에 몰아 준다', () => {
+		expect(suggestLessonGrants({ total_lessons: 12, installment_count: 1 })).toEqual([12]);
+	});
+
+	it('총 회차가 0이면 모두 0이다 (수납 장부 전용)', () => {
+		expect(suggestLessonGrants({ total_lessons: 0, installment_count: 3 })).toEqual([0, 0, 0]);
+	});
+});
+
+describe('validateLessonGrants', () => {
+	it('합계가 총 회차와 다르면 거부한다', () => {
+		expect(validateLessonGrants([4, 4, 3], 3, 12)).toContain('합계');
+	});
+
+	it('개수가 납부 횟수와 다르면 거부한다', () => {
+		expect(validateLessonGrants([4, 4], 3, 12)).toContain('3개');
+	});
+
+	it('음수는 거부한다', () => {
+		expect(validateLessonGrants([-1, 6, 7], 3, 12)).toContain('0 이상');
+	});
+
+	it('배열을 생략하면 통과한다 (기본 배분을 쓴다)', () => {
+		expect(validateLessonGrants(undefined, 3, 12)).toBeNull();
+	});
+
+	it('총 회차가 0이면 배열이 없어도 통과한다', () => {
+		expect(validateLessonGrants(undefined, 3, 0)).toBeNull();
+	});
+
+	it('총 회차가 0인데 배분이 들어오면 거부한다', () => {
+		expect(validateLessonGrants([1, 0, 0], 3, 0)).toContain('모두 0');
+	});
+
+	it('원장이 마지막에 몰지 않고 균등하게 바꾼 배분도 허용한다', () => {
+		// 전문 6개월 기본값 [4,4,4,4,8] 대신 [5,5,5,5,4] 로 조정
+		expect(validateLessonGrants([5, 5, 5, 5, 4], 5, 24)).toBeNull();
+	});
+});
+
+describe('normalizeLessonGrants', () => {
+	const plan = { total_lessons: 12, installment_count: 3 };
+
+	it('길이가 맞으면 그대로 쓴다', () => {
+		expect(normalizeLessonGrants([6, 3, 3], plan)).toEqual([6, 3, 3]);
+	});
+
+	it('납부 횟수가 바뀌어 길이가 안 맞으면 기본 배분으로 되돌린다', () => {
+		expect(normalizeLessonGrants([6, 6], plan)).toEqual([4, 4, 4]);
+	});
+
+	it('null 이면 기본 배분을 쓴다', () => {
+		expect(normalizeLessonGrants(null, plan)).toEqual([4, 4, 4]);
+	});
+});
+
+describe('buildInstallmentSchedule', () => {
+	it('회차별 지급 수강 회차를 함께 내려준다', () => {
+		const schedule = buildInstallmentSchedule(
+			'2026-03-01',
+			{ total_amount: 657000, installment_count: 3, monthly_amount: 270000 },
+			[4, 4, 4]
+		);
+		expect(schedule.map((r) => r.lessons)).toEqual([4, 4, 4]);
+		expect(schedule[2].amount).toBe(117000);
+	});
+
+	it('회차 배분을 안 주면 0으로 채운다', () => {
+		const schedule = buildInstallmentSchedule('2026-03-01', {
+			total_amount: 657000,
+			installment_count: 3,
+			monthly_amount: 270000
+		});
+		expect(schedule.map((r) => r.lessons)).toEqual([0, 0, 0]);
 	});
 });

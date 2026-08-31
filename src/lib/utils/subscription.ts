@@ -27,6 +27,73 @@ export function calcInstallmentAmounts(plan: PlanAmounts): number[] {
 	return [...head, total_amount - monthly_amount * (installment_count - 1)];
 }
 
+export const MAX_TOTAL_LESSONS = 500;
+
+export interface PlanLessons {
+	total_lessons: number;
+	installment_count: number;
+}
+
+// 회차별 지급 수강 회차의 기본 배분.
+//   1 ~ N-1 회차 = floor(L / N),  N 회차 = L - floor(L/N)*(N-1)
+// 금액과 같은 모양으로 "나머지를 마지막 회차에 전부" 몰아준다.
+// 예) 24회차 / 5회 -> [4, 4, 4, 4, 8],  48회차 / 9회 -> [5 x 8, 8]
+//
+// ceil 을 쓰면 안 된다. 48회차 / 9회에서 ceil(48/9)=6 이면 6x8=48 이라
+// 마지막 회차 지급이 0회가 되어 잔금을 안 내도 회차를 다 받는다.
+// 서버 subscription-schedule.ts 와 같은 규칙 — 여기는 미리보기용이다.
+export function suggestLessonGrants(plan: PlanLessons): number[] {
+	const { total_lessons, installment_count } = plan;
+	if (installment_count <= 1) return [total_lessons];
+	const per = Math.floor(total_lessons / installment_count);
+	const head = Array.from({ length: installment_count - 1 }, () => per);
+	return [...head, total_lessons - per * (installment_count - 1)];
+}
+
+// 원장이 회차별로 직접 수정한 지급 회차 검증. 문제가 없으면 null.
+// total_lessons = 0 은 "회차 지급 없음"(수납 장부 전용)이라 배열을 요구하지 않는다.
+export function validateLessonGrants(
+	grants: number[] | null | undefined,
+	installmentCount: number,
+	totalLessons: number
+): string | null {
+	if (!Number.isInteger(totalLessons) || totalLessons < 0)
+		return '총 수강 회차는 0 이상의 정수여야 합니다';
+	if (totalLessons > MAX_TOTAL_LESSONS)
+		return `총 수강 회차는 최대 ${MAX_TOTAL_LESSONS}회까지 가능합니다`;
+
+	if (totalLessons === 0) {
+		if (grants && grants.some((g) => g !== 0))
+			return '총 수강 회차가 0이면 회차별 지급 회차도 모두 0이어야 합니다';
+		return null;
+	}
+
+	if (grants === null || grants === undefined) return null;
+
+	if (!Array.isArray(grants) || grants.length !== installmentCount)
+		return `회차별 지급 회차는 ${installmentCount}개를 모두 지정해야 합니다`;
+	if (grants.some((g) => !Number.isInteger(g) || g < 0))
+		return '회차별 지급 회차는 0 이상의 정수여야 합니다';
+
+	const sum = grants.reduce((acc, v) => acc + v, 0);
+	if (sum !== totalLessons)
+		return `회차별 지급 회차 합계(${sum}회)가 총 수강 회차(${totalLessons}회)와 다릅니다`;
+
+	return null;
+}
+
+// 납부 횟수가 바뀌면 기존 배열은 길이가 안 맞는다 — 그때는 기본 배분으로 되돌린다.
+export function normalizeLessonGrants(
+	grants: number[] | null | undefined,
+	plan: PlanLessons
+): number[] {
+	return grants && grants.length === plan.installment_count ? grants : suggestLessonGrants(plan);
+}
+
+export function sumLessonGrants(grants: number[]): number {
+	return grants.reduce((acc, v) => acc + v, 0);
+}
+
 export function calcFinalAmount(plan: PlanAmounts): number {
 	const amounts = calcInstallmentAmounts(plan);
 	return amounts[amounts.length - 1];
@@ -84,11 +151,17 @@ export function buildDueDates(anchor: string, count: number): string[] {
 // 회차별 (예정일, 금액) 미리보기. 부여 화면에서 그대로 표로 그린다.
 export function buildInstallmentSchedule(
 	anchor: string,
-	plan: PlanAmounts
-): Array<{ seq: number; due_date: string; amount: number }> {
+	plan: PlanAmounts,
+	lessonGrants?: number[]
+): Array<{ seq: number; due_date: string; amount: number; lessons: number }> {
 	const dates = buildDueDates(anchor, plan.installment_count);
 	const amounts = calcInstallmentAmounts(plan);
-	return dates.map((due_date, i) => ({ seq: i + 1, due_date, amount: amounts[i] ?? 0 }));
+	return dates.map((due_date, i) => ({
+		seq: i + 1,
+		due_date,
+		amount: amounts[i] ?? 0,
+		lessons: lessonGrants?.[i] ?? 0
+	}));
 }
 
 // 관리자가 개별 수정한 납부 예정일 검증. 문제가 없으면 null.

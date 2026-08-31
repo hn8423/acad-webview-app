@@ -20,6 +20,10 @@ export interface SubscriptionPlan {
 	monthly_amount: number;
 	// 서버가 계산해 내려주는 마지막 회차 금액 (총액 - 월 납입액 x (횟수-1))
 	final_amount: number;
+	// 이 구독으로 지급할 총 수강 회차. 0 이면 회차 지급 없이 수납 장부로만 쓴다.
+	total_lessons: number;
+	// 회차별 지급 수강 회차. 서버가 NULL 이어도 항상 배열로 채워 내려준다.
+	lesson_grants: number[];
 }
 
 export interface CreateSubscriptionPlanRequest {
@@ -27,6 +31,8 @@ export interface CreateSubscriptionPlanRequest {
 	total_amount: number;
 	installment_count: number;
 	monthly_amount: number;
+	total_lessons: number;
+	lesson_grants: number[];
 }
 
 export type UpdateSubscriptionPlanRequest = Partial<CreateSubscriptionPlanRequest>;
@@ -48,6 +54,10 @@ export interface Installment {
 	paid_amount: number;
 	remaining_amount: number;
 	status: InstallmentStatus;
+	// 이 회차를 완납하면 지급되는 수강 회차 (0 = 회차 지급 없는 분납)
+	grant_lessons: number;
+	// 이미 지급했는지. 납부 기록을 지워 완납이 풀리면 다시 false 가 된다.
+	lessons_granted: boolean;
 	// 상세/학생 화면에서만 내려온다
 	payments?: InstallmentPayment[];
 	days_overdue?: number;
@@ -67,6 +77,9 @@ export interface MemberSubscription {
 	paid_total: number;
 	remaining_total: number;
 	unpaid_count: number;
+	// 계약 총 수강 회차와 지금까지 실제 지급된 회차
+	total_lessons: number;
+	granted_lessons_total: number;
 	status: SubscriptionStatus;
 	installments: Installment[];
 }
@@ -108,6 +121,12 @@ export interface ApplySubscriptionRequest {
 	installment_count?: number;
 	monthly_amount?: number;
 	due_dates: string[];
+	// 회차별 지급 수강 회차. 원장이 부여 화면에서 조정한 값을 그대로 보낸다.
+	// 생략하면 서버가 구독 아이템 템플릿 또는 균등 배분을 쓴다.
+	grant_lessons?: number[];
+	// 부여와 동시에 등록하는 1회차 결제. 1회차 납부일이 수강권 시작일(선납)이라
+	// 대부분 첫 납부를 받으며 부여한다. 완납이면 그 자리에서 1회차분 회차가 지급된다.
+	first_payment?: CreatePaymentRequest;
 }
 
 export interface CreatePaymentRequest {
