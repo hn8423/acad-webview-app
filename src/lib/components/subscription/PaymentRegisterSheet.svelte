@@ -17,6 +17,8 @@
 		remaining_amount: number;
 		member_name?: string;
 		pass_name?: string;
+		// 이 회차를 완납하면 지급되는 수강 회차 (0 = 회차 지급 없는 분납)
+		grant_lessons?: number;
 	}
 
 	interface Props {
@@ -76,6 +78,17 @@
 	let canSubmit = $derived(
 		!!installment && !!paidAmount && !!paidAt && !validationError && !submitting
 	);
+
+	// 완납해야 회차가 나간다. 부분 납부로는 지급되지 않는다는 걸 입력하는 순간 알려준다 —
+	// 원장이 가장 오해하기 쉬운 지점이다.
+	let grantLessons = $derived(installment?.grant_lessons ?? 0);
+	let willComplete = $derived(!!installment && amountNumber >= installment.remaining_amount);
+	let lessonNotice = $derived.by(() => {
+		if (grantLessons <= 0 || !paidAmount || validationError) return '';
+		return willComplete
+			? `완납되어 수강 ${grantLessons}회차가 지급됩니다.`
+			: '부분 납부는 수강 회차가 지급되지 않습니다. 완납해야 지급됩니다.';
+	});
 
 	function handleSubmit() {
 		if (!canSubmit) return;
@@ -141,6 +154,15 @@
 				</div>
 			</div>
 
+			{#if lessonNotice}
+				<p
+					class="payment-sheet__lesson-notice"
+					class:payment-sheet__lesson-notice--grant={willComplete}
+				>
+					{lessonNotice}
+				</p>
+			{/if}
+
 			<Input type="date" label="결제일" bind:value={paidAt} />
 
 			<div class="payment-sheet__methods">
@@ -178,6 +200,21 @@
 
 <style lang="scss">
 	.payment-sheet {
+		&__lesson-notice {
+			margin: 0;
+			padding: var(--space-sm) var(--space-md);
+			border-radius: var(--radius-sm);
+			background: var(--color-bg);
+			color: var(--color-text-secondary);
+			font-size: var(--font-size-xs);
+			line-height: 1.5;
+
+			/* 완납이라 회차가 실제로 나가는 경우만 강조한다 */
+			&--grant {
+				color: var(--color-primary);
+			}
+		}
+
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-md);

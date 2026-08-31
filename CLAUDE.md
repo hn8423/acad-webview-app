@@ -17,7 +17,9 @@ Academy management B2B webview app. Built with SvelteKit, statically built and e
 yarn dev                                  # Dev server (proxies /academic → localhost:3001)
 yarn build                                # Production static build
 yarn preview                              # Preview built output
-yarn check                                # TypeScript type check (svelte-check)
+yarn run check                            # TypeScript type check (svelte-check)
+                                          # NOTE: bare `yarn check` hits yarn's own
+                                          # dependency checker, not this script
 yarn lint                                 # ESLint + Prettier check
 yarn format                               # Auto-format with Prettier
 yarn test:unit                            # Vitest unit tests
@@ -210,15 +212,43 @@ A member can pause a pass for a limited number of days. Rules (enforced server-s
 
 ### Installment Payments (분할 납부 / 구독)
 
-An admin defines reusable **plans** (`SubscriptionPlan`: total / count / monthly) and applies one when
-granting a pass. There is no PG integration — this is a bookkeeping ledger for offline payments.
+An admin defines reusable **plans** (`SubscriptionPlan`: total / count / monthly / total lessons) and
+applies one when granting a pass. There is no PG integration — this is a bookkeeping ledger for
+offline payments, but **paying a round is what issues the lessons**.
 
 - **Amounts**: rounds `1..N-1` cost `monthly_amount`; the last round takes the remainder
   `total - monthly × (N-1)`. e.g. `954,000 / 4회 / 230,000` → `230,000 × 3 + 264,000`.
   Rejected when `monthly × (N-1) >= total` (last round would be ≤ 0). A last round _smaller_ than
   `monthly_amount` is legal — don't assume the last one is the biggest.
-- **The client never sends amounts.** It sends `plan_id` + `due_dates[]`; the server recalculates.
-  `src/lib/utils/subscription.ts` mirrors the math for live preview only.
+- **The client never sends amounts.** It sends `plan_id` + `due_dates[]` + `grant_lessons[]`; the
+  server recalculates every amount. `src/lib/utils/subscription.ts` mirrors the math for preview only.
+- **Lessons are drip-fed, not granted up front.** `SubscriptionPlan.total_lessons` is the contract
+  total and `lesson_grants[]` is the per-round split, both editable by the admin. Completing a round
+  (`PAID`) adds that round's `grant_lessons` to the pass; a partial payment adds nothing. Deleting a
+  payment so the round leaves `PAID` **revokes** them again.
+  - Default split is `floor(total / N)` with **the remainder on the last round** — same shape as the
+    amounts. Never `ceil`: 48회차 / 9회 gives `ceil = 6`, `6 × 8 = 48`, so the final round would grant
+    0 and the student gets everything without paying the balance. `floor` can never reach 0.
+  - Idempotency is keyed on `Installment.lessons_granted_at`, **not** on status — a round can cross
+    `PAID ⇄ PARTIAL` many times and must still grant exactly once.
+  - The grant/revoke hook lives inside `recalcInstallment` (the single place that decides a round's
+    status), so no future call path can skip it. `MEMBER_PASS` is only ever touched with an atomic
+    relative `UPDATE` — attendance deducts lessons outside the subscription lock, so a read-then-write
+    would drop those deductions.
+  - Revoking clamps at 0 (`GREATEST`). Lessons the student already used cannot come back; the response
+    message tells the admin how many were actually revoked.
+  - **`total_lessons = 0` keeps the old behaviour** — a ledger-only subscription that grants nothing,
+    and the pass gets `PassType.total_lessons` in full. Granting a pass with no `subscription` payload
+    at all is likewise untouched.
+  - A subscription attached _after_ the pass exists (`POST /passes/:id/subscription`) is forced to
+    ledger-only — those lessons were already issued, so granting again would double-count.
+- **`end_date` is fixed at grant time** and never extended by payments. `AssignPassDto` accepts an
+  explicit `end_date`; without it the server falls back to `start_date + PassType.duration_days`,
+  which is wrong for a 6-month plan on a 30-day pass type.
+- **First payment at grant**: round 1 is due on the pass start date (선납), so the grant form can send
+  `subscription.first_payment` and the pass starts with round 1's lessons already issued. Without it
+  the pass starts at 0 lessons and booking is blocked by the existing remaining-lessons check.
+  The pass status stays `ACTIVE` (not `USED_UP`) — the list filter only allows `ACTIVE`/`EXPIRED`.
 - **Due dates**: round 1 defaults to the pass start date (선납), then monthly on the same day with
   end-of-month clamping (1/31 → 2/28). Always compute from the **anchor**, never chain off the
   previous round — chaining collapses 1/31 to 2/28 → 3/28 instead of restoring 3/31, 4/30.
@@ -228,7 +258,8 @@ granting a pass. There is no PG integration — this is a bookkeeping ledger for
   `paid_amount`/`status` are a `SUM()` cache. Deleting a payment walks the round back to
   `PARTIAL`/`UNPAID` and revives a `COMPLETED` subscription to `ACTIVE`.
 - **Cancelling** a subscription removes only rounds with nothing paid; partially-paid rounds stay
-  untouched and drop out of the dashboard via `subscription.status`.
+  untouched and drop out of the dashboard via `subscription.status`. Lessons already granted are
+  **not** clawed back — what was paid for stays.
 - Deleting a pass or setting it to `REFUNDED` cancels its subscription. `EXPIRED` does **not** —
   the outstanding balance is still owed.
 - Both admin pages are ADMIN-only (`ROUTE_ROLES`), and a non-ADMIN sending a `subscription` payload

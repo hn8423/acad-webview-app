@@ -83,4 +83,29 @@ describe('PaymentRegisterSheet', () => {
 			})
 		);
 	});
+
+	// 완납해야 회차가 나간다는 정책을 원장이 오해하지 않게 하는 안내.
+	it('전액을 입력하면 지급될 수강 회차를 알려준다', async () => {
+		const { screen } = renderSheet({ grant_lessons: 6 });
+
+		await expect.element(screen.getByText('완납되어 수강 6회차가 지급됩니다.')).toBeInTheDocument();
+	});
+
+	it('부분 납부 금액을 넣으면 회차가 지급되지 않는다고 알린다', async () => {
+		const { screen } = renderSheet({ grant_lessons: 6 });
+
+		await screen.getByPlaceholder('0').fill('100000');
+
+		await expect
+			.element(screen.getByText('부분 납부는 수강 회차가 지급되지 않습니다. 완납해야 지급됩니다.'))
+			.toBeInTheDocument();
+	});
+
+	it('회차 지급 없는 분납에는 안내를 띄우지 않는다', async () => {
+		const { screen } = renderSheet({ grant_lessons: 0 });
+
+		await screen.getByPlaceholder('0').fill('100000');
+
+		await expect.element(screen.getByText(/수강 회차/)).not.toBeInTheDocument();
+	});
 });
