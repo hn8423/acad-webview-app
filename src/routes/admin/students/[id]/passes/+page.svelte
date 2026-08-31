@@ -32,7 +32,15 @@
 	import { getSubscriptionPlans } from '$lib/api/subscription';
 	import InstallmentScheduleEditor from '$lib/components/subscription/InstallmentScheduleEditor.svelte';
 	import { formatCurrency } from '$lib/utils/format';
-	import { buildDueDates, calcInstallmentAmounts, validateDueDates } from '$lib/utils/subscription';
+	import {
+		buildDueDates,
+		calcInstallmentAmounts,
+		normalizeLessonGrants,
+		validateDueDates,
+		validateLessonGrants,
+		PAYMENT_METHOD_OPTIONS
+	} from '$lib/utils/subscription';
+	import type { PaymentMethod } from '$lib/types/subscription';
 	import type { SubscriptionPlan } from '$lib/types/subscription';
 	import { onMount, untrack } from 'svelte';
 
@@ -66,6 +74,11 @@
 	// 분할 납부 (부여 시에만, 원장 전용)
 	let subscriptionPlans = $state<SubscriptionPlan[]>([]);
 	let applySubscription = $state(false);
+	// 회차별 지급 수강 회차. 아이템 템플릿에서 가져와 부여 화면에서 다시 조정할 수 있다.
+	let lessonGrants = $state<number[]>([]);
+	// 1회차 납부일이 수강권 시작일(선납)이라 대부분 첫 납부를 받으며 부여한다.
+	let registerFirstPayment = $state(false);
+	let firstPaymentMethod = $state<PaymentMethod>('CASH');
 	let selectedPlanId = $state('');
 	let dueDates = $state<string[]>([]);
 
@@ -200,8 +213,14 @@
 		if (!applySubscription || !selectedPlan || !startDate) return;
 		const count = selectedPlan.installment_count;
 		const anchor = startDate;
+		const plan = selectedPlan;
 		untrack(() => {
 			dueDates = buildDueDates(anchor, count);
+			// 아이템에 저장된 배분을 그대로 가져온다. 길이가 안 맞으면 기본 배분으로 되돌린다.
+			lessonGrants = normalizeLessonGrants(plan.lesson_grants, {
+				total_lessons: plan.total_lessons ?? 0,
+				installment_count: count
+			});
 		});
 	});
 
@@ -215,11 +234,22 @@
 			: []
 	);
 
+	// 이 아이템이 회차를 나눠 지급하는지. 0이면 기존처럼 수강권 회차를 전액 지급한다.
+	let planTotalLessons = $derived(selectedPlan?.total_lessons ?? 0);
+	let grantsLessons = $derived(applySubscription && planTotalLessons > 0);
+
 	let subscriptionError = $derived.by(() => {
 		if (!applySubscription) return '';
 		if (!selectedPlan) return '구독 아이템을 선택해주세요.';
-		return validateDueDates(dueDates, selectedPlan.installment_count) ?? '';
+		return (
+			validateDueDates(dueDates, selectedPlan.installment_count) ??
+			validateLessonGrants(lessonGrants, selectedPlan.installment_count, planTotalLessons) ??
+			''
+		);
 	});
+
+	// 1회차 금액. 첫 납부를 함께 등록할 때 전액을 프리필한다.
+	let firstInstallmentAmount = $derived(installmentAmounts[0] ?? 0);
 
 	function confirmDelete(pass: MemberPass) {
 		deleteTarget = pass;
@@ -313,9 +343,24 @@
 					instructor_id: Number(selectedInstructorId),
 					start_date: startDate,
 					end_date: endDate,
-					// 회차 금액은 서버가 계산한다 — 어떤 아이템을 언제 낼지만 보낸다
+					// 회차 금액은 서버가 계산한다 — 어떤 아이템을 언제 낼지, 회차를 어떻게 나눌지만 보낸다
 					...(applySubscription && selectedPlan
-						? { subscription: { plan_id: selectedPlan.id, due_dates: dueDates } }
+						? {
+								subscription: {
+									plan_id: selectedPlan.id,
+									due_dates: dueDates,
+									grant_lessons: lessonGrants,
+									...(registerFirstPayment
+										? {
+												first_payment: {
+													paid_amount: firstInstallmentAmount,
+													paid_at: startDate,
+													payment_method: firstPaymentMethod
+												}
+											}
+										: {})
+								}
+							}
 						: {})
 				});
 				if (res.status) {
@@ -407,6 +452,10 @@
 									<span class="pass-item__subscription-label">
 										분납 {(pass.subscription_installment_count ?? 0) -
 											(pass.subscription_unpaid_count ?? 0)}/{pass.subscription_installment_count}회
+										{#if (pass.subscription_total_lessons ?? 0) > 0}
+											· 회차 {pass.subscription_granted_lessons ??
+												0}/{pass.subscription_total_lessons}
+										{/if}
 										납부
 									</span>
 									{#if (pass.subscription_unpaid_count ?? 0) > 0}
@@ -536,11 +585,45 @@
 								{/if}
 							</p>
 
+							{#if grantsLessons}
+								<p class="create-form__info">
+									수강권 종류의 회차 대신 <strong>총 {planTotalLessons}회차</strong>가 적용되며,
+									회차를 납부할 때마다 나눠서 지급됩니다. 분납 기간에 맞게 종료일을 확인해주세요.
+								</p>
+							{/if}
+
 							<InstallmentScheduleEditor
 								bind:dueDates
 								amounts={installmentAmounts}
+								bind:lessons={lessonGrants}
+								totalLessons={planTotalLessons}
+								editableLessons
 								error={subscriptionError}
 							/>
+
+							<label class="subscription-section__toggle">
+								<input type="checkbox" bind:checked={registerFirstPayment} />
+								<span>1회차 결제도 지금 등록 ({formatCurrency(firstInstallmentAmount)})</span>
+							</label>
+
+							{#if registerFirstPayment}
+								<div class="create-form__field">
+									<label class="create-form__label" for="first-payment-method">결제수단</label>
+									<select
+										id="first-payment-method"
+										class="create-form__select"
+										bind:value={firstPaymentMethod}
+									>
+										{#each PAYMENT_METHOD_OPTIONS as option (option.value)}
+											<option value={option.value}>{option.label}</option>
+										{/each}
+									</select>
+								</div>
+							{:else if grantsLessons}
+								<p class="create-form__info">
+									첫 납부를 등록하기 전까지 잔여 회차가 0이라 예약할 수 없습니다.
+								</p>
+							{/if}
 						{/if}
 					{/if}
 				{/if}

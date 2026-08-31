@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { academyStore } from '$lib/stores/academy.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
@@ -15,7 +15,14 @@
 	import Modal from '$lib/components/ui/Modal.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import { formatCurrency } from '$lib/utils/format';
-	import { calcInstallmentAmounts, validatePlanAmounts } from '$lib/utils/subscription';
+	import {
+		calcInstallmentAmounts,
+		normalizeLessonGrants,
+		suggestLessonGrants,
+		validateLessonGrants,
+		validatePlanAmounts
+	} from '$lib/utils/subscription';
+	import InstallmentScheduleEditor from '$lib/components/subscription/InstallmentScheduleEditor.svelte';
 	import type { SubscriptionPlan } from '$lib/types/subscription';
 
 	let plans = $state<SubscriptionPlan[]>([]);
@@ -30,6 +37,13 @@
 	let totalAmount = $state('');
 	let installmentCount = $state('');
 	let monthlyAmount = $state('');
+	let totalLessons = $state('');
+	// 회차별 지급 수강 회차. 총 회차/납부 횟수가 정해지면 기본 배분으로 채우고
+	// 원장이 표에서 개별 수정한다.
+	let lessonGrants = $state<number[]>([]);
+	// 스케줄 에디터는 납부 예정일도 함께 받지만 아이템 템플릿에는 날짜 개념이 없다.
+	// 여기서는 지급 회차 편집만 쓰므로 빈 배열을 넘긴다.
+	let previewDueDates = $state<string[]>([]);
 
 	let showDeleteModal = $state(false);
 	let deleteTarget = $state<SubscriptionPlan | null>(null);
@@ -71,7 +85,42 @@
 
 	let amountError = $derived(isDraftFilled ? (validatePlanAmounts(draft) ?? '') : '');
 
-	let canSubmit = $derived(!!planName.trim() && isDraftFilled && !amountError && !submitting);
+	let lessonPlan = $derived({
+		total_lessons: Number(totalLessons) || 0,
+		installment_count: draft.installment_count
+	});
+
+	// 총 회차나 납부 횟수가 바뀌면 기본 배분으로 다시 채운다.
+	// untrack 없이 lessonGrants 를 읽으면 자기 자신에 반응해 루프가 된다.
+	$effect(() => {
+		const count = lessonPlan.installment_count;
+		const total = lessonPlan.total_lessons;
+		if (!count || count < 1) return;
+		untrack(() => {
+			if (lessonGrants.length !== count) {
+				lessonGrants = suggestLessonGrants({ total_lessons: total, installment_count: count });
+			}
+		});
+	});
+
+	let lessonError = $derived(
+		isDraftFilled
+			? (validateLessonGrants(lessonGrants, draft.installment_count, lessonPlan.total_lessons) ??
+					'')
+			: ''
+	);
+
+	// 편집 중에도 표가 행 수를 잃지 않도록 길이를 맞춰 둔다
+	let editorLessons = $derived(normalizeLessonGrants(lessonGrants, lessonPlan));
+
+	let canSubmit = $derived(
+		!!planName.trim() && isDraftFilled && !amountError && !lessonError && !submitting
+	);
+
+	// 지급 회차를 다시 나눠준다 — 원장이 잘못 만졌을 때 되돌리는 버튼용
+	function resetLessonGrants() {
+		lessonGrants = suggestLessonGrants(lessonPlan);
+	}
 
 	function openCreateModal() {
 		editTarget = null;
@@ -79,6 +128,8 @@
 		totalAmount = '';
 		installmentCount = '';
 		monthlyAmount = '';
+		totalLessons = '';
+		lessonGrants = [];
 		error = '';
 		showFormModal = true;
 	}
@@ -89,6 +140,11 @@
 		totalAmount = String(plan.total_amount);
 		installmentCount = String(plan.installment_count);
 		monthlyAmount = String(plan.monthly_amount);
+		totalLessons = String(plan.total_lessons ?? 0);
+		lessonGrants = normalizeLessonGrants(plan.lesson_grants, {
+			total_lessons: plan.total_lessons ?? 0,
+			installment_count: plan.installment_count
+		});
 		error = '';
 		showFormModal = true;
 	}
@@ -106,7 +162,9 @@
 				total_amount: draft.total_amount,
 				installment_count: draft.installment_count,
 				// 1회 납부면 월 납입액은 의미가 없다 — 서버가 총액으로 맞춘다
-				monthly_amount: draft.installment_count <= 1 ? draft.total_amount : draft.monthly_amount
+				monthly_amount: draft.installment_count <= 1 ? draft.total_amount : draft.monthly_amount,
+				total_lessons: lessonPlan.total_lessons,
+				lesson_grants: editorLessons
 			};
 
 			const res = editTarget
@@ -159,7 +217,8 @@
 
 	<div class="plans-page__content">
 		<p class="plans-page__hint">
-			총 금액과 납부 횟수, 한 달에 낼 금액을 정하면 나머지는 마지막 회차에 몰아서 부과됩니다.
+			총 금액과 납부 횟수, 한 달에 낼 금액을 정하면 나머지는 마지막 회차에 몰아서 부과됩니다. 총
+			수강 회차를 지정하면 회차를 납부할 때마다 그만큼 수강 회차가 지급됩니다.
 		</p>
 
 		<div class="plans-page__header">
@@ -185,6 +244,15 @@
 								· 마지막 {formatCurrency(plan.final_amount)}
 							{/if}
 						</p>
+						{#if plan.total_lessons > 0}
+							<p class="plan-item__lessons">
+								총 {plan.total_lessons}회차 · 납부마다 {plan.lesson_grants.join('·')}회 지급
+							</p>
+						{:else}
+							<p class="plan-item__lessons plan-item__lessons--none">
+								회차 지급 없음 (수납 장부 전용)
+							</p>
+						{/if}
 						<div class="plan-item__actions">
 							<Button size="sm" variant="ghost" onclick={() => openEditModal(plan)}>수정</Button>
 							<Button size="sm" variant="danger" onclick={() => confirmDelete(plan)}>삭제</Button>
@@ -216,17 +284,30 @@
 			/>
 		{/if}
 
+		<Input type="number" label="총 수강 회차" bind:value={totalLessons} placeholder="12" />
+		<p class="plan-form__hint">
+			납부할 때마다 나눠서 지급됩니다. 0이면 회차 지급 없이 수납 장부로만 씁니다.
+		</p>
+
 		{#if previewAmounts.length > 0}
 			<div class="plan-form__preview">
-				<p class="plan-form__preview-title">회차별 금액</p>
-				<ul class="plan-form__preview-list">
-					{#each previewAmounts as amount, i (i)}
-						<li class:plan-form__preview-item--last={i === previewAmounts.length - 1}>
-							<span>{i + 1}회차</span>
-							<strong>{formatCurrency(amount)}</strong>
-						</li>
-					{/each}
-				</ul>
+				<div class="plan-form__preview-head">
+					<p class="plan-form__preview-title">회차별 금액 · 지급 회차</p>
+					{#if lessonPlan.total_lessons > 0}
+						<button type="button" class="plan-form__reset" onclick={resetLessonGrants}>
+							기본 배분으로
+						</button>
+					{/if}
+				</div>
+				<InstallmentScheduleEditor
+					bind:dueDates={previewDueDates}
+					amounts={previewAmounts}
+					bind:lessons={lessonGrants}
+					totalLessons={lessonPlan.total_lessons}
+					editableLessons
+					showDueDates={false}
+					error={lessonError}
+				/>
 			</div>
 		{:else if amountError}
 			<p class="plan-form__error">{amountError}</p>
@@ -338,6 +419,18 @@
 			line-height: 1.5;
 		}
 
+		&__lessons {
+			margin: 2px 0 0;
+			font-size: var(--font-size-xs);
+			color: var(--color-primary);
+			line-height: 1.5;
+
+			/* 회차 지급을 안 쓰는 아이템은 강조하지 않는다 */
+			&--none {
+				color: var(--color-text-muted);
+			}
+		}
+
 		&__actions {
 			display: flex;
 			justify-content: flex-end;
@@ -357,31 +450,36 @@
 			border-radius: var(--radius-md);
 		}
 
+		&__preview-head {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			margin-bottom: var(--space-sm);
+		}
+
 		&__preview-title {
-			margin: 0 0 var(--space-sm);
+			margin: 0;
 			font-size: var(--font-size-xs);
 			color: var(--color-text-secondary);
 		}
 
-		&__preview-list {
-			margin: 0;
-			padding: 0;
-			list-style: none;
-			display: flex;
-			flex-direction: column;
-			gap: 4px;
-
-			li {
-				display: flex;
-				align-items: center;
-				justify-content: space-between;
-				font-size: var(--font-size-sm);
-			}
+		/* 원장이 지급 회차를 잘못 만졌을 때 기본 배분으로 되돌린다 */
+		&__reset {
+			padding: 2px 8px;
+			border: 1px solid var(--color-border);
+			border-radius: var(--radius-full);
+			background: var(--color-surface);
+			color: var(--color-text-secondary);
+			font-size: var(--font-size-xs);
+			font-family: inherit;
+			cursor: pointer;
 		}
 
-		/* 나머지를 몰아 받는 마지막 회차는 금액이 다르므로 눈에 띄게 */
-		&__preview-item--last strong {
-			color: var(--color-primary);
+		&__hint {
+			margin: calc(var(--space-md) * -1 + 4px) 0 0;
+			font-size: var(--font-size-xs);
+			color: var(--color-text-secondary);
+			line-height: 1.5;
 		}
 
 		&__error {

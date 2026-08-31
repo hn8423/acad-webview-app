@@ -88,6 +88,9 @@ export interface MemberPass {
 	subscription_installment_count?: number;
 	subscription_unpaid_count?: number;
 	subscription_next_due_date?: string | null;
+	// 계약 총 수강 회차 / 납부로 실제 지급된 회차. 0 이면 회차 지급 없는 장부용 분납이다.
+	subscription_total_lessons?: number;
+	subscription_granted_lessons?: number;
 	status: PassStatus;
 }
 

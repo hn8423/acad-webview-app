@@ -63,7 +63,12 @@
 				<div class="sub-card__head">
 					<div>
 						<p class="sub-card__name">{sub.plan_name || sub.pass_name}</p>
-						<p class="sub-card__meta">{sub.installment_count}회 분납</p>
+						<p class="sub-card__meta">
+							{sub.installment_count}회 분납
+							{#if sub.total_lessons > 0}
+								· 수강 {sub.granted_lessons_total}/{sub.total_lessons}회차
+							{/if}
+						</p>
 					</div>
 					<Badge variant={getSubscriptionStatusVariant(sub.status)}>
 						{getSubscriptionStatusLabel(sub.status)}
@@ -84,7 +89,12 @@
 						<li class="rounds__item">
 							<span class="rounds__seq">{installment.seq}회차</span>
 							<span class="rounds__due">{formatDate(installment.due_date)}</span>
-							<span class="rounds__amount">{formatCurrency(installment.amount)}</span>
+							<span class="rounds__amount">
+								{formatCurrency(installment.amount)}
+								{#if installment.grant_lessons > 0}
+									<span class="rounds__lessons">+{installment.grant_lessons}회차</span>
+								{/if}
+							</span>
 							<Badge variant={getInstallmentStatusVariant(displayStatus)}>
 								{getInstallmentStatusLabel(displayStatus)}
 							</Badge>
@@ -213,6 +223,14 @@
 		&__amount {
 			font-weight: var(--font-weight-semibold);
 			white-space: nowrap;
+		}
+
+		/* 납부하면 이만큼 수강 회차가 늘어난다 — 납부 동기를 만든다 */
+		&__lessons {
+			margin-left: 4px;
+			color: var(--color-primary);
+			font-size: var(--font-size-xs);
+			font-weight: var(--font-weight-semibold);
 		}
 	}
 </style>
