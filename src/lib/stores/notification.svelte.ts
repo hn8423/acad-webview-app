@@ -1,10 +1,20 @@
 import { getUnreadCount } from '$lib/api/notification';
 import { academyStore } from './academy.svelte';
+import { pushStore } from './push.svelte';
 
 const POLL_INTERVAL_MS = 30_000;
 
 let unreadCount = $state(0);
 let pollInterval: ReturnType<typeof setInterval> | null = null;
+
+/** 미읽음 개수는 앱 아이콘 배지와 항상 같이 움직여야 한다. */
+function setUnreadCount(next: number): void {
+	// 30초마다 도는 폴링이 같은 값으로 네이티브를 왕복하지 않도록 변화가 있을 때만 알린다.
+	if (next === unreadCount) return;
+
+	unreadCount = next;
+	pushStore.syncBadge(next);
+}
 
 export function getNotificationStore() {
 	async function fetchUnreadCount(): Promise<void> {
@@ -14,7 +24,7 @@ export function getNotificationStore() {
 		try {
 			const res = await getUnreadCount(academyId);
 			if (res.status && res.data) {
-				unreadCount = res.data.unread_count;
+				setUnreadCount(res.data.unread_count);
 			}
 		} catch {
 			// silent fail — badge is non-critical
@@ -36,16 +46,16 @@ export function getNotificationStore() {
 
 	function decrementUnread(): void {
 		if (unreadCount > 0) {
-			unreadCount = unreadCount - 1;
+			setUnreadCount(unreadCount - 1);
 		}
 	}
 
 	function clearUnread(): void {
-		unreadCount = 0;
+		setUnreadCount(0);
 	}
 
 	function clear(): void {
-		unreadCount = 0;
+		setUnreadCount(0);
 		stopPolling();
 	}
 

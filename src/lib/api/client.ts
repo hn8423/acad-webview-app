@@ -9,6 +9,18 @@ const STORAGE_KEY_REFRESH = 'refresh_token';
 let isRefreshing = false;
 let refreshPromise: Promise<boolean> | null = null;
 
+/**
+ * 세션이 완전히 끊겼을 때(리프레시 실패) 불린다.
+ * 푸시 스토어가 여기에 붙어 기기 토큰을 폐기한다 — 그러지 않으면 같은 기기에
+ * 다른 사용자가 로그인해도 이전 사용자의 토큰이 서버에 살아 있어 알림이 샌다.
+ * client 가 스토어를 직접 import 하면 순환 참조가 되므로 콜백으로 받는다.
+ */
+let sessionExpiredHandler: (() => void) | null = null;
+
+export function setSessionExpiredHandler(handler: (() => void) | null): void {
+	sessionExpiredHandler = handler;
+}
+
 export function getAccessToken(): string | null {
 	return getItem(STORAGE_KEY_ACCESS);
 }
@@ -115,6 +127,11 @@ export async function apiRequest<T>(endpoint: string, options: RequestOptions = 
 				headers: requestHeaders
 			});
 		} else {
+			try {
+				sessionExpiredHandler?.();
+			} catch (error) {
+				console.error('세션 만료 정리 실패:', error);
+			}
 			clearTokens();
 			if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth/')) {
 				window.location.href = '/auth/login';
