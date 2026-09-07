@@ -1,6 +1,7 @@
 import { setTokens, clearTokens, getAccessToken, getRefreshToken } from '$lib/api/client';
 import * as authApi from '$lib/api/auth';
 import { getJson, setJson, removeItem } from '$lib/utils/storage';
+import { pushStore } from './push.svelte';
 import type { ChangePhoneRequest, User, UserAcademy } from '$lib/types/auth';
 
 const USER_STORAGE_KEY = 'user';
@@ -80,6 +81,9 @@ export function getAuthStore() {
 	}
 
 	async function logout(): Promise<void> {
+		// 토큰 삭제 API 가 인증을 요구하므로 세션을 정리하기 전에 해제한다.
+		await pushStore.unregister();
+
 		const refreshToken = getRefreshToken();
 		if (refreshToken) {
 			try {
@@ -97,8 +101,13 @@ export function getAuthStore() {
 	async function deleteAccount(password: string): Promise<void> {
 		const res = await authApi.deleteMe(btoa(password));
 		if (!res.status) {
+			// 비밀번호 오입력 등으로 실패하면 사용자는 로그인 상태 그대로다.
+			// 먼저 토큰을 폐기했다면 여기서 푸시만 죽은 채로 남는다.
 			throw new Error(res.message || '회원 탈퇴에 실패했습니다.');
 		}
+
+		// 계정이 사라졌으니 서버 삭제는 의미가 없다. 기기 토큰만 폐기한다.
+		pushStore.discardLocalRegistration();
 		user = null;
 		isAuthenticated = false;
 		clearTokens();
