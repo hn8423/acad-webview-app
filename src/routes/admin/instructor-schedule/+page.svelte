@@ -11,10 +11,11 @@
 		ScheduleSlotReservation
 	} from '$lib/types/reservation';
 	import { getPassCategoryLabel } from '$lib/utils/pass';
-	import { isScheduleSlotFull } from '$lib/utils/reservation';
+	import { isScheduleSlotFull, markReservationCancelled } from '$lib/utils/reservation';
 	import { formatTimeRange, getTodayString, getDayOfWeek } from '$lib/utils/format';
 	import { buildInstructorColorMap, getInstructorColorIndex } from '$lib/utils/instructor-colors';
 	import Badge from '$lib/components/ui/Badge.svelte';
+	import ReservationCancelModal from '$lib/components/reservation/ReservationCancelModal.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import DateCalendar from '$lib/components/ui/DateCalendar.svelte';
 
@@ -27,18 +28,35 @@
 
 	// eslint-disable-next-line svelte/prefer-svelte-reactivity -- 월별 응답 캐시 — 화면 갱신은 scheduleData 재할당이 담당한다
 	const scheduleCache = new Map<string, InstructorScheduleData>();
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity -- 월별 캐시 세대. 무효화 이전에 출발한 응답이 캐시를 되살리지 못하게 한다
+	const cacheGeneration = new Map<string, number>();
 	let scheduleRequestId = 0;
+
+	interface CancelTarget {
+		reservation: ScheduleSlotReservation;
+		slot: ScheduleSlot;
+	}
+	let cancelTarget = $state<CancelTarget | null>(null);
 
 	function getInstructorId(inst: Instructor): number {
 		return inst.instructor_id ?? inst.id ?? inst.member_id;
 	}
 
-	async function fetchSchedule(year: number, month: number) {
+	function toCacheKey(year: number, month: number): string {
+		return `${year}-${String(month).padStart(2, '0')}`;
+	}
+
+	function getGeneration(cacheKey: string): number {
+		return cacheGeneration.get(cacheKey) ?? 0;
+	}
+
+	// silent: 이미 보이는 달을 스피너 없이 다시 받는다 (취소 후 재검증용). 실패해도 토스트를 띄우지 않는다
+	async function fetchSchedule(year: number, month: number, { silent = false } = {}) {
 		const academyId = academyStore.academyId;
 		if (!academyId) return;
 
-		const cacheKey = `${year}-${String(month).padStart(2, '0')}`;
-		const cached = scheduleCache.get(cacheKey);
+		const cacheKey = toCacheKey(year, month);
+		const cached = silent ? undefined : scheduleCache.get(cacheKey);
 		if (cached) {
 			// 진행 중인 다른 달 요청이 캐시된 화면을 덮어쓰지 않도록 무효화
 			scheduleRequestId++;
@@ -47,11 +65,12 @@
 			return;
 		}
 
+		const generation = getGeneration(cacheKey);
 		const requestId = ++scheduleRequestId;
-		monthLoading = true;
+		if (!silent) monthLoading = true;
 		try {
 			const res = await getInstructorSchedule(academyId, year, month);
-			if (res.status && res.data) {
+			if (res.status && res.data && generation === getGeneration(cacheKey)) {
 				scheduleCache.set(cacheKey, res.data);
 			}
 			if (requestId !== scheduleRequestId) return;
@@ -59,7 +78,7 @@
 				scheduleData = res.data;
 			}
 		} catch {
-			if (requestId === scheduleRequestId) {
+			if (requestId === scheduleRequestId && !silent) {
 				toastStore.error('강사 일정을 불러올 수 없습니다');
 			}
 		} finally {
@@ -71,6 +90,26 @@
 
 	function handleMonthChange(year: number, month: number) {
 		fetchSchedule(year, month);
+	}
+
+	// 취소 버튼은 selectedDate의 달 데이터에서만 보이므로 무효화 대상도 그 달이다
+	function invalidateMonthOf(date: string): { year: number; month: number } {
+		const [year, month] = date.split('-').map(Number);
+		const cacheKey = toCacheKey(year, month);
+		scheduleCache.delete(cacheKey);
+		cacheGeneration.set(cacheKey, getGeneration(cacheKey) + 1);
+		return { year, month };
+	}
+
+	function handleCancelled() {
+		const target = cancelTarget;
+		cancelTarget = null;
+		if (!target) return;
+		if (scheduleData) {
+			scheduleData = markReservationCancelled(scheduleData, target.reservation.reservation_id);
+		}
+		const { year, month } = invalidateMonthOf(selectedDate);
+		fetchSchedule(year, month, { silent: true });
 	}
 
 	onMount(async () => {
@@ -186,6 +225,11 @@
 		);
 	}
 
+	// 출석 처리(COMPLETED)된 예약은 기록이므로 여기서 취소하지 않는다
+	function isCancellable(rv: ScheduleSlotReservation): boolean {
+		return rv.status === 'PENDING' || rv.status === 'CONFIRMED';
+	}
+
 	function reservationLabel(rv: ScheduleSlotReservation): string {
 		const category = rv.pass_category ? ` · ${getPassCategoryLabel(rv.pass_category)}` : '';
 		return `${rv.member_name}${category}`;
@@ -284,6 +328,16 @@
 													{#if rv.status === 'PENDING'}
 														<Badge variant="warning">대기</Badge>
 													{/if}
+													{#if isCancellable(rv)}
+														<button
+															type="button"
+															class="instructor-schedule__student-cancel"
+															aria-label="{rv.member_name} 예약 취소"
+															onclick={() => (cancelTarget = { reservation: rv, slot })}
+														>
+															취소
+														</button>
+													{/if}
 												</li>
 											{/each}
 										</ul>
@@ -297,6 +351,15 @@
 		</section>
 	{/if}
 </div>
+
+<ReservationCancelModal
+	isOpen={cancelTarget !== null}
+	reservation={cancelTarget?.reservation ?? null}
+	slot={cancelTarget?.slot ?? null}
+	date={selectedDate}
+	onclose={() => (cancelTarget = null)}
+	oncancelled={handleCancelled}
+/>
 
 <style lang="scss">
 	@use '$lib/styles/variables' as *;
@@ -468,6 +531,20 @@
 
 		&__student-name {
 			@include text-truncate;
+		}
+
+		&__student-cancel {
+			@include press-scale;
+			margin-left: auto;
+			flex-shrink: 0;
+			padding: var(--space-2xs) var(--space-sm);
+			border: 1px solid var(--color-border);
+			border-radius: var(--radius-full);
+			background: var(--color-bg-card);
+			color: var(--color-danger);
+			font-size: var(--font-size-xs);
+			font-weight: var(--font-weight-medium);
+			cursor: pointer;
 		}
 
 		&__slot-time {

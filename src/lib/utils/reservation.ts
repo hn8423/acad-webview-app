@@ -1,5 +1,6 @@
 import type {
 	DateIndicators,
+	InstructorScheduleData,
 	LessonSlot,
 	MyReservation,
 	ReservationStatus,
@@ -140,4 +141,25 @@ export function buildDateIndicators(
 	}
 
 	return result;
+}
+
+// 취소 직후 재조회를 기다리지 않고 화면에 반영하기 위한 불변 갱신. 순번은 서버와 같이 null로 둔다
+export function markReservationCancelled(
+	data: InstructorScheduleData,
+	reservationId: number
+): InstructorScheduleData {
+	const days = Object.fromEntries(
+		Object.entries(data.days).map(([date, slots]) => [
+			date,
+			slots.map((slot) => ({
+				...slot,
+				reservations: slot.reservations?.map((rv) =>
+					rv.reservation_id === reservationId
+						? { ...rv, status: 'CANCELLED' as const, sequence: null }
+						: rv
+				)
+			}))
+		])
+	);
+	return { ...data, days };
 }
