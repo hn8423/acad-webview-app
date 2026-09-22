@@ -4,9 +4,15 @@ import {
 	buildDateIndicators,
 	buildSlotKey,
 	hasVisibleSequence,
-	isScheduleSlotFull
+	isScheduleSlotFull,
+	markReservationCancelled
 } from './reservation';
-import type { AvailableSlot, LessonSlot, MyReservation } from '$lib/types/reservation';
+import type {
+	AvailableSlot,
+	InstructorScheduleData,
+	LessonSlot,
+	MyReservation
+} from '$lib/types/reservation';
 
 function makeSlot(overrides: Partial<LessonSlot> = {}): LessonSlot {
 	return {
@@ -286,5 +292,51 @@ describe('isScheduleSlotFull', () => {
 
 	it('should be false when the slot has no capacity limit', () => {
 		expect(isScheduleSlotFull({ max_capacity: null, current_count: 10 })).toBe(false);
+	});
+});
+
+describe('markReservationCancelled', () => {
+	const reservation = {
+		reservation_id: 7,
+		member_name: 'A',
+		pass_category: null,
+		status: 'CONFIRMED' as const,
+		sequence: 1
+	};
+	const data: InstructorScheduleData = {
+		instructors: [],
+		days: {
+			'2026-09-21': [
+				{
+					slot_id: 1,
+					instructor_id: 3,
+					instructor_name: 'Joe',
+					slot_type: 'REGULAR',
+					start_time: '19:00',
+					end_time: '20:00',
+					max_capacity: 2,
+					current_count: 1,
+					status: 'OPEN',
+					reservations: [reservation, { ...reservation, reservation_id: 8 }]
+				}
+			],
+			'2026-09-22': []
+		}
+	};
+
+	it('대상 예약만 CANCELLED로 바꾸고 순번을 지운다', () => {
+		const next = markReservationCancelled(data, 7);
+		const rvs = next.days['2026-09-21'][0].reservations ?? [];
+		expect(rvs[0]).toEqual({ ...reservation, status: 'CANCELLED', sequence: null });
+		expect(rvs[1].status).toBe('CONFIRMED');
+	});
+
+	it('원본을 변경하지 않는다', () => {
+		markReservationCancelled(data, 7);
+		expect(data.days['2026-09-21'][0].reservations?.[0].status).toBe('CONFIRMED');
+	});
+
+	it('해당 예약이 없으면 내용이 같다', () => {
+		expect(markReservationCancelled(data, 999)).toEqual(data);
 	});
 });
