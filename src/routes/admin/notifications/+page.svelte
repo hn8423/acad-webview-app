@@ -14,7 +14,8 @@
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import Modal from '$lib/components/ui/Modal.svelte';
 	import { getRelativeTime } from '$lib/utils/format';
-	import type { Notification, NotificationType } from '$lib/types/notification';
+	import { getAdminNotificationRoute, getNotificationTypeBadge } from '$lib/utils/notification';
+	import type { Notification } from '$lib/types/notification';
 
 	const LIMIT = 20;
 
@@ -70,13 +71,8 @@
 			}
 		}
 
-		if (notification.reference_id && notification.reference_type) {
-			if (notification.reference_type === 'FEEDBACK') {
-				goto(`/admin/feedback/${notification.reference_id}`);
-			} else if (notification.reference_type === 'LESSON') {
-				goto('/admin/reservations');
-			}
-		}
+		const route = getAdminNotificationRoute(notification);
+		if (route) goto(route);
 	}
 
 	async function handleMarkAllRead() {
@@ -122,28 +118,6 @@
 		currentPage = page;
 		await fetchNotifications();
 	}
-
-	function getTypeLabel(type: NotificationType): string {
-		switch (type) {
-			case 'RESERVATION':
-				return '예약';
-			case 'FEEDBACK':
-				return '피드백';
-			default:
-				return '일반';
-		}
-	}
-
-	function getTypeBadgeVariant(type: NotificationType): 'success' | 'warning' | 'neutral' {
-		switch (type) {
-			case 'RESERVATION':
-				return 'warning';
-			case 'FEEDBACK':
-				return 'success';
-			default:
-				return 'neutral';
-		}
-	}
 </script>
 
 <div class="admin-notifications">
@@ -170,6 +144,7 @@
 	{:else}
 		<div class="notification-list">
 			{#each notifications as notification, i (notification.id)}
+				{@const typeBadge = getNotificationTypeBadge(notification.notification_type)}
 				<div
 					class="notification-row"
 					class:notification-row--unread={!notification.is_read}
@@ -185,8 +160,8 @@
 				>
 					<div class="notification-row__main">
 						<div class="notification-row__header">
-							<Badge variant={getTypeBadgeVariant(notification.notification_type)}>
-								{getTypeLabel(notification.notification_type)}
+							<Badge variant={typeBadge.variant}>
+								{typeBadge.label}
 							</Badge>
 							{#if !notification.is_read}
 								<span class="notification-row__dot"></span>

@@ -6,7 +6,8 @@ export type NotificationType =
 	| 'RESERVATION_CANCELLED'
 	| 'PASS_RENEWAL'
 	| 'PASS_EXPIRED'
-	| 'WEEKLY_RESERVATION_REMINDER';
+	| 'WEEKLY_RESERVATION_REMINDER'
+	| 'SUGGESTION_CREATED';
 export type ReferenceType =
 	| 'LESSON'
 	| 'FEEDBACK'
@@ -15,7 +16,8 @@ export type ReferenceType =
 	| 'PASS_EXPIRED'
 	| 'PASS_EXPIRED_CANCEL'
 	| 'PASS_DELETED_CANCEL'
-	| 'WEEKLY_RESERVATION_REMINDER';
+	| 'WEEKLY_RESERVATION_REMINDER'
+	| 'SUGGESTION';
 
 export interface Notification {
 	id: number;
