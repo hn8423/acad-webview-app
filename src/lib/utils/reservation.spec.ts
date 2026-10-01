@@ -3,6 +3,7 @@ import {
 	buildActiveReservationMap,
 	buildDateIndicators,
 	buildSlotKey,
+	getInstructorLabel,
 	hasVisibleSequence,
 	isScheduleSlotFull,
 	markReservationCancelled
@@ -338,5 +339,13 @@ describe('markReservationCancelled', () => {
 
 	it('해당 예약이 없으면 내용이 같다', () => {
 		expect(markReservationCancelled(data, 999)).toEqual(data);
+	});
+});
+
+describe('getInstructorLabel', () => {
+	it('합주는 수업 유형, 정규는 강사명, 강사가 없으면 미지정', () => {
+		expect(getInstructorLabel({ slot_type: 'ENSEMBLE', instructor_name: 'Joe' })).toBe('합주 수업');
+		expect(getInstructorLabel({ slot_type: 'REGULAR', instructor_name: 'Joe' })).toBe('Joe 선생님');
+		expect(getInstructorLabel({ slot_type: 'REGULAR', instructor_name: null })).toBe('강사 미지정');
 	});
 });

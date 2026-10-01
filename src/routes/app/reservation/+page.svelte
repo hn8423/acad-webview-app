@@ -5,6 +5,7 @@
 		getAvailableSlots,
 		getMyReservations,
 		createReservation,
+		createRecurringReservation,
 		cancelReservation,
 		cancelReservationAsNoShow,
 		getLessonSlotsMonthlySummary
@@ -15,17 +16,11 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import BottomSheet from '$lib/components/ui/BottomSheet.svelte';
+	import BookingSheet from '$lib/components/reservation/BookingSheet.svelte';
 	import PassSummary from '$lib/components/reservation/PassSummary.svelte';
 	import ReservationCalendar from '$lib/components/reservation/ReservationCalendar.svelte';
 	import { formatDate, formatTimeRange, getDayOfWeek, getTodayString } from '$lib/utils/format';
-	import {
-		getTicketValue,
-		getReservationWeight,
-		getPassDisplayName,
-		isPassUsable,
-		getAvailableLessons,
-		getPendingCount
-	} from '$lib/utils/pass';
+	import { getTicketValue, getPassDisplayName, isPassUsable } from '$lib/utils/pass';
 	import {
 		getBookingBlockLabel,
 		getBookingBlockMessage,
@@ -37,15 +32,16 @@
 	import {
 		buildActiveReservationMap,
 		buildSlotKey,
+		getInstructorLabel,
 		hasVisibleSequence,
 		isReservationDay
 	} from '$lib/utils/reservation';
+	import { formatRecurringResult, recurringReservationSchema } from '$lib/utils/recurring';
 	import type {
 		AvailableSlot,
 		DateIndicators,
 		MyReservation,
-		ReservationStatus,
-		SlotType
+		ReservationStatus
 	} from '$lib/types/reservation';
 	import type { MemberPass } from '$lib/types/member';
 	import { onMount } from 'svelte';
@@ -120,21 +116,10 @@
 	}
 
 	let filteredPasses = $derived(getPassesForSlot(selectedSlot));
-	let selectedPass = $derived(filteredPasses.find((p) => p.id === selectedPassId) ?? null);
-	let selectedPassWeight = $derived(
-		selectedPass
-			? getReservationWeight(
-					selectedPass.pass_category,
-					selectedPass.ticket_value,
-					selectedSlot?.slot_type
-				)
-			: 1
-	);
-	let exceedsCapacity = $derived(
-		selectedSlot && selectedPass
-			? selectedSlot.slot_type !== 'ENSEMBLE' &&
-					selectedSlot.remaining_capacity < selectedPassWeight
-			: false
+	// 강사 담당 수강권만 추려서 보여주는 중인지 (예약 시트 안내 문구용)
+	let isInstructorFiltered = $derived(
+		!!selectedSlot &&
+			filteredPasses.length < getUsablePassesForDate(memberPasses, selectedSlot.slot_date).length
 	);
 
 	let indicatorRequestId = 0;
@@ -275,26 +260,51 @@
 		bookingSheetOpen = true;
 	}
 
-	async function handleConfirmBooking() {
+	function finishBooking() {
+		bookingSheetOpen = false;
+		selectedSlot = null;
+		selectedPassId = null;
+		loadAvailableSlots(selectedDate);
+		loadMyReservations();
+		loadMemberPasses();
+		refreshMonthIndicators();
+	}
+
+	async function submitRecurring(academyId: number, memberPassId: number, slotIds: number[]) {
+		const request = recurringReservationSchema.safeParse({
+			member_pass_id: memberPassId,
+			slot_ids: slotIds
+		});
+		if (!request.success) {
+			toastStore.error('예약할 회차를 다시 선택해주세요.');
+			return;
+		}
+		const res = await createRecurringReservation(academyId, request.data);
+		if (!res.status) return;
+		const message = formatRecurringResult(res.data);
+		if (res.data.created.length > 0) toastStore.success(message);
+		else toastStore.error(message);
+		finishBooking();
+	}
+
+	async function submitSingle(academyId: number, slotId: number, memberPassId: number) {
+		const res = await createReservation(academyId, {
+			slot_id: slotId,
+			member_pass_id: memberPassId
+		});
+		if (!res.status) return;
+		toastStore.success('예약이 완료되었습니다.');
+		finishBooking();
+	}
+
+	async function handleConfirmBooking(recurringSlotIds: number[] | null) {
 		const academyId = academyStore.academyId;
 		if (!academyId || !selectedSlot || !selectedPassId) return;
 
 		submitting = true;
 		try {
-			const res = await createReservation(academyId, {
-				slot_id: selectedSlot.slot_id,
-				member_pass_id: selectedPassId
-			});
-			if (res.status) {
-				toastStore.success('예약이 완료되었습니다.');
-				bookingSheetOpen = false;
-				selectedSlot = null;
-				selectedPassId = null;
-				loadAvailableSlots(selectedDate);
-				loadMyReservations();
-				loadMemberPasses();
-				refreshMonthIndicators();
-			}
+			if (recurringSlotIds) await submitRecurring(academyId, selectedPassId, recurringSlotIds);
+			else await submitSingle(academyId, selectedSlot.slot_id, selectedPassId);
 		} catch {
 			// handled by client.ts
 		} finally {
@@ -364,14 +374,6 @@
 			default:
 				return status;
 		}
-	}
-
-	function getInstructorLabel(slot: {
-		slot_type: SlotType;
-		instructor_name: string | null;
-	}): string {
-		if (slot.slot_type === 'ENSEMBLE') return '합주 수업';
-		return slot.instructor_name ? `${slot.instructor_name} 선생님` : '강사 미지정';
 	}
 </script>
 
@@ -546,112 +548,20 @@
 </div>
 
 <!-- Booking Confirmation BottomSheet -->
-<BottomSheet
+<BookingSheet
 	bind:isOpen={bookingSheetOpen}
-	title="예약 확인"
+	bind:selectedPassId
+	slot={selectedSlot}
+	passes={filteredPasses}
+	instructorFiltered={isInstructorFiltered}
+	{submitting}
+	onconfirm={handleConfirmBooking}
 	onclose={() => {
 		bookingSheetOpen = false;
 		selectedSlot = null;
 		selectedPassId = null;
 	}}
->
-	{#if selectedSlot}
-		<div class="booking-sheet">
-			<div class="booking-sheet__info">
-				<div class="booking-sheet__row">
-					<span class="booking-sheet__label">날짜</span>
-					<span class="booking-sheet__value">
-						{formatDate(selectedSlot.slot_date)} ({getDayOfWeek(selectedSlot.slot_date)})
-					</span>
-				</div>
-				<div class="booking-sheet__row">
-					<span class="booking-sheet__label">시간</span>
-					<span class="booking-sheet__value">
-						{formatTimeRange(selectedSlot.start_time, selectedSlot.end_time)}
-					</span>
-				</div>
-				<div class="booking-sheet__row">
-					<span class="booking-sheet__label"
-						>{selectedSlot.slot_type === 'ENSEMBLE' ? '유형' : '강사'}</span
-					>
-					<span class="booking-sheet__value">{getInstructorLabel(selectedSlot)}</span>
-				</div>
-			</div>
-
-			<div class="booking-sheet__field">
-				<label class="booking-sheet__field-label" for="pass-select">사용할 수강권</label>
-				<select
-					id="pass-select"
-					class="booking-sheet__select"
-					bind:value={selectedPassId}
-					aria-label="사용할 수강권 선택"
-				>
-					{#each filteredPasses as pass (pass.id)}
-						{@const passWeight = getReservationWeight(
-							pass.pass_category,
-							pass.ticket_value,
-							selectedSlot?.slot_type
-						)}
-						{@const fits =
-							!selectedSlot ||
-							selectedSlot.slot_type === 'ENSEMBLE' ||
-							selectedSlot.remaining_capacity >= passWeight}
-						{@const pendingCount = getPendingCount(pass)}
-						<option value={pass.id} disabled={!fits}>
-							{getPassDisplayName(pass.pass_name, pass.pass_category)} (예약 가능 {getAvailableLessons(
-								pass
-							)}회{pendingCount > 0 ? `, 예약중 ${pendingCount}회` : ''}){getTicketValue(
-								pass.ticket_value
-							) > 1
-								? ` [${getTicketValue(pass.ticket_value)}회 차감]`
-								: ''}{!fits ? ' (마감)' : ''}
-						</option>
-					{/each}
-				</select>
-			</div>
-
-			{#if selectedSlot?.slot_type === 'ENSEMBLE'}
-				<p class="booking-sheet__pass-notice booking-sheet__pass-notice--info">
-					합주 수업은 모든 수강권으로 예약할 수 있습니다.
-				</p>
-			{:else if selectedSlot?.instructor_name && filteredPasses.length < getUsablePassesForDate(memberPasses, selectedSlot.slot_date).length}
-				<p class="booking-sheet__pass-notice">
-					{selectedSlot.instructor_name} 선생님 담당 수강권만 표시됩니다.
-				</p>
-			{/if}
-
-			{#if selectedPass && getTicketValue(selectedPass.ticket_value) > 1}
-				<div class="booking-sheet__ticket-notice">
-					이 수강권은 1회 수업당 {getTicketValue(selectedPass.ticket_value)}회가 차감됩니다.
-				</div>
-			{/if}
-
-			{#if selectedPass && getPendingCount(selectedPass) > 0}
-				<p class="booking-sheet__pass-notice booking-sheet__pass-notice--info">
-					잔여 {selectedPass.remaining_lessons}회 중 {getPendingCount(selectedPass)}회는 이미
-					예약되어 있습니다. (수업 완료 처리 시 차감)
-				</p>
-			{/if}
-
-			{#if exceedsCapacity}
-				<div class="booking-sheet__capacity-warning">해당 시간은 예약이 마감되었습니다.</div>
-			{/if}
-
-			<Button
-				fullWidth
-				loading={submitting}
-				disabled={exceedsCapacity}
-				onclick={handleConfirmBooking}
-			>
-				{#if selectedPass && getTicketValue(selectedPass.ticket_value) > 1}
-					예약하기 ({getTicketValue(selectedPass.ticket_value)}회 차감)
-				{:else}
-					예약하기
-				{/if}
-			</Button>
-		</div>
-	{/if}
-</BottomSheet>
+/>
 
 <!-- Cancel Confirmation BottomSheet -->
 <BottomSheet
@@ -955,100 +865,6 @@
 		&__reason {
 			font-size: var(--font-size-xs);
 			color: var(--color-text-muted);
-		}
-	}
-
-	.booking-sheet {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-lg);
-
-		&__info {
-			display: flex;
-			flex-direction: column;
-			gap: var(--space-sm);
-			padding: var(--space-md);
-			background: var(--color-bg);
-			border-radius: var(--radius-md);
-		}
-
-		&__row {
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-		}
-
-		&__label {
-			font-size: var(--font-size-sm);
-			color: var(--color-text-secondary);
-		}
-
-		&__value {
-			font-size: var(--font-size-sm);
-			font-weight: var(--font-weight-medium);
-			color: var(--color-text);
-		}
-
-		&__field {
-			display: flex;
-			flex-direction: column;
-			gap: var(--space-sm);
-		}
-
-		&__field-label {
-			font-size: var(--font-size-sm);
-			color: var(--color-text-secondary);
-		}
-
-		&__pass-notice {
-			font-size: var(--font-size-sm);
-			color: var(--color-text-secondary);
-			padding: var(--space-sm) var(--space-md);
-			background: var(--color-bg);
-			border-radius: var(--radius-sm);
-
-			&--info {
-				color: var(--color-info);
-				background: var(--color-info-bg);
-			}
-		}
-
-		&__ticket-notice {
-			font-size: var(--font-size-sm);
-			color: var(--color-warning);
-			font-weight: var(--font-weight-medium);
-			padding: var(--space-sm) var(--space-md);
-			background: var(--color-warning-bg);
-			border-radius: var(--radius-sm);
-		}
-
-		&__capacity-warning {
-			font-size: var(--font-size-sm);
-			color: var(--color-danger);
-			font-weight: var(--font-weight-medium);
-			padding: var(--space-sm) var(--space-md);
-			background: var(--color-danger-bg);
-			border-radius: var(--radius-sm);
-		}
-
-		&__select {
-			width: 100%;
-			padding: 14px 16px;
-			border: none;
-			background: var(--color-bg);
-			border-radius: var(--radius-md);
-			font-size: var(--font-size-base);
-			color: var(--color-text);
-			outline: none;
-			appearance: none;
-			background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-			background-repeat: no-repeat;
-			background-position: right 16px center;
-			padding-right: 40px;
-
-			&:focus {
-				box-shadow: 0 0 0 2px var(--color-primary-light);
-			}
 		}
 	}
 

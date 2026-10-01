@@ -153,3 +153,48 @@ export interface DateIndicators {
 }
 
 export type MonthlySummaryData = Record<string, DateIndicators>;
+
+// Recurring reservation (매주 반복 예약)
+
+// 서버가 회차를 예약할 수 없다고 판정한 사유 (academic-lesson BookingBlockReason 과 동일)
+export type RecurringSkipReason =
+	| 'NO_SLOT'
+	| 'SLOT_CLOSED'
+	| 'PAST'
+	| 'OUT_OF_PASS_PERIOD'
+	| 'HOLDING'
+	| 'ALREADY_BOOKED'
+	| 'NO_REMAINING'
+	| 'FULL';
+
+export type RecurringItemStatus = 'AVAILABLE' | RecurringSkipReason;
+
+export interface RecurringPreviewRequest {
+	slot_id: number;
+	member_pass_id: number;
+	count: number;
+}
+
+export interface RecurringPreviewItem {
+	// 그 주에 같은 강사·시간 슬롯이 없으면 null
+	slot_id: number | null;
+	slot_date: string;
+	status: RecurringItemStatus;
+}
+
+export interface RecurringPreviewResponse {
+	start_time: string;
+	end_time: string;
+	available_count: number;
+	items: RecurringPreviewItem[];
+}
+
+export interface RecurringReservationRequest {
+	member_pass_id: number;
+	slot_ids: number[];
+}
+
+export interface RecurringReservationResponse {
+	created: { reservation_id: number; slot_id: number; slot_date: string }[];
+	skipped: { slot_id: number; slot_date: string | null; reason: RecurringSkipReason }[];
+}
