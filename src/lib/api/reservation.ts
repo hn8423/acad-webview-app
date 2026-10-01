@@ -13,6 +13,10 @@ import type {
 	ReservationStatus,
 	SlotType,
 	MonthlySummaryData,
+	RecurringPreviewRequest,
+	RecurringPreviewResponse,
+	RecurringReservationRequest,
+	RecurringReservationResponse,
 	UpdateReservationStatusRequest,
 	UpdateSlotRequest
 } from '$lib/types/reservation';
@@ -27,6 +31,20 @@ export function getAvailableSlots(academyId: number, date: string) {
 export function createReservation(academyId: number, data: CreateReservationRequest) {
 	return post<ApiResponse<CreateReservationResponse>>(
 		`/academic/academies/${academyId}/reservations`,
+		data
+	);
+}
+
+export function previewRecurringReservation(academyId: number, data: RecurringPreviewRequest) {
+	return post<ApiResponse<RecurringPreviewResponse>>(
+		`/academic/academies/${academyId}/reservations/recurring/preview`,
+		data
+	);
+}
+
+export function createRecurringReservation(academyId: number, data: RecurringReservationRequest) {
+	return post<ApiResponse<RecurringReservationResponse>>(
+		`/academic/academies/${academyId}/reservations/recurring`,
 		data
 	);
 }
