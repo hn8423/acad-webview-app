@@ -69,6 +69,9 @@ src/
       ensemble/             # Ensemble domain components
         EnsembleCreateForm.svelte
         EnsembleDetailModal.svelte
+      reservation/          # Lesson booking components
+        BookingSheet.svelte             # Booking confirmation sheet (pass select + submit)
+        RecurringBookingOptions.svelte  # 매주 반복 toggle, count stepper, per-week preview
       subscription/         # Installment payment components
         InstallmentScheduleEditor.svelte  # Per-round due date + amount table
         PaymentRegisterSheet.svelte       # Offline payment registration sheet
@@ -95,6 +98,7 @@ src/
       storage.ts            # localStorage wrapper with 'acad_' prefix
       feedback.ts           # Score level classification (Beginner→Master)
       subscription.ts       # Installment amount/due-date math, status labels
+      recurring.ts          # 매주 반복 예약: count cap, status labels, Zod request schemas
     styles/
       _variables.scss       # Design tokens (colors, spacing, radius, shadows, z-index)
       _reset.scss           # CSS reset + base styles
@@ -127,7 +131,7 @@ static/                     # Static files
 - `/app/feedback` — My feedback list
 - `/app/feedback/[id]` — Feedback detail
 - `/app/ensemble` — Ensemble groups
-- `/app/reservation` — Lesson reservation
+- `/app/reservation` — Lesson reservation (single or 매주 반복 recurring)
 - `/app/holding` — Pass holding request (`?pass_id=` preselects)
 - `/app/subscriptions` — My installment payment status (linked from profile)
 - `/app/profile` — My profile
@@ -209,6 +213,30 @@ A member can pause a pass for a limited number of days. Rules (enforced server-s
 
 `MemberPass.status`: `HOLDING` means holding; **`REFUNDED` means refunded**. Before this feature
 `HOLDING` was labelled 환불 — do not reintroduce that mapping.
+
+### Recurring Reservation (매주 반복 예약)
+
+A member opens a slot's booking sheet and turns on **매주 반복** to book the same instructor · weekday ·
+time for the following weeks in one go. UI: `components/reservation/RecurringBookingOptions.svelte`
+inside `BookingSheet.svelte`; helpers in `src/lib/utils/recurring.ts`.
+
+- **Preview, then commit.** `POST reservations/recurring/preview` (`slot_id`, `member_pass_id`, `count`
+  2–12, base slot included) returns every week with `AVAILABLE` or a skip reason. The member unchecks
+  what they don't want and `POST reservations/recurring` sends only `slot_ids`. The server re-checks
+  everything under lock and returns `{ created, skipped }` — **partial success is normal**, and
+  `created: []` still comes back as `status: true`, so always read the arrays.
+- **Only `REGULAR` slots with an instructor** can repeat. The server rejects a `slot_ids` set that
+  mixes instructors, times or weekdays (`RECURRING_NOT_ALLOWED`) — it is not a generic bulk API.
+- **Remaining lessons are counted in aggregate**, earliest week first: headroom is
+  `remaining_lessons − PENDING/CONFIRMED`, one per booked week (by count, not `ticket_value`, same as
+  single booking). That's why the count stepper caps at `min(12, getAvailableLessons(pass))`.
+- **Weeks stop at the pass `end_date`**, so a preview can return fewer rows than `count`.
+- Skip reasons: `NO_SLOT` (no matching slot that week), `SLOT_CLOSED`, `PAST`, `OUT_OF_PASS_PERIOD`,
+  `HOLDING`, `ALREADY_BOOKED`, `NO_REMAINING`, `FULL`. Labels: `getRecurringStatusLabel()` in
+  `utils/recurring.ts`.
+- The instructor gets **one** notification for the whole series, not one per week.
+- Single booking shares the same server rules and locking, so it can now also fail with
+  `SLOT_CLOSED` / `SLOT_PAST` / `ALREADY_BOOKED`.
 
 ### Installment Payments (분할 납부 / 구독)
 

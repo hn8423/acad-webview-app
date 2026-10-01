@@ -163,3 +163,12 @@ export function markReservationCancelled(
 	);
 	return { ...data, days };
 }
+
+// 슬롯/예약 카드의 강사 표기. 합주는 강사 대신 수업 유형을 보여준다.
+export function getInstructorLabel(slot: {
+	slot_type: SlotType;
+	instructor_name: string | null;
+}): string {
+	if (slot.slot_type === 'ENSEMBLE') return '합주 수업';
+	return slot.instructor_name ? `${slot.instructor_name} 선생님` : '강사 미지정';
+}

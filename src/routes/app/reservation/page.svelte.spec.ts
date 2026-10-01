@@ -4,9 +4,12 @@ import { render } from 'vitest-browser-svelte';
 import ReservationPage from './+page.svelte';
 import { getMyPasses } from '$lib/api/member';
 import {
+	createRecurringReservation,
+	createReservation,
 	getAvailableSlots,
 	getLessonSlotsMonthlySummary,
-	getMyReservations
+	getMyReservations,
+	previewRecurringReservation
 } from '$lib/api/reservation';
 import { toastStore } from '$lib/stores/toast.svelte';
 import type { MemberPass } from '$lib/types/member';
@@ -18,6 +21,8 @@ vi.mock('$lib/api/reservation', () => ({
 	getMyReservations: vi.fn(),
 	getLessonSlotsMonthlySummary: vi.fn(),
 	createReservation: vi.fn(),
+	previewRecurringReservation: vi.fn(),
+	createRecurringReservation: vi.fn(),
 	cancelReservation: vi.fn(),
 	cancelReservationAsNoShow: vi.fn()
 }));
@@ -31,6 +36,10 @@ const mockedGetAvailableSlots = vi.mocked(getAvailableSlots);
 const mockedGetMyReservations = vi.mocked(getMyReservations);
 const mockedGetMonthlySummary = vi.mocked(getLessonSlotsMonthlySummary);
 const mockedToastError = vi.mocked(toastStore.error);
+const mockedToastSuccess = vi.mocked(toastStore.success);
+const mockedPreview = vi.mocked(previewRecurringReservation);
+const mockedCreateRecurring = vi.mocked(createRecurringReservation);
+const mockedCreateReservation = vi.mocked(createReservation);
 
 // 만료 판정이 오늘 기준이라 날짜는 상대값으로 만든다
 function daysFromToday(days: number): string {
@@ -148,5 +157,122 @@ describe('/app/reservation', () => {
 
 		await expect.element(browserPage.getByText('예약 확인')).toBeInTheDocument();
 		expect(mockedToastError).not.toHaveBeenCalled();
+	});
+
+	describe('매주 반복 예약', () => {
+		const pass = () =>
+			makePass({ remaining_lessons: 10, available_lessons: 10, end_date: daysFromToday(60) });
+
+		function arrangeRecurring() {
+			arrange([pass()], [makeSlot()]);
+			mockedPreview.mockResolvedValue(
+				ok({
+					start_time: '21:00',
+					end_time: '22:00',
+					available_count: 3,
+					items: [
+						{ slot_id: 100, slot_date: daysFromToday(0), status: 'AVAILABLE' as const },
+						{ slot_id: 101, slot_date: daysFromToday(7), status: 'FULL' as const },
+						{ slot_id: 102, slot_date: daysFromToday(14), status: 'AVAILABLE' as const },
+						{ slot_id: 103, slot_date: daysFromToday(21), status: 'AVAILABLE' as const }
+					]
+				})
+			);
+		}
+
+		async function openRecurring() {
+			render(ReservationPage);
+			await browserPage.getByRole('button', { name: /Joe 선생님/ }).click();
+			await browserPage.getByRole('switch', { name: '매주 반복' }).click();
+			await expect.element(browserPage.getByRole('button', { name: '3회 예약하기' })).toBeEnabled();
+		}
+
+		it('선택한 회차를 한 번에 예약하고 결과를 알린다', async () => {
+			arrangeRecurring();
+			mockedCreateRecurring.mockResolvedValue(
+				ok({
+					created: [
+						{ reservation_id: 1, slot_id: 100, slot_date: daysFromToday(0) },
+						{ reservation_id: 2, slot_id: 102, slot_date: daysFromToday(14) }
+					],
+					skipped: [{ slot_id: 103, slot_date: daysFromToday(21), reason: 'FULL' as const }]
+				})
+			);
+			await openRecurring();
+
+			await browserPage.getByRole('button', { name: '3회 예약하기' }).click();
+
+			await vi.waitFor(() =>
+				expect(mockedCreateRecurring).toHaveBeenCalledWith(1, {
+					member_pass_id: 1,
+					slot_ids: [100, 102, 103]
+				})
+			);
+			expect(mockedCreateReservation).not.toHaveBeenCalled();
+			await vi.waitFor(() =>
+				expect(mockedToastSuccess).toHaveBeenCalledWith('2건 예약 완료 · 1건 제외')
+			);
+		});
+
+		it('하나도 예약되지 않으면 에러로 알린다', async () => {
+			arrangeRecurring();
+			mockedCreateRecurring.mockResolvedValue(
+				ok({
+					created: [],
+					skipped: [{ slot_id: 100, slot_date: daysFromToday(0), reason: 'FULL' as const }]
+				})
+			);
+			await openRecurring();
+
+			await browserPage.getByRole('button', { name: '3회 예약하기' }).click();
+
+			await vi.waitFor(() =>
+				expect(mockedToastError).toHaveBeenCalledWith('예약 가능한 회차가 없습니다')
+			);
+		});
+
+		it('반복 예약을 마친 뒤 같은 슬롯을 다시 열면 단건 예약 상태로 시작한다', async () => {
+			arrangeRecurring();
+			mockedCreateRecurring.mockResolvedValue(
+				ok({
+					created: [],
+					skipped: [{ slot_id: 100, slot_date: daysFromToday(0), reason: 'FULL' as const }]
+				})
+			);
+			await openRecurring();
+			await browserPage.getByRole('button', { name: '3회 예약하기' }).click();
+			await vi.waitFor(() => expect(mockedToastError).toHaveBeenCalled());
+
+			await browserPage.getByRole('button', { name: /Joe 선생님/ }).click();
+
+			await expect
+				.element(
+					browserPage.getByRole('dialog').getByRole('button', { name: '예약하기', exact: true })
+				)
+				.toBeInTheDocument();
+		});
+
+		it('반복을 끄면 단건 예약으로 돌아간다', async () => {
+			arrangeRecurring();
+			mockedCreateReservation.mockResolvedValue(
+				ok({ reservation_id: 9, status: 'PENDING' as const })
+			);
+			await openRecurring();
+
+			await browserPage.getByRole('switch', { name: '매주 반복' }).click();
+			// 탭 버튼도 '예약하기'라서 시트(dialog) 안의 버튼으로 좁힌다
+			await browserPage
+				.getByRole('dialog')
+				.getByRole('button', { name: '예약하기', exact: true })
+				.click();
+
+			await vi.waitFor(() =>
+				expect(mockedCreateReservation).toHaveBeenCalledWith(1, {
+					slot_id: 100,
+					member_pass_id: 1
+				})
+			);
+			expect(mockedCreateRecurring).not.toHaveBeenCalled();
+		});
 	});
 });
