@@ -5,6 +5,7 @@
 	import { getInstructorDetail, getMembers } from '$lib/api/member';
 	import BackHeader from '$lib/components/layout/BackHeader.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import { formatPhone } from '$lib/utils/format';
@@ -164,6 +165,17 @@
 					{/if}
 				</div>
 			</div>
+			<!-- 탈퇴 전 남은 수업(예약 포함)을 정리하는 화면 -->
+			<div class="instructor-detail__cleanup">
+				<Button
+					size="sm"
+					variant="secondary"
+					fullWidth
+					onclick={() => goto(`/admin/instructors/${instructorId}/slots`)}
+				>
+					예정 수업 정리
+				</Button>
+			</div>
 		{:else}
 			<p class="instructor-detail__empty">강사 정보를 찾을 수 없습니다.</p>
 		{/if}
@@ -252,6 +264,11 @@
 	.instructor-detail {
 		&__content {
 			padding: calc(var(--header-height) + var(--space-md)) var(--space-md) var(--space-md);
+		}
+
+		&__cleanup {
+			margin-top: calc(-1 * var(--space-sm));
+			margin-bottom: var(--space-lg);
 		}
 
 		&__loading {

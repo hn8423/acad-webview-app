@@ -4,10 +4,13 @@ import type {
 	AvailableSlot,
 	BulkCreateSlotRequest,
 	BulkCreateSlotResponse,
+	BulkDeleteSlotsRequest,
+	BulkDeleteSlotsResponse,
 	CreateReservationRequest,
 	CreateReservationResponse,
 	CreateSlotRequest,
 	InstructorScheduleData,
+	InstructorUpcomingSlots,
 	LessonSlot,
 	MyReservation,
 	ReservationStatus,
@@ -143,6 +146,21 @@ export function updateLessonSlot(academyId: number, slotId: number, data: Update
 
 export function deleteLessonSlot(academyId: number, slotId: number) {
 	return del<ApiResponse<void>>(`/academic/academies/${academyId}/lesson-slots/${slotId}`);
+}
+
+// Admin: 강사 수업 정리 — 탈퇴한 강사도 조회된다
+export function getInstructorUpcomingSlots(academyId: number, instructorId: number) {
+	return get<ApiResponse<InstructorUpcomingSlots>>(
+		`/academic/academies/${academyId}/instructors/${instructorId}/upcoming-slots`
+	);
+}
+
+// 확인하지 않은 예약이나 그사이 바뀐 수업이 섞이면 409 (client.ts 가 토스트 후 ApiError)
+export function bulkDeleteSlots(academyId: number, data: BulkDeleteSlotsRequest) {
+	return post<ApiResponse<BulkDeleteSlotsResponse>>(
+		`/academic/academies/${academyId}/lesson-slots/bulk-delete`,
+		data
+	);
 }
 
 // Admin: Reservation Status Management

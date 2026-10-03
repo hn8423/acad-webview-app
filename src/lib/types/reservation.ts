@@ -198,3 +198,42 @@ export interface RecurringReservationResponse {
 	created: { reservation_id: number; slot_id: number; slot_date: string }[];
 	skipped: { slot_id: number; slot_date: string | null; reason: RecurringSkipReason }[];
 }
+
+// 강사 수업 정리 (관리자) — 오늘 이후 남은 수업과 예약 회원
+export interface UpcomingSlotReservation {
+	reservation_id: number;
+	member_name: string;
+	status: ReservationStatus;
+}
+
+export interface UpcomingSlot {
+	slot_id: number;
+	slot_date: string;
+	start_time: string;
+	end_time: string;
+	slot_type: SlotType;
+	status: SlotStatus;
+	max_capacity: number | null;
+	current_count: number;
+	// PENDING/CONFIRMED 예약만 담긴다
+	reservations: UpcomingSlotReservation[];
+}
+
+export interface InstructorUpcomingSlots {
+	instructor: { instructor_id: number; instructor_name: string; is_withdrawn: boolean };
+	slots: UpcomingSlot[];
+	total: number;
+	reserved_count: number;
+}
+
+export interface BulkDeleteSlotsRequest {
+	slot_ids: number[];
+	// 관리자가 확인 모달에서 본 예약. 이 밖의 진행 전 예약이 걸린 수업이 섞이면 서버가 409로 거부한다
+	confirmed_reservation_ids?: number[];
+	cancel_reason?: string;
+}
+
+export interface BulkDeleteSlotsResponse {
+	deleted_slot_count: number;
+	cancelled_reservation_count: number;
+}

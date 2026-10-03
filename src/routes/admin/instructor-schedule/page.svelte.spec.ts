@@ -2,7 +2,11 @@ import { page } from 'vitest/browser';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import InstructorSchedulePage from './+page.svelte';
-import { getInstructorSchedule, updateReservationStatus } from '$lib/api/reservation';
+import {
+	bulkDeleteSlots,
+	getInstructorSchedule,
+	updateReservationStatus
+} from '$lib/api/reservation';
 import { getInstructors } from '$lib/api/member';
 import type {
 	InstructorScheduleData,
@@ -13,7 +17,8 @@ import { getTodayString } from '$lib/utils/format';
 
 vi.mock('$lib/api/reservation', () => ({
 	getInstructorSchedule: vi.fn(),
-	updateReservationStatus: vi.fn()
+	updateReservationStatus: vi.fn(),
+	bulkDeleteSlots: vi.fn()
 }));
 vi.mock('$lib/api/member', () => ({ getInstructors: vi.fn() }));
 vi.mock('$lib/stores/academy.svelte', () => ({ academyStore: { academyId: 1 } }));
@@ -24,6 +29,7 @@ vi.mock('$lib/stores/toast.svelte', () => ({
 const mockedGetSchedule = vi.mocked(getInstructorSchedule);
 const mockedGetInstructors = vi.mocked(getInstructors);
 const mockedUpdate = vi.mocked(updateReservationStatus);
+const mockedBulkDelete = vi.mocked(bulkDeleteSlots);
 
 function makeReservation(
 	id: number,
@@ -121,5 +127,46 @@ describe('/admin/instructor-schedule', () => {
 
 		await expect.element(page.getByText('확정학생')).not.toBeInTheDocument();
 		await vi.waitFor(() => expect(mockedGetSchedule).toHaveBeenCalledTimes(2));
+	});
+
+	it('강사 그룹에 수업 정리 화면 링크를 보여준다', async () => {
+		mockedGetSchedule.mockResolvedValue(ok(makeSchedule([])));
+		render(InstructorSchedulePage);
+
+		await expect
+			.element(page.getByRole('link', { name: '수업 정리' }))
+			.toHaveAttribute('href', '/admin/instructors/3/slots');
+	});
+
+	it('출결 처리된 예약이 있는 수업에는 삭제 버튼이 없다', async () => {
+		mockedGetSchedule.mockResolvedValue(
+			ok(makeSchedule([makeReservation(3, '완료학생', 'COMPLETED')]))
+		);
+		render(InstructorSchedulePage);
+
+		await expect.element(page.getByText('완료학생')).toBeInTheDocument();
+		expect(page.getByRole('button', { name: /수업 삭제$/ }).query()).toBeNull();
+	});
+
+	it('수업 삭제는 예약 회원을 확인한 뒤 취소와 함께 삭제하고 스케줄을 다시 받는다', async () => {
+		mockedGetSchedule
+			.mockResolvedValueOnce(ok(makeSchedule([makeReservation(2, '확정학생', 'CONFIRMED')])))
+			.mockResolvedValueOnce(ok({ instructors: [], days: {} }));
+		mockedBulkDelete.mockResolvedValue({
+			status: true,
+			message: '',
+			data: { deleted_slot_count: 1, cancelled_reservation_count: 1 }
+		});
+		render(InstructorSchedulePage);
+
+		await page.getByRole('button', { name: /수업 삭제$/ }).click();
+		await expect.element(page.getByRole('alert')).toHaveTextContent('예약 회원 1명');
+		await page.getByRole('button', { name: '예약 취소 후 삭제' }).click();
+
+		await vi.waitFor(() => expect(mockedGetSchedule).toHaveBeenCalledTimes(2));
+		expect(mockedBulkDelete).toHaveBeenCalledWith(1, {
+			slot_ids: [9],
+			confirmed_reservation_ids: [2]
+		});
 	});
 });
