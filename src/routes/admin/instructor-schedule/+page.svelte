@@ -8,14 +8,17 @@
 	import type {
 		InstructorScheduleData,
 		ScheduleSlot,
-		ScheduleSlotReservation
+		ScheduleSlotReservation,
+		UpcomingSlot
 	} from '$lib/types/reservation';
 	import { getPassCategoryLabel } from '$lib/utils/pass';
 	import { isScheduleSlotFull, markReservationCancelled } from '$lib/utils/reservation';
 	import { formatTimeRange, getTodayString, getDayOfWeek } from '$lib/utils/format';
 	import { buildInstructorColorMap, getInstructorColorIndex } from '$lib/utils/instructor-colors';
+	import { isDeletableScheduleSlot, toUpcomingSlot } from '$lib/utils/slot-cleanup';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import ReservationCancelModal from '$lib/components/reservation/ReservationCancelModal.svelte';
+	import SlotDeleteConfirmModal from '$lib/components/instructor/SlotDeleteConfirmModal.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import DateCalendar from '$lib/components/ui/DateCalendar.svelte';
 
@@ -37,6 +40,10 @@
 		slot: ScheduleSlot;
 	}
 	let cancelTarget = $state<CancelTarget | null>(null);
+	// 수업 삭제 확인 모달 대상 (한 건). 닫히는 동안 내용이 비지 않도록 열림 상태를 따로 둔다
+	let slotDeleteTarget = $state<UpcomingSlot | null>(null);
+	let slotDeleteOpen = $state(false);
+	const today = getTodayString();
 
 	function getInstructorId(inst: Instructor): number {
 		return inst.instructor_id ?? inst.id ?? inst.member_id;
@@ -108,6 +115,18 @@
 		if (scheduleData) {
 			scheduleData = markReservationCancelled(scheduleData, target.reservation.reservation_id);
 		}
+		const { year, month } = invalidateMonthOf(selectedDate);
+		fetchSchedule(year, month, { silent: true });
+	}
+
+	// 삭제가 성공했든 409로 막혔든 서버 상태가 바뀌었을 수 있으니 이 달을 다시 받는다
+	function openSlotDelete(slot: ScheduleSlot) {
+		slotDeleteTarget = toUpcomingSlot(slot, selectedDate);
+		slotDeleteOpen = true;
+	}
+
+	function handleSlotDeleteDone() {
+		slotDeleteOpen = false;
 		const { year, month } = invalidateMonthOf(selectedDate);
 		fetchSchedule(year, month, { silent: true });
 	}
@@ -298,6 +317,14 @@
 							></span>
 							<span class="instructor-schedule__group-name">{group.instructorName}</span>
 							<span class="instructor-schedule__group-count">{group.slots.length}건</span>
+							{#if group.instructorId !== null}
+								<a
+									class="instructor-schedule__group-link"
+									href="/admin/instructors/{group.instructorId}/slots"
+								>
+									수업 정리
+								</a>
+							{/if}
 						</div>
 						<ul class="instructor-schedule__slots">
 							{#each group.slots as slot (slot.slot_id)}
@@ -312,7 +339,19 @@
 												{slot.slot_type === 'ENSEMBLE' ? '합주' : '레슨'} · {formatCapacity(slot)}
 											</span>
 										</div>
-										<Badge variant={statusVariant(slot)}>{statusLabel(slot)}</Badge>
+										<div class="instructor-schedule__slot-actions">
+											<Badge variant={statusVariant(slot)}>{statusLabel(slot)}</Badge>
+											{#if isDeletableScheduleSlot(slot, selectedDate, today)}
+												<button
+													type="button"
+													class="instructor-schedule__slot-delete"
+													aria-label="{formatTimeRange(slot.start_time, slot.end_time)} 수업 삭제"
+													onclick={() => openSlotDelete(slot)}
+												>
+													삭제
+												</button>
+											{/if}
+										</div>
 									</div>
 									{#if booked.length > 0}
 										<ul class="instructor-schedule__students">
@@ -359,6 +398,13 @@
 	date={selectedDate}
 	onclose={() => (cancelTarget = null)}
 	oncancelled={handleCancelled}
+/>
+
+<SlotDeleteConfirmModal
+	isOpen={slotDeleteOpen}
+	slots={slotDeleteTarget ? [slotDeleteTarget] : []}
+	onclose={() => (slotDeleteOpen = false)}
+	ondone={handleSlotDeleteDone}
 />
 
 <style lang="scss">
@@ -472,6 +518,15 @@
 			color: var(--color-text-muted);
 		}
 
+		&__group-link {
+			margin-left: auto;
+			padding: var(--space-xs) var(--space-sm);
+			font-size: var(--font-size-xs);
+			font-weight: var(--font-weight-medium);
+			color: var(--color-primary);
+			text-decoration: none;
+		}
+
 		&__slots {
 			display: flex;
 			flex-direction: column;
@@ -537,6 +592,25 @@
 			@include press-scale;
 			margin-left: auto;
 			flex-shrink: 0;
+			padding: var(--space-2xs) var(--space-sm);
+			border: 1px solid var(--color-border);
+			border-radius: var(--radius-full);
+			background: var(--color-bg-card);
+			color: var(--color-danger);
+			font-size: var(--font-size-xs);
+			font-weight: var(--font-weight-medium);
+			cursor: pointer;
+		}
+
+		&__slot-actions {
+			display: flex;
+			align-items: center;
+			gap: var(--space-xs);
+			flex-shrink: 0;
+		}
+
+		&__slot-delete {
+			@include press-scale;
 			padding: var(--space-2xs) var(--space-sm);
 			border: 1px solid var(--color-border);
 			border-radius: var(--radius-full);
