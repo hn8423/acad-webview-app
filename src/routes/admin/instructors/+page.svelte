@@ -5,16 +5,15 @@
 		createInstructor,
 		getMembers,
 		getInstructorDetail,
-		updateInstructor,
-		deleteInstructor
+		updateInstructor
 	} from '$lib/api/member';
-	import { toastStore } from '$lib/stores/toast.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Modal from '$lib/components/ui/Modal.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 	import InstructorStatsModal from '$lib/components/instructor/InstructorStatsModal.svelte';
+	import InstructorWithdrawModal from '$lib/components/instructor/InstructorWithdrawModal.svelte';
 	import type { Instructor, MemberListItem } from '$lib/types/member';
 	import { formatPhone } from '$lib/utils/format';
 	import { goto } from '$app/navigation';
@@ -42,10 +41,9 @@
 	let editIntroduction = $state('');
 	let editIsAdmin = $state(false);
 
-	// Delete modal state
+	// Withdraw modal state — 남은 수업이 있으면 모달이 '수업 정리' 화면으로 안내한다
 	let showDeleteModal = $state(false);
-	let deleteTarget = $state<Instructor | null>(null);
-	let deleting = $state(false);
+	let deleteTarget = $state<{ id: number; name: string } | null>(null);
 
 	// Step management: 'select-member' | 'fill-details'
 	let step = $state<'select-member' | 'fill-details'>('select-member');
@@ -285,29 +283,14 @@
 
 	function confirmWithdraw(event: Event, instructor: Instructor) {
 		event.stopPropagation();
-		deleteTarget = instructor;
+		deleteTarget = { id: getInstructorId(instructor), name: instructor.user_name };
 		showDeleteModal = true;
 	}
 
-	async function handleWithdraw() {
-		if (deleting) return;
-		const academyId = academyStore.academyId;
-		if (!academyId || !deleteTarget) return;
-
-		deleting = true;
-		try {
-			const res = await deleteInstructor(academyId, getInstructorId(deleteTarget));
-			if (res.status) {
-				toastStore.success(`${deleteTarget.user_name} 강사가 탈퇴 처리되었습니다.`);
-				showDeleteModal = false;
-				deleteTarget = null;
-				await fetchInstructors();
-			}
-		} catch {
-			// Error toast is handled automatically by client.ts
-		} finally {
-			deleting = false;
-		}
+	async function handleWithdrawn() {
+		showDeleteModal = false;
+		deleteTarget = null;
+		await fetchInstructors();
 	}
 </script>
 
@@ -636,13 +619,12 @@
 	{/if}
 </Modal>
 
-<Modal isOpen={showDeleteModal} title="강사 탈퇴" onclose={() => (showDeleteModal = false)}>
-	<p class="modal-message">"{deleteTarget?.user_name}" 강사를 탈퇴 처리하시겠습니까?</p>
-	<div class="modal-actions">
-		<Button variant="danger" fullWidth onclick={handleWithdraw} loading={deleting}>탈퇴</Button>
-		<Button variant="secondary" fullWidth onclick={() => (showDeleteModal = false)}>취소</Button>
-	</div>
-</Modal>
+<InstructorWithdrawModal
+	isOpen={showDeleteModal}
+	instructor={deleteTarget}
+	onclose={() => (showDeleteModal = false)}
+	onwithdrawn={handleWithdrawn}
+/>
 
 <InstructorStatsModal
 	isOpen={showStatsModal}
@@ -1072,18 +1054,5 @@
 			height: 100%;
 			object-fit: cover;
 		}
-	}
-
-	.modal-message {
-		font-size: var(--font-size-base);
-		color: var(--color-text-secondary);
-		line-height: var(--line-height-base);
-	}
-
-	.modal-actions {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-sm);
-		margin-top: var(--space-lg);
 	}
 </style>

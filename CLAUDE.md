@@ -66,6 +66,10 @@ src/
         BottomNav.svelte    # Dynamic bottom nav (driven by app config)
         BackHeader.svelte   # Back button header for detail pages
         AdminSidebar.svelte # Slide-out sidebar with role-based menu
+      instructor/           # Instructor admin components
+        InstructorWithdrawModal.svelte  # 탈퇴 — redirects to 수업 정리 while slots remain
+        SlotDeleteConfirmModal.svelte   # Bulk slot delete; lists booked members before cancelling
+        UpcomingSlotList.svelte         # Date-grouped selectable upcoming slots
       ensemble/             # Ensemble domain components
         EnsembleCreateForm.svelte
         EnsembleDetailModal.svelte
@@ -99,6 +103,7 @@ src/
       feedback.ts           # Score level classification (Beginner→Master)
       subscription.ts       # Installment amount/due-date math, status labels
       recurring.ts          # 매주 반복 예약: count cap, status labels, Zod request schemas
+      slot-cleanup.ts       # 강사 수업 정리: bulk-delete request chunks, Zod schema, result labels
     styles/
       _variables.scss       # Design tokens (colors, spacing, radius, shadows, z-index)
       _reset.scss           # CSS reset + base styles
@@ -141,6 +146,7 @@ static/                     # Static files
 - `/admin` — Dashboard (role-filtered cards)
 - `/admin/notices` — Notice management (CRUD) `[ADMIN only]`
 - `/admin/instructors` — Instructor management `[ADMIN only]`
+- `/admin/instructors/[id]/slots` — 강사 수업 정리 (delete upcoming slots before 탈퇴) `[ADMIN only]`
 - `/admin/students` — Student list (infinite scroll) `[ADMIN, INSTRUCTOR]`
 - `/admin/students/[id]` — Student detail
 - `/admin/students/[id]/passes` — Student pass management
@@ -237,6 +243,28 @@ inside `BookingSheet.svelte`; helpers in `src/lib/utils/recurring.ts`.
 - The instructor gets **one** notification for the whole series, not one per week.
 - Single booking shares the same server rules and locking, so it can now also fail with
   `SLOT_CLOSED` / `SLOT_PAST` / `ALREADY_BOOKED`.
+
+### Instructor Withdrawal & Slot Cleanup (강사 탈퇴 / 수업 정리)
+
+An instructor can only be withdrawn once **no slot from today onward remains** — booked or not.
+The admin clears them first on `/admin/instructors/[id]/slots` (also linked from the 탈퇴 modal, the
+instructor detail page and each instructor group on `/admin/instructor-schedule`).
+
+- `GET instructors/:id/upcoming-slots` returns today-onward slots with their PENDING/CONFIRMED members.
+  It works for **already-withdrawn** instructors too, so leftover slots from before this rule can be
+  cleaned up (`is_withdrawn` hides the 탈퇴 button).
+- `POST lesson-slots/bulk-delete` (`slot_ids` ≤ 200 per call — `buildBulkDeleteRequests` chunks).
+  Bookings are cancelled only if their id is in `confirmed_reservation_ids` — the members the confirm
+  modal actually showed. A booking that arrived after the list loaded isn't in it, so the server answers
+  **409** instead of cancelling someone the admin never saw; a slot that turned past/deleted/attended
+  under the lock also rolls back with 409. Either way the page reloads. Cancelled students get a
+  notification with the reason (default `관리자 수업 삭제`); an active instructor gets one summary.
+- Only today-onward slots are cleanup targets. A slot with COMPLETED/NO_SHOW reservations is attendance
+  history: if it still has PENDING/CONFIRMED bookings it is listed, and "deleting" it cancels just those
+  bookings and keeps the slot; once nothing active is left it is no longer listed and doesn't block
+  withdrawal. The withdrawal count uses the same rule (`CLEANUP_TARGET_WHERE`) and the same KST today.
+- `DELETE instructors/:id` answers **409** with `remaining_slot_count` while slots remain. The
+  withdraw modal pre-checks the count, so the 409 is only a race fallback.
 
 ### Installment Payments (분할 납부 / 구독)
 
