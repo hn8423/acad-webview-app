@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
+	isPassFeedbackable,
+	getFeedbackPassOptionLabel,
 	getPassStatusVariant,
 	getPassStatusLabel,
 	getPassBadgeVariant,
@@ -549,5 +551,29 @@ describe('isHoldable', () => {
 	it('should reject a pass that is not active', () => {
 		expect(isHoldable({ status: 'HOLDING', hold_days: 30, hold_used_days: 0 })).toBe(false);
 		expect(isHoldable({ status: 'EXPIRED', hold_days: 30, hold_used_days: 0 })).toBe(false);
+	});
+});
+
+describe('isPassFeedbackable', () => {
+	it.each(['ACTIVE', 'USED_UP', 'HOLDING', 'EXPIRED'])('should allow %s passes', (status) => {
+		expect(isPassFeedbackable({ status })).toBe(true);
+	});
+
+	it('should exclude REFUNDED passes', () => {
+		expect(isPassFeedbackable({ status: 'REFUNDED' })).toBe(false);
+	});
+});
+
+describe('getFeedbackPassOptionLabel', () => {
+	it('should omit the status for ACTIVE passes', () => {
+		expect(
+			getFeedbackPassOptionLabel({ pass_name: '취미반', instructor_name: 'Noa', status: 'ACTIVE' })
+		).toBe('취미반 (Noa)');
+	});
+
+	it('should append the status label for non-ACTIVE passes', () => {
+		expect(
+			getFeedbackPassOptionLabel({ pass_name: '취미반', instructor_name: 'Noa', status: 'USED_UP' })
+		).toBe('취미반 (Noa) · 소진');
 	});
 });

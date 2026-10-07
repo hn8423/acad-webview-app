@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { isPassFeedbackable, getFeedbackPassOptionLabel } from '$lib/utils/pass';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { academyStore } from '$lib/stores/academy.svelte';
@@ -57,7 +58,7 @@
 	let improvements = $state('');
 	let notes = $state('');
 	const stepLabels = ['학생 선택', '피드백 작성'];
-	const activePasses = $derived(passes.filter((p) => p.status === 'ACTIVE'));
+	const feedbackPasses = $derived(passes.filter(isPassFeedbackable));
 
 	onMount(() => {
 		const memberNameParam = page.url.searchParams.get('member_name');
@@ -153,7 +154,7 @@
 		const academyId = academyStore.academyId;
 		if (!academyId || !selectedMember) return;
 
-		const selectedPass = activePasses.find((p) => p.id === Number(selectedPassId));
+		const selectedPass = feedbackPasses.find((p) => p.id === Number(selectedPassId));
 		if (!selectedPass?.instructor_id) {
 			error = '선택한 수강권의 강사 정보를 찾을 수 없습니다.';
 			return;
@@ -297,8 +298,8 @@
 					<div class="weekly-page__loading">
 						<Spinner />
 					</div>
-				{:else if activePasses.length === 0}
-					<p class="weekly-page__empty">이 학생은 활성화된 수강권이 없습니다.</p>
+				{:else if feedbackPasses.length === 0}
+					<p class="weekly-page__empty">이 학생은 피드백을 작성할 수강권이 없습니다.</p>
 					<Button variant="secondary" fullWidth onclick={() => (step = 1)}>다른 학생 선택</Button>
 				{:else}
 					<form
@@ -312,8 +313,8 @@
 							<label class="create-form__label" for="pass-select">수강권</label>
 							<select id="pass-select" class="create-form__select" bind:value={selectedPassId}>
 								<option value="">선택하세요</option>
-								{#each activePasses as pass (pass.id)}
-									<option value={pass.id}>{pass.pass_name} ({pass.instructor_name})</option>
+								{#each feedbackPasses as pass (pass.id)}
+									<option value={pass.id}>{getFeedbackPassOptionLabel(pass)}</option>
 								{/each}
 							</select>
 						</div>

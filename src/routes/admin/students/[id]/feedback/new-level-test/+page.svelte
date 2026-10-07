@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { isPassFeedbackable, getFeedbackPassOptionLabel } from '$lib/utils/pass';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { academyStore } from '$lib/stores/academy.svelte';
@@ -40,7 +41,7 @@
 	let instructorMessage = $state('');
 	const stepLabels = ['기본 정보', '카테고리별 평가', '커리큘럼'];
 	const memberId = $derived(Number(page.params.id));
-	const activePasses = $derived(passes.filter((p) => p.status === 'ACTIVE'));
+	const feedbackPasses = $derived(passes.filter(isPassFeedbackable));
 
 	onMount(async () => {
 		const academyId = academyStore.academyId;
@@ -189,8 +190,8 @@
 							<label class="create-form__label" for="pass-select">수강권</label>
 							<select id="pass-select" class="create-form__select" bind:value={selectedPassId}>
 								<option value="">선택하세요</option>
-								{#each activePasses as pass (pass.id)}
-									<option value={pass.id}>{pass.pass_name} ({pass.instructor_name})</option>
+								{#each feedbackPasses as pass (pass.id)}
+									<option value={pass.id}>{getFeedbackPassOptionLabel(pass)}</option>
 								{/each}
 							</select>
 						</div>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { isPassFeedbackable, getFeedbackPassOptionLabel } from '$lib/utils/pass';
 	import { goto } from '$app/navigation';
 	import { academyStore } from '$lib/stores/academy.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
@@ -48,7 +49,7 @@
 	let creating = $state(false);
 
 	const stepLabels = ['학생 선택', '기본 정보', '카테고리별 평가', '커리큘럼'];
-	const activePasses = $derived(passes.filter((p) => p.status === 'ACTIVE'));
+	const feedbackPasses = $derived(passes.filter(isPassFeedbackable));
 
 	onMount(() => fetchMembers());
 
@@ -286,8 +287,8 @@
 					<div class="level-test-page__loading">
 						<Spinner />
 					</div>
-				{:else if activePasses.length === 0}
-					<p class="level-test-page__empty">이 학생은 활성화된 수강권이 없습니다.</p>
+				{:else if feedbackPasses.length === 0}
+					<p class="level-test-page__empty">이 학생은 피드백을 작성할 수강권이 없습니다.</p>
 					<Button variant="secondary" fullWidth onclick={() => (step = 1)}>다른 학생 선택</Button>
 				{:else}
 					<h2 class="step-section__title">기본 정보</h2>
@@ -297,8 +298,8 @@
 							<label class="create-form__label" for="pass-select">수강권</label>
 							<select id="pass-select" class="create-form__select" bind:value={selectedPassId}>
 								<option value="">선택하세요</option>
-								{#each activePasses as pass (pass.id)}
-									<option value={pass.id}>{pass.pass_name} ({pass.instructor_name})</option>
+								{#each feedbackPasses as pass (pass.id)}
+									<option value={pass.id}>{getFeedbackPassOptionLabel(pass)}</option>
 								{/each}
 							</select>
 						</div>
