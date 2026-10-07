@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { isPassFeedbackable, getFeedbackPassOptionLabel } from '$lib/utils/pass';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { academyStore } from '$lib/stores/academy.svelte';
@@ -122,7 +123,7 @@
 		const academyId = academyStore.academyId;
 		if (!academyId) return;
 
-		const selectedPass = activePasses.find((p) => p.id === Number(selectedPassId));
+		const selectedPass = feedbackPasses.find((p) => p.id === Number(selectedPassId));
 		if (!selectedPass?.instructor_id) {
 			error = '선택한 수강권의 강사 정보를 찾을 수 없습니다.';
 			return;
@@ -154,7 +155,7 @@
 		}
 	}
 
-	const activePasses = $derived(passes.filter((p) => p.status === 'ACTIVE'));
+	const feedbackPasses = $derived(passes.filter(isPassFeedbackable));
 </script>
 
 <div class="feedback-page">
@@ -285,8 +286,8 @@
 			<label class="create-form__label" for="pass-select">수강권</label>
 			<select id="pass-select" class="create-form__select" bind:value={selectedPassId}>
 				<option value="">선택하세요</option>
-				{#each activePasses as pass (pass.id)}
-					<option value={pass.id}>{pass.pass_name} ({pass.instructor_name})</option>
+				{#each feedbackPasses as pass (pass.id)}
+					<option value={pass.id}>{getFeedbackPassOptionLabel(pass)}</option>
 				{/each}
 			</select>
 		</div>

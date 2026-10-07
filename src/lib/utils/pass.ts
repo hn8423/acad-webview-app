@@ -35,6 +35,21 @@ export function getPassStatusLabel(status: string): string {
 	}
 }
 
+// 피드백은 이미 진행한 레슨에 대한 기록이라 소진·만료·홀딩 수강권에도 쓸 수 있어야 한다.
+// (마지막 레슨이 끝나면 바로 USED_UP이 되므로 ACTIVE만 허용하면 마지막 레슨 피드백을 못 쓴다.) 환불만 제외.
+export function isPassFeedbackable(pass: { status: string }): boolean {
+	return pass.status !== 'REFUNDED';
+}
+
+export function getFeedbackPassOptionLabel(pass: {
+	pass_name: string;
+	instructor_name: string;
+	status: string;
+}): string {
+	const base = `${pass.pass_name} (${pass.instructor_name})`;
+	return pass.status === 'ACTIVE' ? base : `${base} · ${getPassStatusLabel(pass.status)}`;
+}
+
 export function getTicketValue(ticketValue?: number): number {
 	return ticketValue && ticketValue > 0 ? ticketValue : 1;
 }
