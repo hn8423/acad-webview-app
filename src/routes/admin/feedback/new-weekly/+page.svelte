@@ -88,13 +88,14 @@
 					? (academyStore.instructorId ?? undefined)
 					: undefined;
 			const cursor = append ? (nextCursor ?? undefined) : undefined;
+			// 'ALL': 마지막 레슨 후 소진·만료된 수강권 학생도 피드백 대상이라 검색에 포함
 			const res = await getMembers(
 				academyId,
 				cursor,
 				20,
 				search || undefined,
 				'STUDENT',
-				undefined,
+				'ALL',
 				instructorId
 			);
 			if (res.status && res.data) {
