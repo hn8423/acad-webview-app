@@ -63,9 +63,11 @@ export function updateMember(academyId: number, memberId: number, data: UpdateMe
 }
 
 // Instructors
-export function getInstructors(academyId: number) {
+// includeWithdrawn: 해제된 강사도 포함 (관리자 전용, 정산·수업 이력 확인용)
+export function getInstructors(academyId: number, options: { includeWithdrawn?: boolean } = {}) {
+	const query = options.includeWithdrawn ? '?include_withdrawn=true' : '';
 	return get<ApiResponse<Instructor[] | { instructors: Instructor[] }>>(
-		`/academic/academies/${academyId}/instructors`
+		`/academic/academies/${academyId}/instructors${query}`
 	);
 }
 
