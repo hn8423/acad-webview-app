@@ -20,6 +20,7 @@
 	import { onMount } from 'svelte';
 
 	let instructors = $state<Instructor[]>([]);
+	let showWithdrawn = $state(false);
 	let loading = $state(true);
 	let fetchError = $state('');
 	let showCreateModal = $state(false);
@@ -88,7 +89,7 @@
 		loading = true;
 		fetchError = '';
 		try {
-			const res = await getInstructors(academyId);
+			const res = await getInstructors(academyId, { includeWithdrawn: showWithdrawn });
 			if (res.status && res.data) {
 				const data = res.data;
 				instructors = Array.isArray(data) ? data : (data.instructors ?? []);
@@ -172,6 +173,20 @@
 		event.stopPropagation();
 		statsInstructor = { id: getInstructorId(instructor), name: instructor.user_name };
 		showStatsModal = true;
+	}
+
+	function toggleWithdrawn() {
+		showWithdrawn = !showWithdrawn;
+		fetchInstructors();
+	}
+
+	// 해제된 강사는 상세 화면이 없으므로 행을 눌러도 통계를 연다
+	function handleRowClick(event: Event, instructor: Instructor) {
+		if (instructor.is_withdrawn) {
+			openStatsModal(event, instructor);
+			return;
+		}
+		goto(`/admin/instructors/${getInstructorId(instructor)}`);
 	}
 
 	function openEditModalFromRow(event: Event, instructor: Instructor) {
@@ -300,6 +315,11 @@
 		<Button size="sm" onclick={openCreateModal}>강사 추가</Button>
 	</div>
 
+	<label class="admin-instructors__withdrawn-toggle">
+		<input type="checkbox" checked={showWithdrawn} onchange={toggleWithdrawn} />
+		<span>해제된 강사 보기</span>
+	</label>
+
 	{#if loading}
 		<div class="admin-instructors__loading">
 			<Spinner />
@@ -315,7 +335,7 @@
 					<button
 						type="button"
 						class="instructor-row"
-						onclick={() => goto(`/admin/instructors/${getInstructorId(instructor)}`)}
+						onclick={(e) => handleRowClick(e, instructor)}
 						aria-label="{instructor.user_name} 강사 상세 보기"
 					>
 						<div class="instructor-row__avatar">
@@ -343,6 +363,9 @@
 						<div class="instructor-row__info">
 							<div class="instructor-row__top">
 								<h3 class="instructor-row__name">{instructor.user_name}</h3>
+								{#if instructor.is_withdrawn}
+									<Badge variant="neutral">해제됨</Badge>
+								{/if}
 								{#if instructor.specialties}
 									<Badge variant="info">{instructor.specialties}</Badge>
 								{/if}
@@ -353,26 +376,28 @@
 							{/if}
 						</div>
 					</button>
-					<button
-						type="button"
-						class="instructor-row__edit-btn"
-						onclick={(e) => openEditModalFromRow(e, instructor)}
-						aria-label="{instructor.user_name} 강사 정보 수정"
-					>
-						<svg
-							width="18"
-							height="18"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							stroke-linecap="round"
-							stroke-linejoin="round"
+					{#if !instructor.is_withdrawn}
+						<button
+							type="button"
+							class="instructor-row__edit-btn"
+							onclick={(e) => openEditModalFromRow(e, instructor)}
+							aria-label="{instructor.user_name} 강사 정보 수정"
 						>
-							<path d="M17 3a2.85 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
-						</svg>
-						<span>수정</span>
-					</button>
+							<svg
+								width="18"
+								height="18"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							>
+								<path d="M17 3a2.85 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+							</svg>
+							<span>수정</span>
+						</button>
+					{/if}
 					<button
 						type="button"
 						class="instructor-row__stats-btn"
@@ -393,29 +418,31 @@
 						</svg>
 						<span>통계</span>
 					</button>
-					<button
-						type="button"
-						class="instructor-row__withdraw-btn"
-						onclick={(e) => confirmWithdraw(e, instructor)}
-						aria-label="{instructor.user_name} 강사 탈퇴"
-					>
-						<svg
-							width="18"
-							height="18"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							stroke-linecap="round"
-							stroke-linejoin="round"
+					{#if !instructor.is_withdrawn}
+						<button
+							type="button"
+							class="instructor-row__withdraw-btn"
+							onclick={(e) => confirmWithdraw(e, instructor)}
+							aria-label="{instructor.user_name} 강사 탈퇴"
 						>
-							<polyline points="3 6 5 6 21 6" />
-							<path d="M19 6l-1 14H6L5 6" />
-							<path d="M10 11v6M14 11v6" />
-							<path d="M9 6V4h6v2" />
-						</svg>
-						<span>탈퇴</span>
-					</button>
+							<svg
+								width="18"
+								height="18"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							>
+								<polyline points="3 6 5 6 21 6" />
+								<path d="M19 6l-1 14H6L5 6" />
+								<path d="M10 11v6M14 11v6" />
+								<path d="M9 6V4h6v2" />
+							</svg>
+							<span>탈퇴</span>
+						</button>
+					{/if}
 				</div>
 				{#if i < instructors.length - 1}
 					<div class="instructor-list__divider"></div>
@@ -639,6 +666,16 @@
 			align-items: center;
 			justify-content: space-between;
 			margin-bottom: var(--space-md);
+		}
+
+		&__withdrawn-toggle {
+			display: inline-flex;
+			align-items: center;
+			gap: var(--space-xs);
+			margin-bottom: var(--space-md);
+			font-size: var(--font-size-sm);
+			color: var(--color-text-secondary);
+			cursor: pointer;
 		}
 
 		&__title {

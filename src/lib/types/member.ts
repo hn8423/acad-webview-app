@@ -144,6 +144,8 @@ export interface Instructor {
 	is_admin: number;
 	user_phone?: string;
 	student_count?: number;
+	/** 해제(탈퇴)된 강사. `include_withdrawn` 조회에서만 true로 온다 */
+	is_withdrawn?: boolean;
 }
 
 export interface CreateInstructorRequest {

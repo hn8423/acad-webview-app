@@ -107,6 +107,8 @@
 		const fullLabel = getPassCategoryLabel('FULL');
 
 		return [
+			{ label: '총 완료', value: stats.total_lessons, color: 'primary' },
+			{ label: '총 노쇼', value: stats.no_show_count, color: 'warning' },
 			{ label: `${rotationLabel} 완료`, value: rotation.completed, color: 'info' },
 			{ label: `${fullLabel} 완료`, value: full.completed, color: 'success' },
 			{ label: `${rotationLabel} 노쇼`, value: rotation.no_show, color: 'warning' },
