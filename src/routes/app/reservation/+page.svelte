@@ -494,14 +494,14 @@
 									<Badge variant={getStatusVariant(reservation.status)}>
 										{getStatusLabel(reservation.status)}
 									</Badge>
-									{#if reservation.status === 'PENDING' || reservation.status === 'CONFIRMED'}
-										{@const isSameDay = isReservationDay(reservation.slot_date)}
+									<!-- 당일 취소는 노쇼 처리되므로 학생에게는 버튼을 노출하지 않는다 -->
+									{#if (reservation.status === 'PENDING' || reservation.status === 'CONFIRMED') && !isReservationDay(reservation.slot_date)}
 										<button
 											type="button"
 											class="reservation-card__cancel"
 											onclick={() => handleCancelClick(reservation)}
 										>
-											{isSameDay ? '노쇼' : '취소'}
+											취소
 										</button>
 									{/if}
 								</div>

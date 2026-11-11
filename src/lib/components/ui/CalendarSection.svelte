@@ -374,9 +374,10 @@
 			{#if selectedReservations.length > 0}
 				<div class="reservation-cards">
 					{#each selectedReservations as reservation (reservation.reservation_id)}
+						<!-- 당일 취소는 노쇼 처리되므로 학생에게는 버튼을 노출하지 않는다 -->
 						{@const canCancel =
-							reservation.status === 'PENDING' || reservation.status === 'CONFIRMED'}
-						{@const isSameDay = canCancel && isReservationDay(reservation.slot_date)}
+							(reservation.status === 'PENDING' || reservation.status === 'CONFIRMED') &&
+							!isReservationDay(reservation.slot_date)}
 						<div class="reservation-card">
 							<div class="reservation-card__header">
 								<span
@@ -395,7 +396,7 @@
 										class="reservation-card__cancel"
 										onclick={() => oncancelreservation(reservation.reservation_id)}
 									>
-										{isSameDay ? '노쇼' : '취소'}
+										취소
 									</button>
 								{/if}
 							</div>
